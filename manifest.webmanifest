@@ -1,0 +1,14 @@
+{
+  "name": "Fietsnav",
+  "short_name": "Fietsnav",
+  "description": "Routes maken en gesproken fietsnavigatie",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0e14",
+  "theme_color": "#0b0e14",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

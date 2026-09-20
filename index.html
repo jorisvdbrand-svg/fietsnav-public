@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Fietsnav</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fietsnav">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+/* MapLibre-stijl ingesloten: een externe stylesheet minder om op te wachten,
+   en hij werkt zo ook waar alleen scripts van een CDN mogen komen. */
+.maplibregl-map{font:12px/20px Helvetica Neue,Arial,Helvetica,sans-serif;overflow:hidden;position:relative;-webkit-tap-highlight-color:rgb(0 0 0/0)}.maplibregl-canvas{left:0;position:absolute;top:0}.maplibregl-map:fullscreen{height:100%;width:100%}.maplibregl-ctrl-group button.maplibregl-ctrl-compass{touch-action:none}.maplibregl-canvas-container.maplibregl-interactive,.maplibregl-ctrl-group button.maplibregl-ctrl-compass{cursor:grab;-webkit-user-select:none;-moz-user-select:none;user-select:none}.maplibregl-canvas-container.maplibregl-interactive.maplibregl-track-pointer{cursor:pointer}.maplibregl-canvas-container.maplibregl-interactive:active,.maplibregl-ctrl-group button.maplibregl-ctrl-compass:active{cursor:grabbing}.maplibregl-canvas-container.maplibregl-touch-zoom-rotate,.maplibregl-canvas-container.maplibregl-touch-zoom-rotate .maplibregl-canvas{touch-action:pan-x pan-y}.maplibregl-canvas-container.maplibregl-touch-drag-pan,.maplibregl-canvas-container.maplibregl-touch-drag-pan .maplibregl-canvas{touch-action:pinch-zoom}.maplibregl-canvas-container.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan,.maplibregl-canvas-container.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan .maplibregl-canvas{touch-action:none}.maplibregl-canvas-container.maplibregl-touch-drag-pan.maplibregl-cooperative-gestures,.maplibregl-canvas-container.maplibregl-touch-drag-pan.maplibregl-cooperative-gestures .maplibregl-canvas{touch-action:pan-x pan-y}.maplibregl-ctrl-bottom-left,.maplibregl-ctrl-bottom-right,.maplibregl-ctrl-top-left,.maplibregl-ctrl-top-right{pointer-events:none;position:absolute;z-index:2}.maplibregl-ctrl-top-left{left:0;top:0}.maplibregl-ctrl-top-right{right:0;top:0}.maplibregl-ctrl-bottom-left{bottom:0;left:0}.maplibregl-ctrl-bottom-right{bottom:0;right:0}.maplibregl-ctrl{clear:both;pointer-events:auto;transform:translate(0)}.maplibregl-ctrl-top-left .maplibregl-ctrl{float:left;margin:10px 0 0 10px}.maplibregl-ctrl-top-right .maplibregl-ctrl{float:right;margin:10px 10px 0 0}.maplibregl-ctrl-bottom-left .maplibregl-ctrl{float:left;margin:0 0 10px 10px}.maplibregl-ctrl-bottom-right .maplibregl-ctrl{float:right;margin:0 10px 10px 0}.maplibregl-ctrl-group{background:#fff;border-radius:4px}.maplibregl-ctrl-group:not(:empty){box-shadow:0 0 0 2px rgba(0,0,0,.1)}@media (forced-colors:active){.maplibregl-ctrl-group:not(:empty){box-shadow:0 0 0 2px ButtonText}}.maplibregl-ctrl-group button{background-color:transparent;border:0;box-sizing:border-box;cursor:pointer;display:block;height:29px;outline:0;padding:0;width:29px}.maplibregl-ctrl-group button+button{border-top:1px solid #ddd}.maplibregl-ctrl button .maplibregl-ctrl-icon{background-position:50%;background-repeat:no-repeat;display:block;height:100%;width:100%}@media (forced-colors:active){.maplibregl-ctrl-icon{background-color:transparent}.maplibregl-ctrl-group button+button{border-top:1px solid ButtonText}}.maplibregl-ctrl button::-moz-focus-inner{border:0;padding:0}.maplibregl-ctrl-attrib-button:focus,.maplibregl-ctrl-group button:focus{box-shadow:0 0 2px 2px #0096ff}.maplibregl-ctrl button:disabled{cursor:not-allowed}.maplibregl-ctrl button:disabled .maplibregl-ctrl-icon{opacity:.25}@media (hover:hover){.maplibregl-ctrl button:not(:disabled):hover{background-color:rgb(0 0 0/5%)}}.maplibregl-ctrl button:not(:disabled):active{background-color:rgb(0 0 0/5%)}.maplibregl-ctrl-group button:focus:focus-visible{box-shadow:0 0 2px 2px #0096ff}.maplibregl-ctrl-group button:focus:not(:focus-visible){box-shadow:none}.maplibregl-ctrl-group button:focus:first-child{border-radius:4px 4px 0 0}.maplibregl-ctrl-group button:focus:last-child{border-radius:0 0 4px 4px}.maplibregl-ctrl-group button:focus:only-child{border-radius:inherit}.maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 29 29'%3E%3Cpath d='M10 13c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h9c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 29 29'%3E%3Cpath d='M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5'/%3E%3C/svg%3E")}@media (forced-colors:active){.maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='M10 13c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h9c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5'/%3E%3C/svg%3E")}}@media (forced-colors:active) and (prefers-color-scheme:light){.maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M10 13c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h9c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5'/%3E%3C/svg%3E")}}.maplibregl-ctrl button.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 29 29'%3E%3Cpath d='M24 16v5.5c0 1.75-.75 2.5-2.5 2.5H16v-1l3-1.5-4-5.5 1-1 5.5 4 1.5-3zM6 16l1.5 3 5.5-4 1 1-4 5.5 3 1.5v1H7.5C5.75 24 5 23.25 5 21.5V16zm7-11v1l-3 1.5 4 5.5-1 1-5.5-4L6 13H5V7.5C5 5.75 5.75 5 7.5 5zm11 2.5c0-1.75-.75-2.5-2.5-2.5H16v1l3 1.5-4 5.5 1 1 5.5-4 1.5 3h1z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-shrink .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M18.5 16c-1.75 0-2.5.75-2.5 2.5V24h1l1.5-3 5.5 4 1-1-4-5.5 3-1.5v-1zM13 18.5c0-1.75-.75-2.5-2.5-2.5H5v1l3 1.5L4 24l1 1 5.5-4 1.5 3h1zm3-8c0 1.75.75 2.5 2.5 2.5H24v-1l-3-1.5L25 5l-1-1-5.5 4L17 5h-1zM10.5 13c1.75 0 2.5-.75 2.5-2.5V5h-1l-1.5 3L5 4 4 5l4 5.5L5 12v1z'/%3E%3C/svg%3E")}@media (forced-colors:active){.maplibregl-ctrl button.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='M24 16v5.5c0 1.75-.75 2.5-2.5 2.5H16v-1l3-1.5-4-5.5 1-1 5.5 4 1.5-3zM6 16l1.5 3 5.5-4 1 1-4 5.5 3 1.5v1H7.5C5.75 24 5 23.25 5 21.5V16zm7-11v1l-3 1.5 4 5.5-1 1-5.5-4L6 13H5V7.5C5 5.75 5.75 5 7.5 5zm11 2.5c0-1.75-.75-2.5-2.5-2.5H16v1l3 1.5-4 5.5 1 1 5.5-4 1.5 3h1z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-shrink .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='M18.5 16c-1.75 0-2.5.75-2.5 2.5V24h1l1.5-3 5.5 4 1-1-4-5.5 3-1.5v-1zM13 18.5c0-1.75-.75-2.5-2.5-2.5H5v1l3 1.5L4 24l1 1 5.5-4 1.5 3h1zm3-8c0 1.75.75 2.5 2.5 2.5H24v-1l-3-1.5L25 5l-1-1-5.5 4L17 5h-1zM10.5 13c1.75 0 2.5-.75 2.5-2.5V5h-1l-1.5 3L5 4 4 5l4 5.5L5 12v1z'/%3E%3C/svg%3E")}}@media (forced-colors:active) and (prefers-color-scheme:light){.maplibregl-ctrl button.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M24 16v5.5c0 1.75-.75 2.5-2.5 2.5H16v-1l3-1.5-4-5.5 1-1 5.5 4 1.5-3zM6 16l1.5 3 5.5-4 1 1-4 5.5 3 1.5v1H7.5C5.75 24 5 23.25 5 21.5V16zm7-11v1l-3 1.5 4 5.5-1 1-5.5-4L6 13H5V7.5C5 5.75 5.75 5 7.5 5zm11 2.5c0-1.75-.75-2.5-2.5-2.5H16v1l3 1.5-4 5.5 1 1 5.5-4 1.5 3h1z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-shrink .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='M18.5 16c-1.75 0-2.5.75-2.5 2.5V24h1l1.5-3 5.5 4 1-1-4-5.5 3-1.5v-1zM13 18.5c0-1.75-.75-2.5-2.5-2.5H5v1l3 1.5L4 24l1 1 5.5-4 1.5 3h1zm3-8c0 1.75.75 2.5 2.5 2.5H24v-1l-3-1.5L25 5l-1-1-5.5 4L17 5h-1zM10.5 13c1.75 0 2.5-.75 2.5-2.5V5h-1l-1.5 3L5 4 4 5l4 5.5L5 12v1z'/%3E%3C/svg%3E")}}.maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 29 29'%3E%3Cpath d='m10.5 14 4-8 4 8z'/%3E%3Cpath fill='%23ccc' d='m10.5 16 4 8 4-8z'/%3E%3C/svg%3E")}@media (forced-colors:active){.maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 29 29'%3E%3Cpath d='m10.5 14 4-8 4 8z'/%3E%3Cpath fill='%23ccc' d='m10.5 16 4 8 4-8z'/%3E%3C/svg%3E")}}@media (forced-colors:active) and (prefers-color-scheme:light){.maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 29 29'%3E%3Cpath d='m10.5 14 4-8 4 8z'/%3E%3Cpath fill='%23ccc' d='m10.5 16 4 8 4-8z'/%3E%3C/svg%3E")}}.maplibregl-ctrl button.maplibregl-ctrl-globe .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='%23333' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='8.5'/%3E%3Cpath d='M17.5 11c0 4.819-3.02 8.5-6.5 8.5S4.5 15.819 4.5 11 7.52 2.5 11 2.5s6.5 3.681 6.5 8.5Z'/%3E%3Cpath d='M13.5 11c0 2.447-.331 4.64-.853 6.206-.262.785-.562 1.384-.872 1.777-.314.399-.58.517-.775.517s-.461-.118-.775-.517c-.31-.393-.61-.992-.872-1.777C8.831 15.64 8.5 13.446 8.5 11s.331-4.64.853-6.206c.262-.785.562-1.384.872-1.777.314-.399.58-.517.775-.517s.461.118.775.517c.31.393.61.992.872 1.777.522 1.565.853 3.76.853 6.206Z'/%3E%3Cpath d='M11 7.5c-1.909 0-3.622-.166-4.845-.428-.616-.132-1.08-.283-1.379-.434a1.3 1.3 0 0 1-.224-.138q.07-.058.224-.138c.299-.151.763-.302 1.379-.434C7.378 5.666 9.091 5.5 11 5.5s3.622.166 4.845.428c.616.132 1.08.283 1.379.434.105.053.177.1.224.138q-.07.058-.224.138c-.299.151-.763.302-1.379.434-1.223.262-2.936.428-4.845.428ZM4.486 6.436ZM11 16.5c-1.909 0-3.622-.166-4.845-.428-.616-.132-1.08-.283-1.379-.434a1.3 1.3 0 0 1-.224-.138 1.3 1.3 0 0 1 .224-.138c.299-.151.763-.302 1.379-.434C7.378 14.666 9.091 14.5 11 14.5s3.622.166 4.845.428c.616.132 1.08.283 1.379.434.105.053.177.1.224.138a1.3 1.3 0 0 1-.224.138c-.299.151-.763.302-1.379.434-1.223.262-2.936.428-4.845.428Zm-6.514-1.064ZM11 12.5c-2.46 0-4.672-.222-6.255-.574-.796-.177-1.406-.38-1.805-.59a1.5 1.5 0 0 1-.39-.272.3.3 0 0 1-.047-.064.3.3 0 0 1 .048-.064c.066-.073.189-.167.389-.272.399-.21 1.009-.413 1.805-.59C6.328 9.722 8.54 9.5 11 9.5s4.672.222 6.256.574c.795.177 1.405.38 1.804.59.2.105.323.2.39.272a.3.3 0 0 1 .047.064.3.3 0 0 1-.048.064 1.4 1.4 0 0 1-.389.272c-.399.21-1.009.413-1.804.59-1.584.352-3.796.574-6.256.574Zm-8.501-1.51v.002zm0 .018v.002zm17.002.002v-.002zm0-.018v-.002z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-globe-enabled .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='%2333b5e5' viewBox='0 0 22 22'%3E%3Ccircle cx='11' cy='11' r='8.5'/%3E%3Cpath d='M17.5 11c0 4.819-3.02 8.5-6.5 8.5S4.5 15.819 4.5 11 7.52 2.5 11 2.5s6.5 3.681 6.5 8.5Z'/%3E%3Cpath d='M13.5 11c0 2.447-.331 4.64-.853 6.206-.262.785-.562 1.384-.872 1.777-.314.399-.58.517-.775.517s-.461-.118-.775-.517c-.31-.393-.61-.992-.872-1.777C8.831 15.64 8.5 13.446 8.5 11s.331-4.64.853-6.206c.262-.785.562-1.384.872-1.777.314-.399.58-.517.775-.517s.461.118.775.517c.31.393.61.992.872 1.777.522 1.565.853 3.76.853 6.206Z'/%3E%3Cpath d='M11 7.5c-1.909 0-3.622-.166-4.845-.428-.616-.132-1.08-.283-1.379-.434a1.3 1.3 0 0 1-.224-.138q.07-.058.224-.138c.299-.151.763-.302 1.379-.434C7.378 5.666 9.091 5.5 11 5.5s3.622.166 4.845.428c.616.132 1.08.283 1.379.434.105.053.177.1.224.138q-.07.058-.224.138c-.299.151-.763.302-1.379.434-1.223.262-2.936.428-4.845.428ZM4.486 6.436ZM11 16.5c-1.909 0-3.622-.166-4.845-.428-.616-.132-1.08-.283-1.379-.434a1.3 1.3 0 0 1-.224-.138 1.3 1.3 0 0 1 .224-.138c.299-.151.763-.302 1.379-.434C7.378 14.666 9.091 14.5 11 14.5s3.622.166 4.845.428c.616.132 1.08.283 1.379.434.105.053.177.1.224.138a1.3 1.3 0 0 1-.224.138c-.299.151-.763.302-1.379.434-1.223.262-2.936.428-4.845.428Zm-6.514-1.064ZM11 12.5c-2.46 0-4.672-.222-6.255-.574-.796-.177-1.406-.38-1.805-.59a1.5 1.5 0 0 1-.39-.272.3.3 0 0 1-.047-.064.3.3 0 0 1 .048-.064c.066-.073.189-.167.389-.272.399-.21 1.009-.413 1.805-.59C6.328 9.722 8.54 9.5 11 9.5s4.672.222 6.256.574c.795.177 1.405.38 1.804.59.2.105.323.2.39.272a.3.3 0 0 1 .047.064.3.3 0 0 1-.048.064 1.4 1.4 0 0 1-.389.272c-.399.21-1.009.413-1.804.59-1.584.352-3.796.574-6.256.574Zm-8.501-1.51v.002zm0 .018v.002zm17.002.002v-.002zm0-.018v-.002z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-terrain .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='%23333' viewBox='0 0 22 22'%3E%3Cpath d='m1.754 13.406 4.453-4.851 3.09 3.09 3.281 3.277.969-.969-3.309-3.312 3.844-4.121 6.148 6.886h1.082v-.855l-7.207-8.07-4.84 5.187L6.169 6.57l-5.48 5.965v.871ZM.688 16.844h20.625v1.375H.688Zm0 0'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-terrain-enabled .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='%2333b5e5' viewBox='0 0 22 22'%3E%3Cpath d='m1.754 13.406 4.453-4.851 3.09 3.09 3.281 3.277.969-.969-3.309-3.312 3.844-4.121 6.148 6.886h1.082v-.855l-7.207-8.07-4.84 5.187L6.169 6.57l-5.48 5.965v.871ZM.688 16.844h20.625v1.375H.688Zm0 0'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23333' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23aaa' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Cpath fill='red' d='m14 5 1 1-9 9-1-1z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%2333b5e5' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-active-error .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23e58978' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%2333b5e5' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-background-error .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23e54e33' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-waiting .maplibregl-ctrl-icon{animation:maplibregl-spin 2s linear infinite}@media (forced-colors:active){.maplibregl-ctrl button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23fff' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23999' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Cpath fill='red' d='m14 5 1 1-9 9-1-1z'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%2333b5e5' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-active-error .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23e58978' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%2333b5e5' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate.maplibregl-ctrl-geolocate-background-error .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23e54e33' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3C/svg%3E")}}@media (forced-colors:active) and (prefers-color-scheme:light){.maplibregl-ctrl button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3C/svg%3E")}.maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='29' height='29' fill='%23666' viewBox='0 0 20 20'%3E%3Cpath d='M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Cpath fill='red' d='m14 5 1 1-9 9-1-1z'/%3E%3C/svg%3E")}}@keyframes maplibregl-spin{0%{transform:rotate(0)}to{transform:rotate(1turn)}}a.maplibregl-ctrl-logo{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='23' fill='none'%3E%3Cpath fill='%23000' fill-opacity='.4' fill-rule='evenodd' d='M17.408 16.796h-1.827l2.501-12.095h.198l3.324 6.533.988 2.19.988-2.19 3.258-6.533h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.929 5.644h-.098l-2.914-5.644-.757-1.71-.345 1.71zm1.958-3.42-.726 3.663a1.255 1.255 0 0 1-1.232 1.011h-1.827a1.255 1.255 0 0 1-1.229-1.509l2.501-12.095a1.255 1.255 0 0 1 1.23-1.001h.197a1.25 1.25 0 0 1 1.12.685l3.19 6.273 3.125-6.263a1.25 1.25 0 0 1 1.123-.695h.181a1.255 1.255 0 0 1 1.227.991l1.443 6.71a5 5 0 0 1 .314-.787l.009-.016a4.6 4.6 0 0 1 1.777-1.887c.782-.46 1.668-.667 2.611-.667a4.6 4.6 0 0 1 1.7.32l.306.134c.21-.16.474-.256.759-.256h1.694a1.255 1.255 0 0 1 1.212.925 1.255 1.255 0 0 1 1.212-.925h1.711c.284 0 .545.094.755.252.613-.3 1.312-.45 2.075-.45 1.356 0 2.557.445 3.482 1.4q.47.48.763 1.064V4.701a1.255 1.255 0 0 1 1.255-1.255h1.86A1.255 1.255 0 0 1 54.44 4.7v9.194h2.217c.19 0 .37.043.532.118v-4.77c0-.356.147-.678.385-.906a2.42 2.42 0 0 1-.682-1.71c0-.665.267-1.253.735-1.7a2.45 2.45 0 0 1 1.722-.674 2.43 2.43 0 0 1 1.705.675q.318.302.504.683V4.7a1.255 1.255 0 0 1 1.255-1.255h1.744A1.255 1.255 0 0 1 65.812 4.7v3.335a4.8 4.8 0 0 1 1.526-.246c.938 0 1.817.214 2.59.69a4.47 4.47 0 0 1 1.67 1.743v-.98a1.255 1.255 0 0 1 1.256-1.256h1.777c.233 0 .451.064.639.174a3.4 3.4 0 0 1 1.567-.372c.346 0 .861.02 1.285.232a1.25 1.25 0 0 1 .689 1.004 4.7 4.7 0 0 1 .853-.588c.795-.44 1.675-.647 2.61-.647 1.385 0 2.65.39 3.525 1.396.836.938 1.168 2.173 1.168 3.528q-.001.515-.056 1.051a1.255 1.255 0 0 1-.947 1.09l.408.952a1.255 1.255 0 0 1-.477 1.552c-.418.268-.92.463-1.458.612-.613.171-1.304.244-2.049.244-1.06 0-2.043-.207-2.886-.698l-.015-.008c-.798-.48-1.419-1.135-1.818-1.963l-.004-.008a5.8 5.8 0 0 1-.548-2.512q0-.429.053-.843a1.3 1.3 0 0 1-.333-.086l-.166-.004c-.223 0-.426.062-.643.228-.03.024-.142.139-.142.59v3.883a1.255 1.255 0 0 1-1.256 1.256h-1.777a1.255 1.255 0 0 1-1.256-1.256V15.69l-.032.057a4.8 4.8 0 0 1-1.86 1.833 5.04 5.04 0 0 1-2.484.634 4.5 4.5 0 0 1-1.935-.424 1.25 1.25 0 0 1-.764.258h-1.71a1.255 1.255 0 0 1-1.256-1.255V7.687a2.4 2.4 0 0 1-.428.625c.253.23.412.561.412.93v7.553a1.255 1.255 0 0 1-1.256 1.255h-1.843a1.25 1.25 0 0 1-.894-.373c-.228.23-.544.373-.894.373H51.32a1.255 1.255 0 0 1-1.256-1.255v-1.251l-.061.117a4.7 4.7 0 0 1-1.782 1.884 4.77 4.77 0 0 1-2.485.67 5.6 5.6 0 0 1-1.485-.188l.009 2.764a1.255 1.255 0 0 1-1.255 1.259h-1.729a1.255 1.255 0 0 1-1.255-1.255v-3.537a1.255 1.255 0 0 1-1.167.793h-1.679a1.25 1.25 0 0 1-.77-.263 4.5 4.5 0 0 1-1.945.429c-.885 0-1.724-.21-2.495-.632l-.017-.01a5 5 0 0 1-1.081-.836 1.255 1.255 0 0 1-1.254 1.312h-1.81a1.255 1.255 0 0 1-1.228-.99l-.782-3.625-2.044 3.939a1.25 1.25 0 0 1-1.115.676h-.098a1.25 1.25 0 0 1-1.116-.68l-2.061-3.994zM35.92 16.63l.207-.114.223-.15q.493-.356.735-.785l.061-.118.033 1.332h1.678V9.242h-1.694l-.033 1.267q-.133-.329-.526-.658l-.032-.028a3.2 3.2 0 0 0-.668-.428l-.27-.12a3.3 3.3 0 0 0-1.235-.23q-1.136-.001-1.974.493a3.36 3.36 0 0 0-1.3 1.382q-.445.89-.444 2.074 0 1.2.51 2.107a3.8 3.8 0 0 0 1.382 1.381 3.9 3.9 0 0 0 1.893.477q.795 0 1.455-.33zm-2.789-5.38q-.576.675-.575 1.762 0 1.102.559 1.794.576.675 1.645.675a2.25 2.25 0 0 0 .934-.19 2.2 2.2 0 0 0 .468-.29l.178-.161a2.2 2.2 0 0 0 .397-.561q.244-.5.244-1.15v-.115q0-.708-.296-1.267l-.043-.077a2.2 2.2 0 0 0-.633-.709l-.13-.086-.047-.028a2.1 2.1 0 0 0-1.073-.285q-1.052 0-1.629.692zm2.316 2.706c.163-.17.28-.407.28-.83v-.114c0-.292-.06-.508-.15-.68a.96.96 0 0 0-.353-.389.85.85 0 0 0-.464-.127c-.4 0-.56.114-.664.239l-.01.012c-.148.174-.275.45-.275.945 0 .506.122.801.27.99.097.11.266.224.68.224.303 0 .504-.09.687-.269zm7.545 1.705a2.6 2.6 0 0 0 .331.423q.319.33.755.548l.173.074q.65.255 1.49.255 1.02 0 1.844-.493a3.45 3.45 0 0 0 1.316-1.4q.493-.904.493-2.089 0-1.909-.988-2.913-.988-1.02-2.584-1.02-.898 0-1.575.347a3 3 0 0 0-.415.262l-.199.166a3.4 3.4 0 0 0-.64.82V9.242h-1.712v11.553h1.729l-.017-5.134zm.53-1.138q.206.29.48.5l.155.11.053.034q.51.296 1.119.297 1.07 0 1.645-.675.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.435 0-.835.16a2 2 0 0 0-.284.136 2 2 0 0 0-.363.254 2.2 2.2 0 0 0-.46.569l-.082.162a2.6 2.6 0 0 0-.213 1.072v.115q0 .707.296 1.267l.135.211zm.964-.818a1.1 1.1 0 0 0 .367.385.94.94 0 0 0 .476.118c.423 0 .59-.117.687-.23.159-.194.28-.478.28-.95 0-.53-.133-.8-.266-.952l-.021-.025c-.078-.094-.231-.221-.68-.221a1 1 0 0 0-.503.135l-.012.007a.86.86 0 0 0-.335.343c-.073.133-.132.324-.132.614v.115a1.4 1.4 0 0 0 .14.66zm15.7-6.222q.347-.346.346-.856a1.05 1.05 0 0 0-.345-.79 1.18 1.18 0 0 0-.84-.329q-.51 0-.855.33a1.05 1.05 0 0 0-.346.79q0 .51.346.855.345.346.856.346.51 0 .839-.346zm4.337 9.314.033-1.332q.191.403.59.747l.098.081a4 4 0 0 0 .316.224l.223.122a3.2 3.2 0 0 0 1.44.322 3.8 3.8 0 0 0 1.875-.477 3.5 3.5 0 0 0 1.382-1.366q.527-.89.526-2.09 0-1.184-.444-2.073a3.24 3.24 0 0 0-1.283-1.399q-.823-.51-1.942-.51a3.5 3.5 0 0 0-1.527.344l-.086.043-.165.09a3 3 0 0 0-.33.214q-.432.315-.656.707a2 2 0 0 0-.099.198l.082-1.283V4.701h-1.744v12.095zm.473-2.509a2.5 2.5 0 0 0 .566.7q.117.098.245.18l.144.08a2.1 2.1 0 0 0 .975.232q1.07 0 1.645-.675.576-.69.576-1.778 0-1.102-.576-1.777-.56-.691-1.645-.692a2.2 2.2 0 0 0-1.015.235q-.22.113-.415.282l-.15.142a2.1 2.1 0 0 0-.42.594q-.223.479-.223 1.1v.115q0 .705.293 1.26zm2.616-.293c.157-.191.28-.479.28-.967 0-.51-.13-.79-.276-.961l-.021-.026c-.082-.1-.232-.225-.67-.225a.87.87 0 0 0-.681.279l-.012.011c-.154.155-.274.38-.274.807v.115c0 .285.057.499.144.669a1.1 1.1 0 0 0 .367.405c.137.082.28.123.455.123.423 0 .59-.118.686-.23zm8.266-3.013q.345-.13.724-.14l.069-.002q.493 0 .642.099l.247-1.794q-.196-.099-.717-.099a2.3 2.3 0 0 0-.545.063 2 2 0 0 0-.411.148 2.2 2.2 0 0 0-.4.249 2.5 2.5 0 0 0-.485.499 2.7 2.7 0 0 0-.32.581l-.05.137v-1.48h-1.778v7.553h1.777v-3.884q0-.546.159-.943a1.5 1.5 0 0 1 .466-.636 2.5 2.5 0 0 1 .399-.253 2 2 0 0 1 .224-.099zm9.784 2.656.05-.922q0-1.743-.856-2.698-.838-.97-2.584-.97-1.119-.001-2.007.493a3.46 3.46 0 0 0-1.4 1.382q-.493.906-.493 2.106 0 1.07.428 1.975.428.89 1.332 1.432.906.526 2.255.526.973 0 1.668-.185l.044-.012.135-.04q.613-.184.984-.421l-.542-1.267q-.3.162-.642.274l-.297.087q-.51.131-1.3.131-.954 0-1.497-.444a1.6 1.6 0 0 1-.192-.193q-.366-.44-.512-1.234l-.004-.021zm-5.427-1.256-.003.022h3.752v-.138q-.011-.727-.288-1.118a1 1 0 0 0-.156-.176q-.46-.428-1.316-.428-.986 0-1.494.604-.379.45-.494 1.234zm-27.053 2.77V4.7h-1.86v12.095h5.333V15.15zm7.103-5.908v7.553h-1.843V9.242h1.843z'/%3E%3Cpath fill='%23fff' d='m19.63 11.151-.757-1.71-.345 1.71-1.12 5.644h-1.827L18.083 4.7h.197l3.325 6.533.988 2.19.988-2.19L26.839 4.7h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.93 5.644h-.098l-2.913-5.644zm14.836 5.81q-1.02 0-1.893-.478a3.8 3.8 0 0 1-1.381-1.382q-.51-.906-.51-2.106 0-1.185.444-2.074a3.36 3.36 0 0 1 1.3-1.382q.839-.494 1.974-.494a3.3 3.3 0 0 1 1.234.231 3.3 3.3 0 0 1 .97.575q.396.33.527.659l.033-1.267h1.694v7.553H37.18l-.033-1.332q-.279.593-1.02 1.053a3.17 3.17 0 0 1-1.662.444zm.296-1.482q.938 0 1.58-.642.642-.66.642-1.711v-.115q0-.708-.296-1.267a2.2 2.2 0 0 0-.807-.872 2.1 2.1 0 0 0-1.119-.313q-1.053 0-1.629.692-.575.675-.575 1.76 0 1.103.559 1.795.577.675 1.645.675zm6.521-6.237h1.711v1.4q.906-1.597 2.83-1.597 1.596 0 2.584 1.02.988 1.005.988 2.914 0 1.185-.493 2.09a3.46 3.46 0 0 1-1.316 1.399 3.5 3.5 0 0 1-1.844.493q-.954 0-1.662-.329a2.67 2.67 0 0 1-1.086-.97l.017 5.134h-1.728zm4.048 6.22q1.07 0 1.645-.674.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.592 0-1.12.296-.51.28-.822.823-.296.527-.296 1.234v.115q0 .708.296 1.267.313.543.823.855.51.296 1.119.297z'/%3E%3Cpath fill='%23e1e3e9' d='M51.325 4.7h1.86v10.45h3.473v1.646h-5.333zm7.12 4.542h1.843v7.553h-1.843zm.905-1.415a1.16 1.16 0 0 1-.856-.346 1.17 1.17 0 0 1-.346-.856 1.05 1.05 0 0 1 .346-.79q.346-.329.856-.329.494 0 .839.33a1.05 1.05 0 0 1 .345.79 1.16 1.16 0 0 1-.345.855q-.33.346-.84.346zm7.875 9.133a3.17 3.17 0 0 1-1.662-.444q-.723-.46-1.004-1.053l-.033 1.332h-1.71V4.701h1.743v4.657l-.082 1.283q.279-.658 1.086-1.119a3.5 3.5 0 0 1 1.778-.477q1.119 0 1.942.51a3.24 3.24 0 0 1 1.283 1.4q.445.888.444 2.072 0 1.201-.526 2.09a3.5 3.5 0 0 1-1.382 1.366 3.8 3.8 0 0 1-1.876.477zm-.296-1.481q1.069 0 1.645-.675.577-.69.577-1.778 0-1.102-.577-1.776-.56-.691-1.645-.692a2.12 2.12 0 0 0-1.58.659q-.642.641-.642 1.694v.115q0 .71.296 1.267a2.4 2.4 0 0 0 .807.872 2.1 2.1 0 0 0 1.119.313zm5.927-6.237h1.777v1.481q.263-.757.856-1.217a2.14 2.14 0 0 1 1.349-.46q.527 0 .724.098l-.247 1.794q-.149-.099-.642-.099-.774 0-1.416.494-.626.493-.626 1.58v3.883h-1.777V9.242zm9.534 7.718q-1.35 0-2.255-.526-.904-.543-1.332-1.432a4.6 4.6 0 0 1-.428-1.975q0-1.2.493-2.106a3.46 3.46 0 0 1 1.4-1.382q.889-.495 2.007-.494 1.744 0 2.584.97.855.956.856 2.7 0 .444-.05.92h-5.43q.18 1.005.708 1.45.542.443 1.497.443.79 0 1.3-.131a4 4 0 0 0 .938-.362l.542 1.267q-.411.263-1.119.46-.708.198-1.711.197zm1.596-4.558q.016-1.02-.444-1.432-.46-.428-1.316-.428-1.728 0-1.991 1.86z'/%3E%3Cpath d='M5.074 15.948a.484.657 0 0 0-.486.659v1.84a.484.657 0 0 0 .486.659h4.101a.484.657 0 0 0 .486-.659v-1.84a.484.657 0 0 0-.486-.659zm3.56 1.16H5.617v.838h3.017z' style='fill:%23fff;fill-rule:evenodd;stroke-width:1.03600001'/%3E%3Cg style='stroke-width:1.12603545'%3E%3Cpath d='M-9.408-1.416c-3.833-.025-7.056 2.912-7.08 6.615-.02 3.08 1.653 4.832 3.107 6.268.903.892 1.721 1.74 2.32 2.902l-.525-.004c-.543-.003-.992.304-1.24.639a1.87 1.87 0 0 0-.362 1.121l-.011 1.877c-.003.402.104.787.347 1.125.244.338.688.653 1.23.656l4.142.028c.542.003.99-.306 1.238-.641a1.87 1.87 0 0 0 .363-1.121l.012-1.875a1.87 1.87 0 0 0-.348-1.127c-.243-.338-.688-.653-1.23-.656l-.518-.004c.597-1.145 1.425-1.983 2.348-2.87 1.473-1.414 3.18-3.149 3.2-6.226-.016-3.59-2.923-6.684-6.993-6.707m-.006 1.1v.002c3.274.02 5.92 2.532 5.9 5.6-.017 2.706-1.39 4.026-2.863 5.44-1.034.994-2.118 2.033-2.814 3.633-.018.041-.052.055-.075.065q-.013.004-.02.01a.34.34 0 0 1-.226.084.34.34 0 0 1-.224-.086l-.092-.077c-.699-1.615-1.768-2.669-2.781-3.67-1.454-1.435-2.797-2.762-2.78-5.478.02-3.067 2.7-5.545 5.975-5.523m-.02 2.826c-1.62-.01-2.944 1.315-2.955 2.96-.01 1.646 1.295 2.988 2.916 2.999h.002c1.621.01 2.943-1.316 2.953-2.961.011-1.646-1.294-2.988-2.916-2.998m-.005 1.1c1.017.006 1.829.83 1.822 1.89s-.83 1.874-1.848 1.867c-1.018-.006-1.829-.83-1.822-1.89s.83-1.874 1.848-1.868m-2.155 11.857 4.14.025c.271.002.49.305.487.676l-.013 1.875c-.003.37-.224.67-.495.668l-4.14-.025c-.27-.002-.487-.306-.485-.676l.012-1.875c.003-.37.224-.67.494-.668' style='color:%23000;font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:%23000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:evenodd;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:%23000;solid-opacity:1;vector-effect:none;fill:%23000;fill-opacity:.4;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-9.415-.316C-12.69-.338-15.37 2.14-15.39 5.207c-.017 2.716 1.326 4.041 2.78 5.477 1.013 1 2.081 2.055 2.78 3.67l.092.076a.34.34 0 0 0 .225.086.34.34 0 0 0 .227-.083l.019-.01c.022-.009.057-.024.074-.064.697-1.6 1.78-2.64 2.814-3.634 1.473-1.414 2.847-2.733 2.864-5.44.02-3.067-2.627-5.58-5.901-5.601m-.057 8.784c1.621.011 2.944-1.315 2.955-2.96.01-1.646-1.295-2.988-2.916-2.999-1.622-.01-2.945 1.315-2.955 2.96s1.295 2.989 2.916 3' style='clip-rule:evenodd;fill:%23e1e3e9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-11.594 15.465c-.27-.002-.492.297-.494.668l-.012 1.876c-.003.371.214.673.485.675l4.14.027c.271.002.492-.298.495-.668l.012-1.877c.003-.37-.215-.672-.485-.674z' style='clip-rule:evenodd;fill:%23fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3C/g%3E%3C/svg%3E");background-repeat:no-repeat;cursor:pointer;display:block;height:23px;margin:0 0 -4px -4px;overflow:hidden;width:88px}a.maplibregl-ctrl-logo.maplibregl-compact{width:14px}@media (forced-colors:active){a.maplibregl-ctrl-logo{background-color:transparent;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='23' fill='none'%3E%3Cpath fill='%23000' fill-opacity='.4' fill-rule='evenodd' d='M17.408 16.796h-1.827l2.501-12.095h.198l3.324 6.533.988 2.19.988-2.19 3.258-6.533h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.929 5.644h-.098l-2.914-5.644-.757-1.71-.345 1.71zm1.958-3.42-.726 3.663a1.255 1.255 0 0 1-1.232 1.011h-1.827a1.255 1.255 0 0 1-1.229-1.509l2.501-12.095a1.255 1.255 0 0 1 1.23-1.001h.197a1.25 1.25 0 0 1 1.12.685l3.19 6.273 3.125-6.263a1.25 1.25 0 0 1 1.123-.695h.181a1.255 1.255 0 0 1 1.227.991l1.443 6.71a5 5 0 0 1 .314-.787l.009-.016a4.6 4.6 0 0 1 1.777-1.887c.782-.46 1.668-.667 2.611-.667a4.6 4.6 0 0 1 1.7.32l.306.134c.21-.16.474-.256.759-.256h1.694a1.255 1.255 0 0 1 1.212.925 1.255 1.255 0 0 1 1.212-.925h1.711c.284 0 .545.094.755.252.613-.3 1.312-.45 2.075-.45 1.356 0 2.557.445 3.482 1.4q.47.48.763 1.064V4.701a1.255 1.255 0 0 1 1.255-1.255h1.86A1.255 1.255 0 0 1 54.44 4.7v9.194h2.217c.19 0 .37.043.532.118v-4.77c0-.356.147-.678.385-.906a2.42 2.42 0 0 1-.682-1.71c0-.665.267-1.253.735-1.7a2.45 2.45 0 0 1 1.722-.674 2.43 2.43 0 0 1 1.705.675q.318.302.504.683V4.7a1.255 1.255 0 0 1 1.255-1.255h1.744A1.255 1.255 0 0 1 65.812 4.7v3.335a4.8 4.8 0 0 1 1.526-.246c.938 0 1.817.214 2.59.69a4.47 4.47 0 0 1 1.67 1.743v-.98a1.255 1.255 0 0 1 1.256-1.256h1.777c.233 0 .451.064.639.174a3.4 3.4 0 0 1 1.567-.372c.346 0 .861.02 1.285.232a1.25 1.25 0 0 1 .689 1.004 4.7 4.7 0 0 1 .853-.588c.795-.44 1.675-.647 2.61-.647 1.385 0 2.65.39 3.525 1.396.836.938 1.168 2.173 1.168 3.528q-.001.515-.056 1.051a1.255 1.255 0 0 1-.947 1.09l.408.952a1.255 1.255 0 0 1-.477 1.552c-.418.268-.92.463-1.458.612-.613.171-1.304.244-2.049.244-1.06 0-2.043-.207-2.886-.698l-.015-.008c-.798-.48-1.419-1.135-1.818-1.963l-.004-.008a5.8 5.8 0 0 1-.548-2.512q0-.429.053-.843a1.3 1.3 0 0 1-.333-.086l-.166-.004c-.223 0-.426.062-.643.228-.03.024-.142.139-.142.59v3.883a1.255 1.255 0 0 1-1.256 1.256h-1.777a1.255 1.255 0 0 1-1.256-1.256V15.69l-.032.057a4.8 4.8 0 0 1-1.86 1.833 5.04 5.04 0 0 1-2.484.634 4.5 4.5 0 0 1-1.935-.424 1.25 1.25 0 0 1-.764.258h-1.71a1.255 1.255 0 0 1-1.256-1.255V7.687a2.4 2.4 0 0 1-.428.625c.253.23.412.561.412.93v7.553a1.255 1.255 0 0 1-1.256 1.255h-1.843a1.25 1.25 0 0 1-.894-.373c-.228.23-.544.373-.894.373H51.32a1.255 1.255 0 0 1-1.256-1.255v-1.251l-.061.117a4.7 4.7 0 0 1-1.782 1.884 4.77 4.77 0 0 1-2.485.67 5.6 5.6 0 0 1-1.485-.188l.009 2.764a1.255 1.255 0 0 1-1.255 1.259h-1.729a1.255 1.255 0 0 1-1.255-1.255v-3.537a1.255 1.255 0 0 1-1.167.793h-1.679a1.25 1.25 0 0 1-.77-.263 4.5 4.5 0 0 1-1.945.429c-.885 0-1.724-.21-2.495-.632l-.017-.01a5 5 0 0 1-1.081-.836 1.255 1.255 0 0 1-1.254 1.312h-1.81a1.255 1.255 0 0 1-1.228-.99l-.782-3.625-2.044 3.939a1.25 1.25 0 0 1-1.115.676h-.098a1.25 1.25 0 0 1-1.116-.68l-2.061-3.994zM35.92 16.63l.207-.114.223-.15q.493-.356.735-.785l.061-.118.033 1.332h1.678V9.242h-1.694l-.033 1.267q-.133-.329-.526-.658l-.032-.028a3.2 3.2 0 0 0-.668-.428l-.27-.12a3.3 3.3 0 0 0-1.235-.23q-1.136-.001-1.974.493a3.36 3.36 0 0 0-1.3 1.382q-.445.89-.444 2.074 0 1.2.51 2.107a3.8 3.8 0 0 0 1.382 1.381 3.9 3.9 0 0 0 1.893.477q.795 0 1.455-.33zm-2.789-5.38q-.576.675-.575 1.762 0 1.102.559 1.794.576.675 1.645.675a2.25 2.25 0 0 0 .934-.19 2.2 2.2 0 0 0 .468-.29l.178-.161a2.2 2.2 0 0 0 .397-.561q.244-.5.244-1.15v-.115q0-.708-.296-1.267l-.043-.077a2.2 2.2 0 0 0-.633-.709l-.13-.086-.047-.028a2.1 2.1 0 0 0-1.073-.285q-1.052 0-1.629.692zm2.316 2.706c.163-.17.28-.407.28-.83v-.114c0-.292-.06-.508-.15-.68a.96.96 0 0 0-.353-.389.85.85 0 0 0-.464-.127c-.4 0-.56.114-.664.239l-.01.012c-.148.174-.275.45-.275.945 0 .506.122.801.27.99.097.11.266.224.68.224.303 0 .504-.09.687-.269zm7.545 1.705a2.6 2.6 0 0 0 .331.423q.319.33.755.548l.173.074q.65.255 1.49.255 1.02 0 1.844-.493a3.45 3.45 0 0 0 1.316-1.4q.493-.904.493-2.089 0-1.909-.988-2.913-.988-1.02-2.584-1.02-.898 0-1.575.347a3 3 0 0 0-.415.262l-.199.166a3.4 3.4 0 0 0-.64.82V9.242h-1.712v11.553h1.729l-.017-5.134zm.53-1.138q.206.29.48.5l.155.11.053.034q.51.296 1.119.297 1.07 0 1.645-.675.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.435 0-.835.16a2 2 0 0 0-.284.136 2 2 0 0 0-.363.254 2.2 2.2 0 0 0-.46.569l-.082.162a2.6 2.6 0 0 0-.213 1.072v.115q0 .707.296 1.267l.135.211zm.964-.818a1.1 1.1 0 0 0 .367.385.94.94 0 0 0 .476.118c.423 0 .59-.117.687-.23.159-.194.28-.478.28-.95 0-.53-.133-.8-.266-.952l-.021-.025c-.078-.094-.231-.221-.68-.221a1 1 0 0 0-.503.135l-.012.007a.86.86 0 0 0-.335.343c-.073.133-.132.324-.132.614v.115a1.4 1.4 0 0 0 .14.66zm15.7-6.222q.347-.346.346-.856a1.05 1.05 0 0 0-.345-.79 1.18 1.18 0 0 0-.84-.329q-.51 0-.855.33a1.05 1.05 0 0 0-.346.79q0 .51.346.855.345.346.856.346.51 0 .839-.346zm4.337 9.314.033-1.332q.191.403.59.747l.098.081a4 4 0 0 0 .316.224l.223.122a3.2 3.2 0 0 0 1.44.322 3.8 3.8 0 0 0 1.875-.477 3.5 3.5 0 0 0 1.382-1.366q.527-.89.526-2.09 0-1.184-.444-2.073a3.24 3.24 0 0 0-1.283-1.399q-.823-.51-1.942-.51a3.5 3.5 0 0 0-1.527.344l-.086.043-.165.09a3 3 0 0 0-.33.214q-.432.315-.656.707a2 2 0 0 0-.099.198l.082-1.283V4.701h-1.744v12.095zm.473-2.509a2.5 2.5 0 0 0 .566.7q.117.098.245.18l.144.08a2.1 2.1 0 0 0 .975.232q1.07 0 1.645-.675.576-.69.576-1.778 0-1.102-.576-1.777-.56-.691-1.645-.692a2.2 2.2 0 0 0-1.015.235q-.22.113-.415.282l-.15.142a2.1 2.1 0 0 0-.42.594q-.223.479-.223 1.1v.115q0 .705.293 1.26zm2.616-.293c.157-.191.28-.479.28-.967 0-.51-.13-.79-.276-.961l-.021-.026c-.082-.1-.232-.225-.67-.225a.87.87 0 0 0-.681.279l-.012.011c-.154.155-.274.38-.274.807v.115c0 .285.057.499.144.669a1.1 1.1 0 0 0 .367.405c.137.082.28.123.455.123.423 0 .59-.118.686-.23zm8.266-3.013q.345-.13.724-.14l.069-.002q.493 0 .642.099l.247-1.794q-.196-.099-.717-.099a2.3 2.3 0 0 0-.545.063 2 2 0 0 0-.411.148 2.2 2.2 0 0 0-.4.249 2.5 2.5 0 0 0-.485.499 2.7 2.7 0 0 0-.32.581l-.05.137v-1.48h-1.778v7.553h1.777v-3.884q0-.546.159-.943a1.5 1.5 0 0 1 .466-.636 2.5 2.5 0 0 1 .399-.253 2 2 0 0 1 .224-.099zm9.784 2.656.05-.922q0-1.743-.856-2.698-.838-.97-2.584-.97-1.119-.001-2.007.493a3.46 3.46 0 0 0-1.4 1.382q-.493.906-.493 2.106 0 1.07.428 1.975.428.89 1.332 1.432.906.526 2.255.526.973 0 1.668-.185l.044-.012.135-.04q.613-.184.984-.421l-.542-1.267q-.3.162-.642.274l-.297.087q-.51.131-1.3.131-.954 0-1.497-.444a1.6 1.6 0 0 1-.192-.193q-.366-.44-.512-1.234l-.004-.021zm-5.427-1.256-.003.022h3.752v-.138q-.011-.727-.288-1.118a1 1 0 0 0-.156-.176q-.46-.428-1.316-.428-.986 0-1.494.604-.379.45-.494 1.234zm-27.053 2.77V4.7h-1.86v12.095h5.333V15.15zm7.103-5.908v7.553h-1.843V9.242h1.843z'/%3E%3Cpath fill='%23fff' d='m19.63 11.151-.757-1.71-.345 1.71-1.12 5.644h-1.827L18.083 4.7h.197l3.325 6.533.988 2.19.988-2.19L26.839 4.7h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.93 5.644h-.098l-2.913-5.644zm14.836 5.81q-1.02 0-1.893-.478a3.8 3.8 0 0 1-1.381-1.382q-.51-.906-.51-2.106 0-1.185.444-2.074a3.36 3.36 0 0 1 1.3-1.382q.839-.494 1.974-.494a3.3 3.3 0 0 1 1.234.231 3.3 3.3 0 0 1 .97.575q.396.33.527.659l.033-1.267h1.694v7.553H37.18l-.033-1.332q-.279.593-1.02 1.053a3.17 3.17 0 0 1-1.662.444zm.296-1.482q.938 0 1.58-.642.642-.66.642-1.711v-.115q0-.708-.296-1.267a2.2 2.2 0 0 0-.807-.872 2.1 2.1 0 0 0-1.119-.313q-1.053 0-1.629.692-.575.675-.575 1.76 0 1.103.559 1.795.577.675 1.645.675zm6.521-6.237h1.711v1.4q.906-1.597 2.83-1.597 1.596 0 2.584 1.02.988 1.005.988 2.914 0 1.185-.493 2.09a3.46 3.46 0 0 1-1.316 1.399 3.5 3.5 0 0 1-1.844.493q-.954 0-1.662-.329a2.67 2.67 0 0 1-1.086-.97l.017 5.134h-1.728zm4.048 6.22q1.07 0 1.645-.674.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.592 0-1.12.296-.51.28-.822.823-.296.527-.296 1.234v.115q0 .708.296 1.267.313.543.823.855.51.296 1.119.297z'/%3E%3Cpath fill='%23e1e3e9' d='M51.325 4.7h1.86v10.45h3.473v1.646h-5.333zm7.12 4.542h1.843v7.553h-1.843zm.905-1.415a1.16 1.16 0 0 1-.856-.346 1.17 1.17 0 0 1-.346-.856 1.05 1.05 0 0 1 .346-.79q.346-.329.856-.329.494 0 .839.33a1.05 1.05 0 0 1 .345.79 1.16 1.16 0 0 1-.345.855q-.33.346-.84.346zm7.875 9.133a3.17 3.17 0 0 1-1.662-.444q-.723-.46-1.004-1.053l-.033 1.332h-1.71V4.701h1.743v4.657l-.082 1.283q.279-.658 1.086-1.119a3.5 3.5 0 0 1 1.778-.477q1.119 0 1.942.51a3.24 3.24 0 0 1 1.283 1.4q.445.888.444 2.072 0 1.201-.526 2.09a3.5 3.5 0 0 1-1.382 1.366 3.8 3.8 0 0 1-1.876.477zm-.296-1.481q1.069 0 1.645-.675.577-.69.577-1.778 0-1.102-.577-1.776-.56-.691-1.645-.692a2.12 2.12 0 0 0-1.58.659q-.642.641-.642 1.694v.115q0 .71.296 1.267a2.4 2.4 0 0 0 .807.872 2.1 2.1 0 0 0 1.119.313zm5.927-6.237h1.777v1.481q.263-.757.856-1.217a2.14 2.14 0 0 1 1.349-.46q.527 0 .724.098l-.247 1.794q-.149-.099-.642-.099-.774 0-1.416.494-.626.493-.626 1.58v3.883h-1.777V9.242zm9.534 7.718q-1.35 0-2.255-.526-.904-.543-1.332-1.432a4.6 4.6 0 0 1-.428-1.975q0-1.2.493-2.106a3.46 3.46 0 0 1 1.4-1.382q.889-.495 2.007-.494 1.744 0 2.584.97.855.956.856 2.7 0 .444-.05.92h-5.43q.18 1.005.708 1.45.542.443 1.497.443.79 0 1.3-.131a4 4 0 0 0 .938-.362l.542 1.267q-.411.263-1.119.46-.708.198-1.711.197zm1.596-4.558q.016-1.02-.444-1.432-.46-.428-1.316-.428-1.728 0-1.991 1.86z'/%3E%3Cpath d='M5.074 15.948a.484.657 0 0 0-.486.659v1.84a.484.657 0 0 0 .486.659h4.101a.484.657 0 0 0 .486-.659v-1.84a.484.657 0 0 0-.486-.659zm3.56 1.16H5.617v.838h3.017z' style='fill:%23fff;fill-rule:evenodd;stroke-width:1.03600001'/%3E%3Cg style='stroke-width:1.12603545'%3E%3Cpath d='M-9.408-1.416c-3.833-.025-7.056 2.912-7.08 6.615-.02 3.08 1.653 4.832 3.107 6.268.903.892 1.721 1.74 2.32 2.902l-.525-.004c-.543-.003-.992.304-1.24.639a1.87 1.87 0 0 0-.362 1.121l-.011 1.877c-.003.402.104.787.347 1.125.244.338.688.653 1.23.656l4.142.028c.542.003.99-.306 1.238-.641a1.87 1.87 0 0 0 .363-1.121l.012-1.875a1.87 1.87 0 0 0-.348-1.127c-.243-.338-.688-.653-1.23-.656l-.518-.004c.597-1.145 1.425-1.983 2.348-2.87 1.473-1.414 3.18-3.149 3.2-6.226-.016-3.59-2.923-6.684-6.993-6.707m-.006 1.1v.002c3.274.02 5.92 2.532 5.9 5.6-.017 2.706-1.39 4.026-2.863 5.44-1.034.994-2.118 2.033-2.814 3.633-.018.041-.052.055-.075.065q-.013.004-.02.01a.34.34 0 0 1-.226.084.34.34 0 0 1-.224-.086l-.092-.077c-.699-1.615-1.768-2.669-2.781-3.67-1.454-1.435-2.797-2.762-2.78-5.478.02-3.067 2.7-5.545 5.975-5.523m-.02 2.826c-1.62-.01-2.944 1.315-2.955 2.96-.01 1.646 1.295 2.988 2.916 2.999h.002c1.621.01 2.943-1.316 2.953-2.961.011-1.646-1.294-2.988-2.916-2.998m-.005 1.1c1.017.006 1.829.83 1.822 1.89s-.83 1.874-1.848 1.867c-1.018-.006-1.829-.83-1.822-1.89s.83-1.874 1.848-1.868m-2.155 11.857 4.14.025c.271.002.49.305.487.676l-.013 1.875c-.003.37-.224.67-.495.668l-4.14-.025c-.27-.002-.487-.306-.485-.676l.012-1.875c.003-.37.224-.67.494-.668' style='color:%23000;font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:%23000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:evenodd;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:%23000;solid-opacity:1;vector-effect:none;fill:%23000;fill-opacity:.4;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-9.415-.316C-12.69-.338-15.37 2.14-15.39 5.207c-.017 2.716 1.326 4.041 2.78 5.477 1.013 1 2.081 2.055 2.78 3.67l.092.076a.34.34 0 0 0 .225.086.34.34 0 0 0 .227-.083l.019-.01c.022-.009.057-.024.074-.064.697-1.6 1.78-2.64 2.814-3.634 1.473-1.414 2.847-2.733 2.864-5.44.02-3.067-2.627-5.58-5.901-5.601m-.057 8.784c1.621.011 2.944-1.315 2.955-2.96.01-1.646-1.295-2.988-2.916-2.999-1.622-.01-2.945 1.315-2.955 2.96s1.295 2.989 2.916 3' style='clip-rule:evenodd;fill:%23e1e3e9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-11.594 15.465c-.27-.002-.492.297-.494.668l-.012 1.876c-.003.371.214.673.485.675l4.14.027c.271.002.492-.298.495-.668l.012-1.877c.003-.37-.215-.672-.485-.674z' style='clip-rule:evenodd;fill:%23fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3C/g%3E%3C/svg%3E")}}@media (forced-colors:active) and (prefers-color-scheme:light){a.maplibregl-ctrl-logo{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='23' fill='none'%3E%3Cpath fill='%23000' fill-opacity='.4' fill-rule='evenodd' d='M17.408 16.796h-1.827l2.501-12.095h.198l3.324 6.533.988 2.19.988-2.19 3.258-6.533h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.929 5.644h-.098l-2.914-5.644-.757-1.71-.345 1.71zm1.958-3.42-.726 3.663a1.255 1.255 0 0 1-1.232 1.011h-1.827a1.255 1.255 0 0 1-1.229-1.509l2.501-12.095a1.255 1.255 0 0 1 1.23-1.001h.197a1.25 1.25 0 0 1 1.12.685l3.19 6.273 3.125-6.263a1.25 1.25 0 0 1 1.123-.695h.181a1.255 1.255 0 0 1 1.227.991l1.443 6.71a5 5 0 0 1 .314-.787l.009-.016a4.6 4.6 0 0 1 1.777-1.887c.782-.46 1.668-.667 2.611-.667a4.6 4.6 0 0 1 1.7.32l.306.134c.21-.16.474-.256.759-.256h1.694a1.255 1.255 0 0 1 1.212.925 1.255 1.255 0 0 1 1.212-.925h1.711c.284 0 .545.094.755.252.613-.3 1.312-.45 2.075-.45 1.356 0 2.557.445 3.482 1.4q.47.48.763 1.064V4.701a1.255 1.255 0 0 1 1.255-1.255h1.86A1.255 1.255 0 0 1 54.44 4.7v9.194h2.217c.19 0 .37.043.532.118v-4.77c0-.356.147-.678.385-.906a2.42 2.42 0 0 1-.682-1.71c0-.665.267-1.253.735-1.7a2.45 2.45 0 0 1 1.722-.674 2.43 2.43 0 0 1 1.705.675q.318.302.504.683V4.7a1.255 1.255 0 0 1 1.255-1.255h1.744A1.255 1.255 0 0 1 65.812 4.7v3.335a4.8 4.8 0 0 1 1.526-.246c.938 0 1.817.214 2.59.69a4.47 4.47 0 0 1 1.67 1.743v-.98a1.255 1.255 0 0 1 1.256-1.256h1.777c.233 0 .451.064.639.174a3.4 3.4 0 0 1 1.567-.372c.346 0 .861.02 1.285.232a1.25 1.25 0 0 1 .689 1.004 4.7 4.7 0 0 1 .853-.588c.795-.44 1.675-.647 2.61-.647 1.385 0 2.65.39 3.525 1.396.836.938 1.168 2.173 1.168 3.528q-.001.515-.056 1.051a1.255 1.255 0 0 1-.947 1.09l.408.952a1.255 1.255 0 0 1-.477 1.552c-.418.268-.92.463-1.458.612-.613.171-1.304.244-2.049.244-1.06 0-2.043-.207-2.886-.698l-.015-.008c-.798-.48-1.419-1.135-1.818-1.963l-.004-.008a5.8 5.8 0 0 1-.548-2.512q0-.429.053-.843a1.3 1.3 0 0 1-.333-.086l-.166-.004c-.223 0-.426.062-.643.228-.03.024-.142.139-.142.59v3.883a1.255 1.255 0 0 1-1.256 1.256h-1.777a1.255 1.255 0 0 1-1.256-1.256V15.69l-.032.057a4.8 4.8 0 0 1-1.86 1.833 5.04 5.04 0 0 1-2.484.634 4.5 4.5 0 0 1-1.935-.424 1.25 1.25 0 0 1-.764.258h-1.71a1.255 1.255 0 0 1-1.256-1.255V7.687a2.4 2.4 0 0 1-.428.625c.253.23.412.561.412.93v7.553a1.255 1.255 0 0 1-1.256 1.255h-1.843a1.25 1.25 0 0 1-.894-.373c-.228.23-.544.373-.894.373H51.32a1.255 1.255 0 0 1-1.256-1.255v-1.251l-.061.117a4.7 4.7 0 0 1-1.782 1.884 4.77 4.77 0 0 1-2.485.67 5.6 5.6 0 0 1-1.485-.188l.009 2.764a1.255 1.255 0 0 1-1.255 1.259h-1.729a1.255 1.255 0 0 1-1.255-1.255v-3.537a1.255 1.255 0 0 1-1.167.793h-1.679a1.25 1.25 0 0 1-.77-.263 4.5 4.5 0 0 1-1.945.429c-.885 0-1.724-.21-2.495-.632l-.017-.01a5 5 0 0 1-1.081-.836 1.255 1.255 0 0 1-1.254 1.312h-1.81a1.255 1.255 0 0 1-1.228-.99l-.782-3.625-2.044 3.939a1.25 1.25 0 0 1-1.115.676h-.098a1.25 1.25 0 0 1-1.116-.68l-2.061-3.994zM35.92 16.63l.207-.114.223-.15q.493-.356.735-.785l.061-.118.033 1.332h1.678V9.242h-1.694l-.033 1.267q-.133-.329-.526-.658l-.032-.028a3.2 3.2 0 0 0-.668-.428l-.27-.12a3.3 3.3 0 0 0-1.235-.23q-1.136-.001-1.974.493a3.36 3.36 0 0 0-1.3 1.382q-.445.89-.444 2.074 0 1.2.51 2.107a3.8 3.8 0 0 0 1.382 1.381 3.9 3.9 0 0 0 1.893.477q.795 0 1.455-.33zm-2.789-5.38q-.576.675-.575 1.762 0 1.102.559 1.794.576.675 1.645.675a2.25 2.25 0 0 0 .934-.19 2.2 2.2 0 0 0 .468-.29l.178-.161a2.2 2.2 0 0 0 .397-.561q.244-.5.244-1.15v-.115q0-.708-.296-1.267l-.043-.077a2.2 2.2 0 0 0-.633-.709l-.13-.086-.047-.028a2.1 2.1 0 0 0-1.073-.285q-1.052 0-1.629.692zm2.316 2.706c.163-.17.28-.407.28-.83v-.114c0-.292-.06-.508-.15-.68a.96.96 0 0 0-.353-.389.85.85 0 0 0-.464-.127c-.4 0-.56.114-.664.239l-.01.012c-.148.174-.275.45-.275.945 0 .506.122.801.27.99.097.11.266.224.68.224.303 0 .504-.09.687-.269zm7.545 1.705a2.6 2.6 0 0 0 .331.423q.319.33.755.548l.173.074q.65.255 1.49.255 1.02 0 1.844-.493a3.45 3.45 0 0 0 1.316-1.4q.493-.904.493-2.089 0-1.909-.988-2.913-.988-1.02-2.584-1.02-.898 0-1.575.347a3 3 0 0 0-.415.262l-.199.166a3.4 3.4 0 0 0-.64.82V9.242h-1.712v11.553h1.729l-.017-5.134zm.53-1.138q.206.29.48.5l.155.11.053.034q.51.296 1.119.297 1.07 0 1.645-.675.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.435 0-.835.16a2 2 0 0 0-.284.136 2 2 0 0 0-.363.254 2.2 2.2 0 0 0-.46.569l-.082.162a2.6 2.6 0 0 0-.213 1.072v.115q0 .707.296 1.267l.135.211zm.964-.818a1.1 1.1 0 0 0 .367.385.94.94 0 0 0 .476.118c.423 0 .59-.117.687-.23.159-.194.28-.478.28-.95 0-.53-.133-.8-.266-.952l-.021-.025c-.078-.094-.231-.221-.68-.221a1 1 0 0 0-.503.135l-.012.007a.86.86 0 0 0-.335.343c-.073.133-.132.324-.132.614v.115a1.4 1.4 0 0 0 .14.66zm15.7-6.222q.347-.346.346-.856a1.05 1.05 0 0 0-.345-.79 1.18 1.18 0 0 0-.84-.329q-.51 0-.855.33a1.05 1.05 0 0 0-.346.79q0 .51.346.855.345.346.856.346.51 0 .839-.346zm4.337 9.314.033-1.332q.191.403.59.747l.098.081a4 4 0 0 0 .316.224l.223.122a3.2 3.2 0 0 0 1.44.322 3.8 3.8 0 0 0 1.875-.477 3.5 3.5 0 0 0 1.382-1.366q.527-.89.526-2.09 0-1.184-.444-2.073a3.24 3.24 0 0 0-1.283-1.399q-.823-.51-1.942-.51a3.5 3.5 0 0 0-1.527.344l-.086.043-.165.09a3 3 0 0 0-.33.214q-.432.315-.656.707a2 2 0 0 0-.099.198l.082-1.283V4.701h-1.744v12.095zm.473-2.509a2.5 2.5 0 0 0 .566.7q.117.098.245.18l.144.08a2.1 2.1 0 0 0 .975.232q1.07 0 1.645-.675.576-.69.576-1.778 0-1.102-.576-1.777-.56-.691-1.645-.692a2.2 2.2 0 0 0-1.015.235q-.22.113-.415.282l-.15.142a2.1 2.1 0 0 0-.42.594q-.223.479-.223 1.1v.115q0 .705.293 1.26zm2.616-.293c.157-.191.28-.479.28-.967 0-.51-.13-.79-.276-.961l-.021-.026c-.082-.1-.232-.225-.67-.225a.87.87 0 0 0-.681.279l-.012.011c-.154.155-.274.38-.274.807v.115c0 .285.057.499.144.669a1.1 1.1 0 0 0 .367.405c.137.082.28.123.455.123.423 0 .59-.118.686-.23zm8.266-3.013q.345-.13.724-.14l.069-.002q.493 0 .642.099l.247-1.794q-.196-.099-.717-.099a2.3 2.3 0 0 0-.545.063 2 2 0 0 0-.411.148 2.2 2.2 0 0 0-.4.249 2.5 2.5 0 0 0-.485.499 2.7 2.7 0 0 0-.32.581l-.05.137v-1.48h-1.778v7.553h1.777v-3.884q0-.546.159-.943a1.5 1.5 0 0 1 .466-.636 2.5 2.5 0 0 1 .399-.253 2 2 0 0 1 .224-.099zm9.784 2.656.05-.922q0-1.743-.856-2.698-.838-.97-2.584-.97-1.119-.001-2.007.493a3.46 3.46 0 0 0-1.4 1.382q-.493.906-.493 2.106 0 1.07.428 1.975.428.89 1.332 1.432.906.526 2.255.526.973 0 1.668-.185l.044-.012.135-.04q.613-.184.984-.421l-.542-1.267q-.3.162-.642.274l-.297.087q-.51.131-1.3.131-.954 0-1.497-.444a1.6 1.6 0 0 1-.192-.193q-.366-.44-.512-1.234l-.004-.021zm-5.427-1.256-.003.022h3.752v-.138q-.011-.727-.288-1.118a1 1 0 0 0-.156-.176q-.46-.428-1.316-.428-.986 0-1.494.604-.379.45-.494 1.234zm-27.053 2.77V4.7h-1.86v12.095h5.333V15.15zm7.103-5.908v7.553h-1.843V9.242h1.843z'/%3E%3Cpath fill='%23fff' d='m19.63 11.151-.757-1.71-.345 1.71-1.12 5.644h-1.827L18.083 4.7h.197l3.325 6.533.988 2.19.988-2.19L26.839 4.7h.181l2.6 12.095h-1.81l-1.218-5.644-.362-1.71-.658 1.71-2.93 5.644h-.098l-2.913-5.644zm14.836 5.81q-1.02 0-1.893-.478a3.8 3.8 0 0 1-1.381-1.382q-.51-.906-.51-2.106 0-1.185.444-2.074a3.36 3.36 0 0 1 1.3-1.382q.839-.494 1.974-.494a3.3 3.3 0 0 1 1.234.231 3.3 3.3 0 0 1 .97.575q.396.33.527.659l.033-1.267h1.694v7.553H37.18l-.033-1.332q-.279.593-1.02 1.053a3.17 3.17 0 0 1-1.662.444zm.296-1.482q.938 0 1.58-.642.642-.66.642-1.711v-.115q0-.708-.296-1.267a2.2 2.2 0 0 0-.807-.872 2.1 2.1 0 0 0-1.119-.313q-1.053 0-1.629.692-.575.675-.575 1.76 0 1.103.559 1.795.577.675 1.645.675zm6.521-6.237h1.711v1.4q.906-1.597 2.83-1.597 1.596 0 2.584 1.02.988 1.005.988 2.914 0 1.185-.493 2.09a3.46 3.46 0 0 1-1.316 1.399 3.5 3.5 0 0 1-1.844.493q-.954 0-1.662-.329a2.67 2.67 0 0 1-1.086-.97l.017 5.134h-1.728zm4.048 6.22q1.07 0 1.645-.674.577-.69.576-1.762 0-1.119-.576-1.777-.558-.675-1.645-.675-.592 0-1.12.296-.51.28-.822.823-.296.527-.296 1.234v.115q0 .708.296 1.267.313.543.823.855.51.296 1.119.297z'/%3E%3Cpath fill='%23e1e3e9' d='M51.325 4.7h1.86v10.45h3.473v1.646h-5.333zm7.12 4.542h1.843v7.553h-1.843zm.905-1.415a1.16 1.16 0 0 1-.856-.346 1.17 1.17 0 0 1-.346-.856 1.05 1.05 0 0 1 .346-.79q.346-.329.856-.329.494 0 .839.33a1.05 1.05 0 0 1 .345.79 1.16 1.16 0 0 1-.345.855q-.33.346-.84.346zm7.875 9.133a3.17 3.17 0 0 1-1.662-.444q-.723-.46-1.004-1.053l-.033 1.332h-1.71V4.701h1.743v4.657l-.082 1.283q.279-.658 1.086-1.119a3.5 3.5 0 0 1 1.778-.477q1.119 0 1.942.51a3.24 3.24 0 0 1 1.283 1.4q.445.888.444 2.072 0 1.201-.526 2.09a3.5 3.5 0 0 1-1.382 1.366 3.8 3.8 0 0 1-1.876.477zm-.296-1.481q1.069 0 1.645-.675.577-.69.577-1.778 0-1.102-.577-1.776-.56-.691-1.645-.692a2.12 2.12 0 0 0-1.58.659q-.642.641-.642 1.694v.115q0 .71.296 1.267a2.4 2.4 0 0 0 .807.872 2.1 2.1 0 0 0 1.119.313zm5.927-6.237h1.777v1.481q.263-.757.856-1.217a2.14 2.14 0 0 1 1.349-.46q.527 0 .724.098l-.247 1.794q-.149-.099-.642-.099-.774 0-1.416.494-.626.493-.626 1.58v3.883h-1.777V9.242zm9.534 7.718q-1.35 0-2.255-.526-.904-.543-1.332-1.432a4.6 4.6 0 0 1-.428-1.975q0-1.2.493-2.106a3.46 3.46 0 0 1 1.4-1.382q.889-.495 2.007-.494 1.744 0 2.584.97.855.956.856 2.7 0 .444-.05.92h-5.43q.18 1.005.708 1.45.542.443 1.497.443.79 0 1.3-.131a4 4 0 0 0 .938-.362l.542 1.267q-.411.263-1.119.46-.708.198-1.711.197zm1.596-4.558q.016-1.02-.444-1.432-.46-.428-1.316-.428-1.728 0-1.991 1.86z'/%3E%3Cpath d='M5.074 15.948a.484.657 0 0 0-.486.659v1.84a.484.657 0 0 0 .486.659h4.101a.484.657 0 0 0 .486-.659v-1.84a.484.657 0 0 0-.486-.659zm3.56 1.16H5.617v.838h3.017z' style='fill:%23fff;fill-rule:evenodd;stroke-width:1.03600001'/%3E%3Cg style='stroke-width:1.12603545'%3E%3Cpath d='M-9.408-1.416c-3.833-.025-7.056 2.912-7.08 6.615-.02 3.08 1.653 4.832 3.107 6.268.903.892 1.721 1.74 2.32 2.902l-.525-.004c-.543-.003-.992.304-1.24.639a1.87 1.87 0 0 0-.362 1.121l-.011 1.877c-.003.402.104.787.347 1.125.244.338.688.653 1.23.656l4.142.028c.542.003.99-.306 1.238-.641a1.87 1.87 0 0 0 .363-1.121l.012-1.875a1.87 1.87 0 0 0-.348-1.127c-.243-.338-.688-.653-1.23-.656l-.518-.004c.597-1.145 1.425-1.983 2.348-2.87 1.473-1.414 3.18-3.149 3.2-6.226-.016-3.59-2.923-6.684-6.993-6.707m-.006 1.1v.002c3.274.02 5.92 2.532 5.9 5.6-.017 2.706-1.39 4.026-2.863 5.44-1.034.994-2.118 2.033-2.814 3.633-.018.041-.052.055-.075.065q-.013.004-.02.01a.34.34 0 0 1-.226.084.34.34 0 0 1-.224-.086l-.092-.077c-.699-1.615-1.768-2.669-2.781-3.67-1.454-1.435-2.797-2.762-2.78-5.478.02-3.067 2.7-5.545 5.975-5.523m-.02 2.826c-1.62-.01-2.944 1.315-2.955 2.96-.01 1.646 1.295 2.988 2.916 2.999h.002c1.621.01 2.943-1.316 2.953-2.961.011-1.646-1.294-2.988-2.916-2.998m-.005 1.1c1.017.006 1.829.83 1.822 1.89s-.83 1.874-1.848 1.867c-1.018-.006-1.829-.83-1.822-1.89s.83-1.874 1.848-1.868m-2.155 11.857 4.14.025c.271.002.49.305.487.676l-.013 1.875c-.003.37-.224.67-.495.668l-4.14-.025c-.27-.002-.487-.306-.485-.676l.012-1.875c.003-.37.224-.67.494-.668' style='color:%23000;font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:%23000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:evenodd;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:%23000;solid-opacity:1;vector-effect:none;fill:%23000;fill-opacity:.4;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-9.415-.316C-12.69-.338-15.37 2.14-15.39 5.207c-.017 2.716 1.326 4.041 2.78 5.477 1.013 1 2.081 2.055 2.78 3.67l.092.076a.34.34 0 0 0 .225.086.34.34 0 0 0 .227-.083l.019-.01c.022-.009.057-.024.074-.064.697-1.6 1.78-2.64 2.814-3.634 1.473-1.414 2.847-2.733 2.864-5.44.02-3.067-2.627-5.58-5.901-5.601m-.057 8.784c1.621.011 2.944-1.315 2.955-2.96.01-1.646-1.295-2.988-2.916-2.999-1.622-.01-2.945 1.315-2.955 2.96s1.295 2.989 2.916 3' style='clip-rule:evenodd;fill:%23e1e3e9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3Cpath d='M-11.594 15.465c-.27-.002-.492.297-.494.668l-.012 1.876c-.003.371.214.673.485.675l4.14.027c.271.002.492-.298.495-.668l.012-1.877c.003-.37-.215-.672-.485-.674z' style='clip-rule:evenodd;fill:%23fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.47727823;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:.4' transform='translate(15.553 2.85)scale(.88807)'/%3E%3C/g%3E%3C/svg%3E")}}.maplibregl-ctrl.maplibregl-ctrl-attrib{background-color:hsla(0,0%,100%,.5);margin:0;padding:0 5px}@media screen{.maplibregl-ctrl-attrib.maplibregl-compact{background-color:#fff;border-radius:12px;box-sizing:content-box;color:#000;margin:10px;min-height:20px;padding:2px 24px 2px 0;position:relative}.maplibregl-ctrl-attrib.maplibregl-compact-show{padding:2px 28px 2px 8px;visibility:visible}.maplibregl-ctrl-bottom-left>.maplibregl-ctrl-attrib.maplibregl-compact-show,.maplibregl-ctrl-top-left>.maplibregl-ctrl-attrib.maplibregl-compact-show{border-radius:12px;padding:2px 8px 2px 28px}.maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-inner{display:none}.maplibregl-ctrl-attrib-button{background-color:hsla(0,0%,100%,.5);background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill-rule='evenodd' viewBox='0 0 20 20'%3E%3Cpath d='M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0'/%3E%3C/svg%3E");border:0;border-radius:12px;box-sizing:border-box;cursor:pointer;display:none;height:24px;outline:0;position:absolute;right:0;top:0;width:24px}.maplibregl-ctrl-attrib summary.maplibregl-ctrl-attrib-button{-webkit-appearance:none;-moz-appearance:none;appearance:none;list-style:none}.maplibregl-ctrl-attrib summary.maplibregl-ctrl-attrib-button::-webkit-details-marker{display:none}.maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib-button,.maplibregl-ctrl-top-left .maplibregl-ctrl-attrib-button{left:0}.maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button,.maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner{display:block}.maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-button{background-color:rgb(0 0 0/5%)}.maplibregl-ctrl-bottom-right>.maplibregl-ctrl-attrib.maplibregl-compact:after{bottom:0;right:0}.maplibregl-ctrl-top-right>.maplibregl-ctrl-attrib.maplibregl-compact:after{right:0;top:0}.maplibregl-ctrl-top-left>.maplibregl-ctrl-attrib.maplibregl-compact:after{left:0;top:0}.maplibregl-ctrl-bottom-left>.maplibregl-ctrl-attrib.maplibregl-compact:after{bottom:0;left:0}}@media screen and (forced-colors:active){.maplibregl-ctrl-attrib.maplibregl-compact:after{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='%23fff' fill-rule='evenodd' viewBox='0 0 20 20'%3E%3Cpath d='M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0'/%3E%3C/svg%3E")}}@media screen and (forced-colors:active) and (prefers-color-scheme:light){.maplibregl-ctrl-attrib.maplibregl-compact:after{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill-rule='evenodd' viewBox='0 0 20 20'%3E%3Cpath d='M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0'/%3E%3C/svg%3E")}}.maplibregl-ctrl-attrib a{color:rgba(0,0,0,.75);text-decoration:none}.maplibregl-ctrl-attrib a:hover{color:inherit;text-decoration:underline}.maplibregl-attrib-empty{display:none}.maplibregl-ctrl-scale{background-color:hsla(0,0%,100%,.75);border:2px solid #333;border-top:#333;box-sizing:border-box;color:#333;font-size:10px;padding:0 5px}.maplibregl-popup{display:flex;left:0;pointer-events:none;position:absolute;top:0;will-change:transform}.maplibregl-popup-anchor-top,.maplibregl-popup-anchor-top-left,.maplibregl-popup-anchor-top-right{flex-direction:column}.maplibregl-popup-anchor-bottom,.maplibregl-popup-anchor-bottom-left,.maplibregl-popup-anchor-bottom-right{flex-direction:column-reverse}.maplibregl-popup-anchor-left{flex-direction:row}.maplibregl-popup-anchor-right{flex-direction:row-reverse}.maplibregl-popup-tip{border:10px solid transparent;height:0;width:0;z-index:1}.maplibregl-popup-anchor-top .maplibregl-popup-tip{align-self:center;border-bottom-color:#fff;border-top:none}.maplibregl-popup-anchor-top-left .maplibregl-popup-tip{align-self:flex-start;border-bottom-color:#fff;border-left:none;border-top:none}.maplibregl-popup-anchor-top-right .maplibregl-popup-tip{align-self:flex-end;border-bottom-color:#fff;border-right:none;border-top:none}.maplibregl-popup-anchor-bottom .maplibregl-popup-tip{align-self:center;border-bottom:none;border-top-color:#fff}.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip{align-self:flex-start;border-bottom:none;border-left:none;border-top-color:#fff}.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip{align-self:flex-end;border-bottom:none;border-right:none;border-top-color:#fff}.maplibregl-popup-anchor-left .maplibregl-popup-tip{align-self:center;border-left:none;border-right-color:#fff}.maplibregl-popup-anchor-right .maplibregl-popup-tip{align-self:center;border-left-color:#fff;border-right:none}.maplibregl-popup-close-button{background-color:transparent;border:0;border-radius:0 3px 0 0;cursor:pointer;position:absolute;right:0;top:0}.maplibregl-popup-close-button:hover{background-color:rgb(0 0 0/5%)}.maplibregl-popup-content{background:#fff;border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.1);padding:15px 10px;pointer-events:auto;position:relative}.maplibregl-popup-anchor-top-left .maplibregl-popup-content{border-top-left-radius:0}.maplibregl-popup-anchor-top-right .maplibregl-popup-content{border-top-right-radius:0}.maplibregl-popup-anchor-bottom-left .maplibregl-popup-content{border-bottom-left-radius:0}.maplibregl-popup-anchor-bottom-right .maplibregl-popup-content{border-bottom-right-radius:0}.maplibregl-popup-track-pointer{display:none}.maplibregl-popup-track-pointer *{pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.maplibregl-map:hover .maplibregl-popup-track-pointer{display:flex}.maplibregl-map:active .maplibregl-popup-track-pointer{display:none}.maplibregl-marker{left:0;position:absolute;top:0;transition:opacity .2s;will-change:transform}.maplibregl-user-location-dot,.maplibregl-user-location-dot:before{background-color:#1da1f2;border-radius:50%;height:15px;width:15px}.maplibregl-user-location-dot:before{animation:maplibregl-user-location-dot-pulse 2s infinite;content:"";position:absolute}.maplibregl-user-location-dot:after{border:2px solid #fff;border-radius:50%;box-shadow:0 0 3px rgba(0,0,0,.35);box-sizing:border-box;content:"";height:19px;left:-2px;position:absolute;top:-2px;width:19px}@keyframes maplibregl-user-location-dot-pulse{0%{opacity:1;transform:scale(1)}70%{opacity:0;transform:scale(3)}to{opacity:0;transform:scale(1)}}.maplibregl-user-location-dot-stale{background-color:#aaa}.maplibregl-user-location-dot-stale:after{display:none}.maplibregl-user-location-accuracy-circle{background-color:#1da1f233;border-radius:100%;height:1px;width:1px}.maplibregl-crosshair,.maplibregl-crosshair .maplibregl-interactive,.maplibregl-crosshair .maplibregl-interactive:active{cursor:crosshair}.maplibregl-boxzoom{background:#fff;border:2px dotted #202020;height:0;left:0;opacity:.5;position:absolute;top:0;width:0}.maplibregl-cooperative-gesture-screen{align-items:center;background:rgba(0,0,0,.4);color:#fff;display:flex;font-size:1.4em;inset:0;justify-content:center;line-height:1.2;opacity:0;padding:1rem;pointer-events:none;position:absolute;transition:opacity 1s ease 1s;z-index:99999}.maplibregl-cooperative-gesture-screen.maplibregl-show{opacity:1;transition:opacity .05s}.maplibregl-cooperative-gesture-screen .maplibregl-mobile-message{display:none}@media (hover:none),(pointer:coarse){.maplibregl-cooperative-gesture-screen .maplibregl-desktop-message{display:none}.maplibregl-cooperative-gesture-screen .maplibregl-mobile-message{display:block}}.maplibregl-pseudo-fullscreen{height:100%!important;left:0!important;position:fixed!important;top:0!important;width:100%!important;z-index:99999}
+</style>
+<style>
+:root{
+  --bg:#0b0e14; --panel:#141923; --panel2:#1c2230; --line:#2a3242;
+  --tx:#e8edf7; --dim:#8b97ad; --accent:#00e08a; --route:#e6007e;
+  --warn:#ffb020; --bad:#ff4d4d;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
+  font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  overscroll-behavior:none;-webkit-text-size-adjust:100%}
+#map{position:absolute;inset:0}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:11px 14px;font-weight:600;min-height:46px;display:inline-flex;
+  align-items:center;justify-content:center;gap:7px;transition:transform .08s}
+.btn:active{transform:scale(.96)}
+.btn.pri{background:var(--accent);color:#04231a;border-color:transparent}
+.btn.dan{background:#3a1520;color:#ff9a9a;border-color:#5a2030}
+.btn:disabled{opacity:.4}
+.btn.sm{padding:7px 11px;min-height:38px;font-size:13px;border-radius:10px}
+#planbar{position:absolute;top:0;left:0;right:0;padding:calc(var(--safe-t) + 10px) 12px 10px;
+  display:flex;gap:8px;align-items:center;z-index:5;pointer-events:none;
+  background:linear-gradient(#0b0e14ee,#0b0e1400)}
+#planbar>*{pointer-events:auto}
+#planbar .logo{font-weight:800;letter-spacing:-.4px;font-size:17px;margin-right:auto;
+  text-shadow:0 1px 6px #000}
+#planbar .logo b{color:var(--accent)}
+#sheet{position:absolute;left:0;right:0;bottom:0;z-index:6;background:var(--panel);
+  border-top:1px solid var(--line);border-radius:18px 18px 0 0;
+  padding:0 14px calc(var(--safe-b) + 14px);max-height:76vh;overflow-y:auto;
+  box-shadow:0 -10px 40px #0009;transition:transform .25s ease}
+#sheet.down{transform:translateY(calc(100% - 92px))}
+#grip{height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  position:sticky;top:0;background:var(--panel);z-index:2}
+#grip i{width:38px;height:4px;border-radius:3px;background:var(--line);display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--panel2);border-radius:12px;padding:9px 10px;text-align:center}
+.stat u{display:block;font-size:10px;letter-spacing:.6px;color:var(--dim);
+  text-transform:uppercase;text-decoration:none;margin-bottom:2px}
+.stat b{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat b s{font-size:11px;font-weight:500;color:var(--dim);text-decoration:none;margin-left:1px}
+#qual{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 12px}
+#qual span{background:var(--panel2);border-radius:8px;padding:5px 9px;font-size:11.5px;
+  color:var(--dim);display:flex;gap:5px;align-items:center}
+#qual span b{color:var(--tx);font-weight:700}
+#qual span.good b{color:var(--accent)}
+#qual span.meh b{color:var(--warn)}
+.row{display:flex;gap:8px;margin-bottom:10px}
+.row>*{flex:1}
+h3{margin:16px 0 8px;font-size:11px;letter-spacing:.9px;color:var(--dim);text-transform:uppercase}
+.card{background:var(--panel2);border-radius:14px;padding:12px;margin-bottom:10px}
+label.fld{display:block;margin-bottom:11px}
+label.fld span{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:5px}
+label.fld span b{color:var(--tx);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);height:24px}
+input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);
+  border-radius:10px;padding:11px;color:var(--tx);font:inherit}
+#elev{width:100%;height:56px;display:block;background:var(--bg);border-radius:10px}
+.hint{font-size:12px;color:var(--dim);line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:999px;
+  padding:7px 13px;font-size:13px;font-weight:600}
+.chip.on{background:var(--accent);color:#04231a;border-color:transparent}
+.saved{display:flex;align-items:center;gap:10px;padding:10px;background:var(--panel2);
+  border-radius:12px;margin-bottom:7px}
+.saved div{flex:1;min-width:0}
+.saved b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saved small{color:var(--dim);font-size:12px}
+body.mode-ride #planbar,body.mode-ride #sheet{display:none}
+body.mode-plan #banner,body.mode-plan #ridebar,body.mode-plan #ridectl{display:none}
+#banner{position:absolute;top:0;left:0;right:0;z-index:7;
+  padding:calc(var(--safe-t) + 12px) 14px 14px;
+  background:linear-gradient(#0b0e14,#0b0e14 84%,#0b0e1400);
+  display:flex;align-items:center;gap:14px}
+#arrow{width:66px;height:66px;flex:none}
+#arrow svg{width:100%;height:100%;display:block}
+#bantx{flex:1;min-width:0}
+#bandist{font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
+  letter-spacing:-1px}
+#bandist s{font-size:16px;font-weight:600;color:var(--dim);text-decoration:none;margin-left:3px}
+#banstreet{font-size:17px;font-weight:600;margin-top:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#banthen{font-size:13px;color:#9fb0c9;margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ridebar{position:absolute;bottom:0;left:0;right:0;z-index:7;
+  padding:12px 14px calc(var(--safe-b) + 12px);
+  background:linear-gradient(#0b0e1400,#0b0e14f2 45%);
+  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+#ridebar .s u{display:block;font-size:9.5px;letter-spacing:.5px;color:var(--dim);
+  text-transform:uppercase;text-decoration:none}
+#ridebar .s b{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+#ridebar .s b s{font-size:11px;color:var(--dim);text-decoration:none;font-weight:500}
+#ridectl{position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:7;
+  display:flex;flex-direction:column;gap:9px}
+#ridectl .btn{width:52px;height:52px;padding:0;border-radius:15px;font-size:19px;
+  background:#141923e8;backdrop-filter:blur(8px)}
+#ridectl .btn.off{color:var(--bad)}
+#offroute{position:absolute;top:calc(var(--safe-t) + 118px);left:14px;right:14px;z-index:8;
+  background:var(--warn);color:#2b1a00;padding:10px 14px;border-radius:12px;
+  font-weight:700;text-align:center;display:none}
+body.off #offroute{display:block}
+#power{position:fixed;inset:0;z-index:20;background:#000;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;
+  text-align:center}
+body.saving #power{display:flex}
+#parrow{width:150px;height:150px}
+#parrow svg{width:100%;height:100%;display:block}
+#pdist{font-size:76px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
+  letter-spacing:-3px}
+#pdist s{font-size:28px;color:#555;text-decoration:none}
+#pstreet{font-size:22px;font-weight:600;color:#cfd7e6;max-width:92%}
+#pfoot{position:absolute;bottom:calc(var(--safe-b) + 20px);color:#4a5568;font-size:13px}
+#toast{position:absolute;left:50%;transform:translateX(-50%);z-index:30;
+  bottom:calc(var(--safe-b) + 96px);background:#0b0e14f0;border:1px solid var(--line);
+  padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:600;
+  opacity:0;transition:opacity .25s;pointer-events:none;max-width:88vw;text-align:center}
+#toast.on{opacity:1}
+#spin{position:absolute;top:calc(var(--safe-t) + 58px);left:50%;transform:translateX(-50%);
+  z-index:9;background:#0b0e14e8;border:1px solid var(--line);padding:7px 14px;
+  border-radius:999px;font-size:12.5px;font-weight:600;display:none;align-items:center;gap:8px}
+#spin.on{display:flex}
+#spin i{width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);
+  border-radius:50%;display:block;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.wp{width:26px;height:26px;border-radius:50%;background:var(--route);color:#fff;
+  border:2.5px solid #fff;box-shadow:0 2px 8px #0008;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:800;cursor:grab}
+.wp.start{background:var(--accent);color:#04231a}
+.wp.end{background:#fff;color:#111}
+#me svg{display:block;filter:drop-shadow(0 2px 5px #000a)}
+.maplibregl-ctrl-attrib{font-size:10px}
+.maplibregl-ctrl-bottom-left{display:none}
+body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
+</style>
+</head>
+<body class="mode-plan">
+<div id="map"></div>
+
+<div id="planbar">
+  <div class="logo">Fiets<b>nav</b></div>
+  <button class="btn sm" id="bBack" title="Laatste stap terug" disabled>&#8630;</button>
+  <button class="btn sm" id="bLocate">Hier</button>
+  <button class="btn sm" id="bClear">Wis</button>
+</div>
+
+<div id="spin"><i></i><span id="spintx">Route berekenen</span></div>
+
+<div id="sheet" class="down">
+  <div id="grip"><i></i></div>
+
+  <div class="stats">
+    <div class="stat"><u>Afstand</u><b id="sDist">0<s>km</s></b></div>
+    <div class="stat"><u>Tijd</u><b id="sTime">0<s>min</s></b></div>
+    <div class="stat"><u>Stijgen</u><b id="sUp">0<s>m</s></b></div>
+  </div>
+  <div id="qual" hidden></div>
+
+  <div class="row">
+    <button class="btn pri" id="bRide">Start rit</button>
+    <button class="btn" id="bUndo">Stap terug</button>
+  </div>
+
+  <svg id="elev" viewBox="0 0 300 56" preserveAspectRatio="none"></svg>
+
+  <h3>Rondje maken</h3>
+  <div class="card">
+    <label class="fld"><span>Afstand <b id="loopKmL">50 km</b></span>
+      <input type="range" id="loopKm" min="10" max="200" step="5" value="50"></label>
+    <div class="chips" id="dirs" style="margin-bottom:11px"></div>
+    <button class="btn pri" id="bLoop" style="width:100%">Maak rondje vanaf startpunt</button>
+    <div class="hint" style="margin-top:9px">Zet eerst een startpunt: tik op de kaart of op
+      Hier. De keerpunten blijven versleepbaar, dus trek ze het land in als de lus te veel
+      door de stad loopt.</div>
+  </div>
+
+  <h3>Fietsprofiel</h3>
+  <div class="card">
+    <label class="fld"><span>Jouw snelheid <b id="spdL">28 km/u</b></span>
+      <input type="range" id="spd" min="12" max="45" step="1" value="28"></label>
+    <label class="fld"><span>Liever grote wegen <b id="urL">midden</b></span>
+      <input type="range" id="ur" min="0" max="100" step="5" value="50"></label>
+    <label class="fld" style="margin-bottom:0"><span>Slecht wegdek mijden <b id="abL">veel</b></span>
+      <input type="range" id="ab" min="0" max="100" step="5" value="70"></label>
+  </div>
+
+  <h3>Opslaan en delen</h3>
+  <div class="card">
+    <input type="text" id="rname" placeholder="Naam van de route" style="margin-bottom:9px">
+    <div class="row" style="margin:0">
+      <button class="btn" id="bSave">Bewaar</button>
+      <button class="btn" id="bShare">Deel link</button>
+      <button class="btn" id="bGpx">GPX</button>
+    </div>
+  </div>
+
+  <h3>Bewaarde routes</h3>
+  <div id="savedList"></div>
+  <div class="hint" id="noSaved">Nog niets bewaard.</div>
+
+  <h3 style="margin-top:20px">Onderweg</h3>
+  <div class="hint" style="padding-bottom:6px">
+    Zet de telefoon in een stuurhouder met het scherm aan. De app houdt hem wakker.
+    Op slot zetten kan niet: dan stopt iOS de spraak en de GPS. De maanknop zet de
+    spaarstand aan: zwart scherm met alleen de volgende afslag, scheelt flink accu.
+  </div>
+</div>
+
+<div id="banner">
+  <div id="arrow"></div>
+  <div id="bantx">
+    <div id="bandist">--<s>m</s></div>
+    <div id="banstreet">Klaar om te starten</div>
+    <div id="banthen"></div>
+  </div>
+</div>
+
+<div id="offroute">Van de route, opnieuw berekenen...</div>
+
+<div id="ridebar">
+  <div class="s"><u>Tempo</u><b id="rSpd">0<s>km/u</s></b></div>
+  <div class="s"><u>Nog</u><b id="rLeft">0<s>km</s></b></div>
+  <div class="s"><u>Gereden</u><b id="rDone">0<s>km</s></b></div>
+  <div class="s"><u>Aankomst</u><b id="rEta">--</b></div>
+</div>
+
+<div id="ridectl">
+  <button class="btn" id="bMute" title="Stem aan of uit">&#128266;</button>
+  <button class="btn" id="bSaveMode" title="Spaarstand">&#127769;</button>
+  <button class="btn" id="bRecenter" title="Centreren">&#9678;</button>
+  <button class="btn dan" id="bStop" title="Stop">&#9632;</button>
+</div>
+
+<div id="power">
+  <div id="parrow"></div>
+  <div id="pdist">--<s>m</s></div>
+  <div id="pstreet"></div>
+  <div id="pfoot">Tik om de kaart terug te halen</div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.6.1/maplibre-gl.min.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const toRad = d => d * Math.PI / 180;
+const toDeg = r => r * 180 / Math.PI;
+
+const VALHALLA = 'https://valhalla1.openstreetmap.de';
+
+const S = {
+  wps: [],          // [{lat,lon}] door gebruiker geplaatst
+  route: null,      // {pts, cum, man, len, time, wpAlong}
+  prof: { spd: 28, ur: 0.5, ab: 0.7 },
+  loopDir: null,    // graden, of null = willekeurig
+  saved: [],
+  hist: [],
+  nav: null,
+  elev: null,
+  markers: [],
+  meMarker: null,
+  follow: true
+};
+
+/* ---------------- geo ---------------- */
+function hav(a, b) {
+  const la1 = toRad(a[0]), la2 = toRad(b[0]);
+  const dla = la2 - la1, dlo = toRad(b[1] - a[1]);
+  const h = Math.sin(dla/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dlo/2)**2;
+  return 2 * 6371008.8 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function destPoint(lat, lon, brg, distKm) {
+  const R = 6371.0088, d = distKm / R, b = toRad(brg);
+  const la = toRad(lat), lo = toRad(lon);
+  const la2 = Math.asin(Math.sin(la)*Math.cos(d) + Math.cos(la)*Math.sin(d)*Math.cos(b));
+  const lo2 = lo + Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(la),
+                              Math.cos(d) - Math.sin(la)*Math.sin(la2));
+  return { lat: toDeg(la2), lon: ((toDeg(lo2) + 540) % 360) - 180 };
+}
+function bearingTo(a, b) {
+  const la1 = toRad(a[0]), la2 = toRad(b[0]), dlo = toRad(b[1] - a[1]);
+  const y = Math.sin(dlo) * Math.cos(la2);
+  const x = Math.cos(la1)*Math.sin(la2) - Math.sin(la1)*Math.cos(la2)*Math.cos(dlo);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+// loodrechte projectie van p op segment a-b, in meters
+function ptSeg(p, a, b) {
+  const kx = Math.cos(toRad(a[0])) * 111320, ky = 110540;
+  const px = (p[1]-a[1])*kx, py = (p[0]-a[0])*ky;
+  const bx = (b[1]-a[1])*kx, by = (b[0]-a[0])*ky;
+  const L2 = bx*bx + by*by;
+  let t = L2 > 0 ? (px*bx + py*by) / L2 : 0;
+  t = clamp(t, 0, 1);
+  const dx = px - t*bx, dy = py - t*by;
+  return { d: Math.sqrt(dx*dx + dy*dy), t };
+}
+
+/* ------------- polyline, precisie 6 (niet 5!) ------------- */
+function decodePoly(str, precision) {
+  const f = Math.pow(10, precision === undefined ? 6 : precision);
+  let i = 0, lat = 0, lon = 0, b, r, sh;
+  const out = [];
+  while (i < str.length) {
+    r = 0; sh = 0;
+    do { b = str.charCodeAt(i++) - 63; r |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20);
+    lat += (r & 1) ? ~(r >> 1) : (r >> 1);
+    r = 0; sh = 0;
+    do { b = str.charCodeAt(i++) - 63; r |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20);
+    lon += (r & 1) ? ~(r >> 1) : (r >> 1);
+    out.push([lat / f, lon / f]);
+  }
+  return out;
+}
+
+/* ---------------- instructiefilter ----------------
+   Valhalla maneuver-types die een echte handeling zijn. Type 8 (ga verder op)
+   en 7 (wordt) worden bewust nooit uitgesproken: dat scheelt op een rondje van
+   60 km zo'n 25 van de 137 meldingen zonder dat je iets mist.            */
+const TURN = new Set([9,10,11,12,13,14,15,16,18,19,20,21,23,24,26,27]);
+const ENDT = new Set([4,5,6]);
+// hoek waarmee de pijl gedraaid wordt, per maneuver-type
+const ANG = {9:35,10:85,11:130,12:175,13:-175,14:-130,15:-85,16:-35,
+             17:0,18:40,19:-40,20:70,21:-70,22:0,23:20,24:-20,7:0,8:0};
+
+function maneuverAngle(t) { return ANG[t] === undefined ? 0 : ANG[t]; }
+function isRoundabout(t) { return t === 26 || t === 27; }
+
+function txtAlert(m) {
+  return m.verbal_transition_alert_instruction ||
+         m.verbal_succinct_transition_instruction ||
+         m.instruction || '';
+}
+function txtFull(m) {
+  return m.verbal_pre_transition_instruction ||
+         m.instruction || txtAlert(m);
+}
+function txtShort(m) {
+  return m.verbal_succinct_transition_instruction ||
+         m.verbal_transition_alert_instruction ||
+         m.instruction || '';
+}
+
+/* Bouwt uit de ruwe Valhalla-trip een route met doorlopende indices,
+   cumulatieve afstanden en een uitgedunde spreeklijst.                  */
+function buildRoute(trip) {
+  const pts = [], man = [], wpIdx = [0];
+  for (const leg of trip.legs) {
+    const lp = decodePoly(leg.shape, 6);
+    const start = pts.length ? 1 : 0;      // eerste punt van een leg dubbelt met het vorige
+    const base = pts.length - start;
+    for (let i = start; i < lp.length; i++) pts.push(lp[i]);
+    for (const m of leg.maneuvers) {
+      man.push(Object.assign({}, m, {
+        bi: base + m.begin_shape_index,
+        ei: base + m.end_shape_index
+      }));
+    }
+    wpIdx.push(pts.length - 1);            // hier lag het volgende tussenpunt
+  }
+  const cum = new Float64Array(pts.length);
+  for (let i = 1; i < pts.length; i++) cum[i] = cum[i-1] + hav(pts[i-1], pts[i]);
+
+  for (const m of man) m.at = cum[Math.min(m.bi, cum.length - 1)];
+
+  prepSpeech(man);
+
+  return {
+    pts, cum, man,
+    len: trip.summary.length * 1000,
+    time: trip.summary.time,
+    // Exact, want elke leg loopt van tussenpunt tot tussenpunt. Zelf de
+    // dichtstbijzijnde lijnpositie zoeken gaat op een rondje juist mis: het
+    // startpunt ligt daar even dicht bij het einde van de lus als bij het begin.
+    wpAlong: wpIdx.map(i => cum[Math.min(i, cum.length - 1)])
+  };
+}
+
+/* Bepaalt per manoeuvre wat er gezegd wordt en op welke afstanden.
+   Drie regels, in deze volgorde:
+   1. multi-cue: Valhalla plakt een korte opvolger al aan de vorige zin vast
+      ("...Daarna links afslaan"). Die opvolger mag dan niet nog eens los
+      aangekondigd worden, anders hoor je alles dubbel.
+   2. hoe dichter de afslagen op elkaar, hoe minder tiers en hoe korter de zin.
+   3. straatnaam alleen als er ruimte voor is.                            */
+function prepSpeech(man) {
+  let prevAt = 0, prevSpoken = null;
+  for (let i = 0; i < man.length; i++) {
+    const m = man[i];
+    m.speak = TURN.has(m.type) || ENDT.has(m.type);
+    m.tiers = [];
+    if (!m.speak) continue;
+
+    // regel 1
+    const prev = i > 0 ? man[i-1] : null;
+    m.chained = !!(prev && prev.verbal_multi_cue && prev.speak);
+
+    const gap = m.at - prevAt;
+    prevAt = m.at;
+
+    if (m.chained) {
+      // al meegenomen in de vorige zin: hooguit nog een korte bevestiging
+      if (gap > 60) m.tiers.push({ at: 30, kind: 'now', text: txtShort(m) });
+    } else if (gap >= 700) {
+      m.tiers.push({ at: 0, kind: 'alert', text: txtAlert(m) });   // at wordt straks gezet
+      m.tiers.push({ at: 0, kind: 'pre', text: txtFull(m) });
+    } else if (gap >= 250) {
+      m.tiers.push({ at: 0, kind: 'pre', text: txtFull(m) });
+    } else {
+      m.tiers.push({ at: 35, kind: 'now', text: txtShort(m) });
+    }
+    prevSpoken = m;
+  }
+}
+
+/* Afstanden waarop de tiers afgaan hangen af van je snelheid: bij 35 km/u
+   wil je eerder gewaarschuwd worden dan bij 18. */
+function tierDistances(spdKmh) {
+  const v = Math.max(3, spdKmh / 3.6);
+  return { alert: Math.max(350, v * 25), pre: Math.max(110, v * 9) };
+}
+/* ---------------- routering ---------------- */
+function profileBody(wps, prof) {
+  return {
+    locations: wps.map(w => ({ lat: +w.lat.toFixed(6), lon: +w.lon.toFixed(6), type: 'break' })),
+    costing: 'bicycle',
+    costing_options: { bicycle: {
+      bicycle_type: 'Road',
+      use_roads: prof.ur,
+      avoid_bad_surfaces: prof.ab,
+      cycling_speed: prof.spd
+    }},
+    directions_options: { language: 'nl-NL', units: 'kilometers' }
+  };
+}
+
+async function valhalla(wps, prof, tries) {
+  const n = tries === undefined ? 3 : tries;
+  let lastErr;
+  for (let k = 0; k < n; k++) {
+    try {
+      const r = await fetch(VALHALLA + '/route', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileBody(wps, prof))
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (!j.trip || !j.trip.legs) throw new Error('geen route');
+      return buildRoute(j.trip);
+    } catch (e) {
+      lastErr = e;
+      if (k < n - 1) await new Promise(res => setTimeout(res, 600 * (k + 1)));
+    }
+  }
+  throw lastErr;
+}
+
+/* BRouter is de reserve. Hij levert wel een lijn maar zijn afslaghints zijn
+   codes, geen Nederlandse zinnen. We gebruiken hem daarom alleen om te kunnen
+   blijven plannen als Valhalla plat ligt, en blokkeren dan het starten van een
+   rit: zwijgend navigeren is gevaarlijker dan een duidelijke melding.      */
+async function brouter(wps, prof) {
+  const ll = wps.map(w => w.lon.toFixed(6) + ',' + w.lat.toFixed(6)).join('|');
+  const url = 'https://brouter.de/brouter?lonlats=' + ll +
+              '&profile=fastbike&alternativeidx=0&format=geojson';
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('BRouter HTTP ' + r.status);
+  const j = await r.json();
+  const f = j.features[0];
+  const pts = f.geometry.coordinates.map(c => [c[1], c[0]]);
+  const cum = new Float64Array(pts.length);
+  for (let i = 1; i < pts.length; i++) cum[i] = cum[i-1] + hav(pts[i-1], pts[i]);
+  const len = +f.properties['track-length'];
+  return {
+    pts, cum, man: [], len,
+    time: len / (prof.spd / 3.6),
+    wpAlong: [], noVoice: true
+  };
+}
+
+async function computeRoute(wps, prof) {
+  try {
+    return await valhalla(wps, prof);
+  } catch (e) {
+    const r = await brouter(wps, prof);
+    toast('Valhalla ligt plat, route via BRouter. Navigeren kan nu niet.', 4200);
+    return r;
+  }
+}
+
+
+/* ---------------- hoogteprofiel ---------------- */
+async function fetchElevation(route) {
+  const N = 240;
+  const step = Math.max(1, Math.floor(route.pts.length / N));
+  const idx = [];
+  for (let i = 0; i < route.pts.length; i += step) idx.push(i);
+  if (idx[idx.length-1] !== route.pts.length - 1) idx.push(route.pts.length - 1);
+  const shape = idx.map(i => ({ lat: +route.pts[i][0].toFixed(6), lon: +route.pts[i][1].toFixed(6) }));
+  const r = await fetch(VALHALLA + '/height', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ shape, range: true })
+  });
+  if (!r.ok) throw new Error('height ' + r.status);
+  const j = await r.json();
+  const raw = j.range_height.map(x => x[1]);
+  const hs = smoothProfile(raw, 9);
+  return { hs, raw, up: ascent(hs, 4), dists: j.range_height.map(x => x[0]) };
+}
+
+/* Het hoogtemodel achter Valhalla is op hele meters afgerond en ruist een paar
+   meter per monster. Botweg alle stijginkjes optellen levert daardoor onzin op:
+   Delft naar Den Haag, met in totaal 12 meter hoogteverschil, kwam zo op 83 m
+   klimmen uit. Daarom eerst gladstrijken en dan alleen echte klimmetjes tellen.
+   Gekalibreerd op drie routes: Delft 13 m, een lus bij Uden 20 m, en de heuvels
+   bij Valkenburg 114 m. Bewust aan de voorzichtige kant, want te veel melden is
+   vervelender dan te weinig.                                                 */
+function smoothProfile(hs, w) {
+  const h = (w - 1) / 2, out = [];
+  for (let i = 0; i < hs.length; i++) {
+    let a = 0, n = 0;
+    for (let k = -h; k <= h; k++) {
+      const j = i + k;
+      if (j >= 0 && j < hs.length) { a += hs[j]; n++; }
+    }
+    out.push(a / n);
+  }
+  return out;
+}
+// telt pas een klim mee als hij minstens th meter doorzet (hysterese)
+function ascent(hs, th) {
+  if (hs.length < 2) return 0;
+  let up = 0, anchor = hs[0], ext = hs[0], dir = 0;
+  for (let i = 1; i < hs.length; i++) {
+    const v = hs[i];
+    if (dir >= 0) {
+      if (v > ext) ext = v;
+      else if (ext - v > th) { if (ext > anchor) up += ext - anchor; anchor = v; ext = v; dir = -1; }
+    } else {
+      if (v < ext) ext = v;
+      else if (v - ext > th) { anchor = ext; ext = v; dir = 1; }
+    }
+  }
+  if (dir >= 0 && ext > anchor) up += ext - anchor;
+  return Math.round(up);
+}
+
+function drawElevation(el) {
+  const svg = $('#elev');
+  if (!el || el.hs.length < 2) { svg.innerHTML = ''; svg.style.display = 'none'; return; }
+  svg.style.display = 'block';
+  const hs = el.hs, n = hs.length;
+  let lo = Math.min.apply(null, hs), hi = Math.max.apply(null, hs);
+  if (hi - lo < 12) { const mid = (hi + lo) / 2; lo = mid - 6; hi = mid + 6; }
+  const W = 300, H = 56, pad = 4;
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * W;
+    const y = H - pad - ((hs[i] - lo) / (hi - lo)) * (H - pad * 2);
+    d += (i ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1);
+  }
+  svg.innerHTML =
+    '<path d="' + d + 'L' + W + ',' + H + 'L0,' + H + 'Z" fill="rgba(230,0,126,.18)"/>' +
+    '<path d="' + d + '" fill="none" stroke="#e6007e" stroke-width="1.6"/>';
+}
+/* ---------------- kaart ---------------- */
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/liberty',
+  center: [4.3571, 52.0116],
+  zoom: 12,
+  attributionControl: { compact: true }
+});
+map.touchZoomRotate.disableRotation();
+// MapLibre meet zijn container bij het aanmaken; in een paneel dat daarna pas
+// zijn maat krijgt blijft het canvas anders op 400x300 hangen.
+try { new ResizeObserver(() => map.resize()).observe(document.getElementById('map')); }
+catch (e) { window.addEventListener('resize', () => map.resize()); }
+window.addEventListener('orientationchange', () => setTimeout(() => map.resize(), 350));
+
+let mapReady = false;
+map.on('load', () => {
+  map.addSource('route', { type: 'geojson', data: emptyFC() });
+  map.addSource('done',  { type: 'geojson', data: emptyFC() });
+  map.addLayer({ id: 'route-case', type: 'line', source: 'route',
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: { 'line-color': '#1a0010', 'line-width': 9, 'line-opacity': .85 } });
+  map.addLayer({ id: 'route-line', type: 'line', source: 'route',
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: { 'line-color': '#e6007e', 'line-width': 5 } });
+  map.addLayer({ id: 'done-line', type: 'line', source: 'done',
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: { 'line-color': '#5b6478', 'line-width': 5 } });
+  mapReady = true;
+  if (S.route) drawRoute();      // route die al berekend was alsnog tekenen
+});
+map.on('error', e => {
+  const m = (e && e.error && e.error.message) || 'onbekende kaartfout';
+  if (!mapReady) toast('Kaart laadt niet (' + m + '). Plannen werkt wel.', 5000);
+});
+map.on('click', e => {
+  if (S.nav) return;
+  addWaypoint({ lat: e.lngLat.lat, lon: e.lngLat.lng });
+});
+
+function emptyFC() { return { type: 'FeatureCollection', features: [] }; }
+function lineFC(pts) {
+  return { type: 'FeatureCollection', features: [{ type: 'Feature', properties: {},
+    geometry: { type: 'LineString', coordinates: pts.map(p => [p[1], p[0]]) } }] };
+}
+function drawRoute() {
+  if (!mapReady) return;
+  map.getSource('route').setData(S.route ? lineFC(S.route.pts) : emptyFC());
+  if (!S.nav) map.getSource('done').setData(emptyFC());
+}
+function fitRoute() {
+  if (!S.route || !S.route.pts.length) return;
+  let n = -90, s = 90, w = 180, e = -180;
+  for (const p of S.route.pts) {
+    if (p[0] > n) n = p[0];
+    if (p[0] < s) s = p[0];
+    if (p[1] < w) w = p[1];
+    if (p[1] > e) e = p[1];
+  }
+  map.fitBounds([[w, s], [e, n]],
+    { padding: { top: 90, bottom: 260, left: 40, right: 40 }, duration: 600 });
+}
+
+/* ---------------- waypoints ---------------- */
+/* Undo-stapel. Elke bewerking van de punten zet eerst de oude lijst opzij, dus
+   ook Wis en een gegenereerd rondje zijn terug te draaien. Zonder dit was de
+   enige zichtbare knop Wis, en die gooide alles weg. */
+function pushHist() {
+  S.hist.push(S.wps.map(w => ({ lat: w.lat, lon: w.lon })));
+  if (S.hist.length > 60) S.hist.shift();
+  const b = $('#bBack'); if (b) b.disabled = false;
+}
+function undo() {
+  if (!S.hist.length) { toast('Niets om terug te halen'); return; }
+  S.wps = S.hist.pop();
+  renderMarkers(); refresh();
+  if (!S.hist.length) $('#bBack').disabled = true;
+  toast(S.wps.length ? 'Stap terug' : 'Alles leeg');
+}
+function removeWp(i) {
+  pushHist(); S.wps.splice(i, 1); renderMarkers(); refresh();
+}
+function addWaypoint(p) { pushHist(); S.wps.push(p); renderMarkers(); refresh(); }
+
+function renderMarkers() {
+  S.markers.forEach(m => m.remove());
+  S.markers = S.wps.map((w, i) => {
+    const el = document.createElement('div');
+    el.className = 'wp' + (i === 0 ? ' start' : (i === S.wps.length - 1 ? ' end' : ''));
+    el.textContent = i === 0 ? 'S' : (i === S.wps.length - 1 ? 'F' : i);
+    el.title = 'Tik om dit punt weg te halen';
+    const m = new maplibregl.Marker({ element: el, draggable: !S.nav })
+      .setLngLat([w.lon, w.lat]).addTo(map);
+    // Tik = weghalen, slepen = verplaatsen. De vlag voorkomt dat de klik na een
+    // sleep het punt alsnog wist. Rechtsklikken bestaat niet op een telefoon.
+    el.addEventListener('click', ev => {
+      ev.stopPropagation();
+      if (el.__drag || S.nav) return;
+      removeWp(i);
+    });
+    m.on('dragstart', () => { el.__drag = true; pushHist(); });
+    m.on('dragend', () => {
+      const ll = m.getLngLat();
+      S.wps[i] = { lat: ll.lat, lon: ll.lng };
+      refresh();
+      setTimeout(() => { el.__drag = false; }, 300);
+    });
+    return m;
+  });
+}
+/* ---------------- routeberekening aansturen ---------------- */
+let refreshTimer = null, refreshSeq = 0;
+function refresh() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(doRefresh, 320);   // niet spammen tijdens het slepen
+}
+async function doRefresh() {
+  if (S.wps.length < 2) {
+    S.route = null; S.elev = null; drawRoute(); drawElevation(null); updateStats();
+    return;
+  }
+  const seq = ++refreshSeq;
+  S.rating = null; $('#qual').hidden = true;
+  spin(true, 'Route berekenen');
+  try {
+    const r = await computeRoute(S.wps, S.prof);
+    if (seq !== refreshSeq) return;
+    S.route = r;
+    drawRoute();
+    updateStats();
+    spin(false);
+    S.elev = null; drawElevation(null);
+    try {
+      const el = await fetchElevation(r);
+      if (seq === refreshSeq) { S.elev = el; drawElevation(el); updateStats(); }
+    } catch (e) { /* hoogte is bijzaak, route telt */ }
+  } catch (e) {
+    if (seq === refreshSeq) { spin(false); toast('Route mislukt: ' + e.message, 3800); }
+  }
+}
+
+function updateStats() {
+  const r = S.route;
+  if (!r && $('#qual')) $('#qual').hidden = true;
+  $('#sDist').innerHTML = r ? (r.len / 1000).toFixed(1) + '<s>km</s>' : '0<s>km</s>';
+  const mins = r ? Math.round(r.len / 1000 / S.prof.spd * 60) : 0;
+  $('#sTime').innerHTML = !r ? '0<s>min</s>' : (mins >= 60
+      ? Math.floor(mins / 60) + '<s>u</s>' + String(mins % 60).padStart(2, '0')
+      : mins + '<s>min</s>');
+  $('#sUp').innerHTML = (S.elev ? S.elev.up : 0) + '<s>m</s>';
+  $('#bRide').disabled = !r || !!r.noVoice || !r.man.length;
+}
+
+/* ---------------- fietsknooppunten ----------------
+   Het Nederlandse knooppuntennetwerk is precies waar Joris om vroeg: routes die
+   mensen echt rijden, uitgezet en bewegwijzerd door de provincies, en als open
+   data in OpenStreetMap te bevragen via Overpass. Door de keerpunten van een
+   gegenereerd rondje naar het dichtstbijzijnde knooppunt te schuiven loopt de
+   lus over dat netwerk in plaats van door willekeurige woonwijken. Gemeten over
+   vier richtingen bij Delft: 600 -> 671 meter per bocht, en in het beste geval
+   105 bochten terug naar 77.
+
+   Overpass is een gemeenschapsserver met strakke limieten en soms tien seconden
+   antwoordtijd, dus: hoogstens een vraag per gebied, het antwoord drie maanden
+   in localStorage, en bij uitblijven gewoon doorgaan zonder. Het netwerk
+   verandert nauwelijks, dus die cache mag lang staan. */
+const OVERPASS = 'https://overpass-api.de/api/interpreter';
+const KN_TTL = 90 * 24 * 3600 * 1000;
+
+function knCacheKey(lat, lon, radM) {
+  return 'fietsnav.kn.' + lat.toFixed(1) + ',' + lon.toFixed(1) + ',' + Math.round(radM / 1000);
+}
+function knFromCache(lat, lon, radM) {
+  try {
+    const raw = localStorage.getItem(knCacheKey(lat, lon, radM));
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    if (!o.ts || Date.now() - o.ts > KN_TTL) return null;
+    return o.n;
+  } catch (e) { return null; }
+}
+async function fetchKnooppunten(lat, lon, radM) {
+  const cached = knFromCache(lat, lon, radM);
+  if (cached) return cached;
+  const q = '[out:json][timeout:40];node(around:' + Math.round(radM) + ',' +
+            lat.toFixed(4) + ',' + lon.toFixed(4) + ')["rcn_ref"];out skel;';
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 14000);
+  try {
+    const r = await fetch(OVERPASS, { method: 'POST', signal: ctl.signal,
+      body: 'data=' + encodeURIComponent(q),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+    clearTimeout(timer);
+    if (!r.ok) return null;                      // 429 of 504: stil doorgaan
+    const j = await r.json();
+    const n = (j.elements || []).map(e => [e.lat, e.lon]);
+    if (n.length < 8) return null;               // te mager om iets mee te winnen
+    try { localStorage.setItem(knCacheKey(lat, lon, radM),
+          JSON.stringify({ ts: Date.now(), n })); } catch (e) {}
+    return n;
+  } catch (e) { clearTimeout(timer); return null; }
+}
+function snapToKn(p, kn, maxM) {
+  if (!kn || !kn.length) return p;
+  let best = null, bd = Infinity;
+  for (const n of kn) {
+    const d = hav([p.lat, p.lon], n);
+    if (d < bd) { bd = d; best = n; }
+  }
+  return (best && bd <= (maxM || 3500)) ? { lat: best[0], lon: best[1] } : p;
+}
+
+/* ---------------- hoe goed is een rondje? ----------------
+   "Meters per bocht" was te grof: het zegt niets over wegdek, paaltjes, of
+   je door weiland of langs een industrieterrein rijdt. Valhalla kan per
+   wegvak vertellen wat voor weg het is, via /trace_attributes. Twee dingen
+   die uit het uitzoekwerk kwamen:
+
+   - edge.density is een uitstekende maat voor landelijk vs stad. Gemeten:
+     Den Haag centrum 14.1, polder Midden-Delfland 3.5, Beemster 2.6,
+     buitengebied Uden 4.2. Schaal loopt van 0 tot 15.
+   - node.traffic_signal is in Nederland NIET gevuld (nul stoplichten op een
+     route dwars door het centrum van Den Haag), dus daar valt niet op te
+     sturen. Kruisingen per kilometer is de bruikbare vervanger: stad ~29/km,
+     polder ~10/km.
+
+   Paaltjes en hekken tellen apart mee. Die staan op fietspaden, en voor een
+   racefiets is elk paaltje afremmen en weer op gang komen. */
+async function fetchRoadAttrs(route) {
+  const pts = route.pts;
+  const step = Math.max(1, Math.floor(pts.length / 420));
+  const shape = [];
+  for (let i = 0; i < pts.length; i += step)
+    shape.push({ lat: +pts[i][0].toFixed(6), lon: +pts[i][1].toFixed(6) });
+  const last = pts[pts.length - 1];
+  shape.push({ lat: +last[0].toFixed(6), lon: +last[1].toFixed(6) });
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 20000);
+  try {
+    const r = await fetch(VALHALLA + '/trace_attributes', {
+      method: 'POST', signal: ctl.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shape, costing: 'bicycle', shape_match: 'map_snap',
+        filters: { attributes: ['edge.use', 'edge.surface', 'edge.density',
+          'edge.length', 'node.type'], action: 'include' } })
+    });
+    clearTimeout(timer);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const edges = j.edges || [];
+    if (!edges.length) return null;
+    let L = 0, dens = 0, glad = 0, onverhard = 0, obstakels = 0, kruisingen = 0;
+    for (const e of edges) {
+      const ln = e.length || 0; L += ln;
+      dens += (e.density || 0) * ln;
+      const su = e.surface;
+      if (su === 'paved_smooth') glad += ln;
+      if (su === 'gravel' || su === 'dirt' || su === 'compacted' || su === 'path') onverhard += ln;
+      const t = (e.end_node || {}).type;
+      if (t === 'bollard' || t === 'gate') obstakels++;
+      else if (t === 'street_intersection') kruisingen++;
+    }
+    if (L < 0.5) return null;
+    return { km: L, dichtheid: dens / L, glad: glad / L, onverhard: onverhard / L,
+             obstakels, kruisPerKm: kruisingen / L };
+  } catch (e) { clearTimeout(timer); return null; }
+}
+
+/* Hoeveel van de route ligt bovenop zichzelf? Dat is precies wat "het is geen
+   rondje maar heen en weer" betekent. Twee punten tellen als dubbel als ze
+   ruimtelijk binnen 35 m van elkaar liggen maar meer dan 2 km uit elkaar in
+   route-afstand. Een rasterindeling houdt het lineair; kost geen aanroep.
+
+   Gemeten bij Delft, doel 60 km: drie keerpunten op een cirkel gaven 17,7%
+   dubbel (de kortste weg tussen twee punten op 120 graden loopt dwars door het
+   midden, dus door de stad heen). Met vijf punten zakte dat naar 3,0%, en met
+   een cirkel die naast het startpunt ligt naar 0,1%. */
+function overlapFraction(route) {
+  const pts = route.pts, cum = route.cum, n = pts.length;
+  if (n < 10) return 0;
+  const SEP = 2000, CELL = 35;
+  const dLat = CELL / 111320;
+  const dLon = dLat / Math.max(0.2, Math.cos(pts[0][0] * Math.PI / 180));
+  const grid = new Map();
+  const kxs = new Int32Array(n), kys = new Int32Array(n);
+  for (let i = 0; i < n; i++) {
+    const kx = Math.floor(pts[i][0] / dLat), ky = Math.floor(pts[i][1] / dLon);
+    kxs[i] = kx; kys[i] = ky;
+    const k = kx + ':' + ky;
+    let a = grid.get(k);
+    if (!a) { a = []; grid.set(k, a); }
+    a.push(i);
+  }
+  let dubbel = 0;
+  for (let i = 0; i < n; i++) {
+    let hit = false;
+    for (let dx = -1; dx <= 1 && !hit; dx++) {
+      for (let dy = -1; dy <= 1 && !hit; dy++) {
+        const a = grid.get((kxs[i] + dx) + ':' + (kys[i] + dy));
+        if (!a) continue;
+        for (let q = 0; q < a.length; q++) {
+          const j = a[q];
+          if (Math.abs(cum[j] - cum[i]) > SEP && hav(pts[i], pts[j]) < CELL) { hit = true; break; }
+        }
+      }
+    }
+    if (hit) dubbel += (cum[Math.min(n-1, i+1)] - cum[Math.max(0, i-1)]) / 2;
+  }
+  return dubbel / Math.max(cum[n-1], 1);
+}
+
+/* Ononderbroken stukken: manoeuvres aan elkaar plakken tot er een echte bocht
+   komt. Dat is wat doortrappen betekent, en het kost geen extra aanroep. */
+function routeRuns(route) {
+  const out = []; let cur = 0;
+  for (const m of route.man) {
+    cur += (m.length || 0);
+    if (TURN.has(m.type)) { out.push(cur); cur = 0; }
+  }
+  if (cur > 0) out.push(cur);
+  return out;
+}
+
+function rateRoute(route, a) {
+  const km = route.len / 1000;
+  const dubbel = overlapFraction(route);
+  const runs = routeRuns(route);
+  const lang = runs.filter(x => x >= 1.0).reduce((s, x) => s + x, 0) / Math.max(km, 0.01);
+  const zeer = runs.filter(x => x >= 2.5).reduce((s, x) => s + x, 0) / Math.max(km, 0.01);
+  const bochten = route.man.filter(m => TURN.has(m.type)).length;
+  if (!a) {  // zonder wegdata alleen wat gratis uit de route komt
+    return { score: 0.55*lang + 0.25*zeer - 1.2*dubbel, lang, zeer, bochten, dubbel, ruw: true };
+  }
+  const landelijk = clamp((12 - a.dichtheid) / 9, 0, 1);
+  const rust = clamp((18 - a.kruisPerKm) / 12, 0, 1);
+  const wegdek = Math.max(0, a.glad - 2 * a.onverhard);
+  const straf = Math.min(0.25, a.obstakels * 0.012);
+  // Dubbel gereden weg weegt zwaar: een rondje dat over zichzelf heen loopt is
+  // geen rondje, hoe mooi de wegen ook zijn.
+  return {
+    score: 0.34*landelijk + 0.30*lang + 0.15*zeer + 0.11*rust + 0.10*wegdek
+           - straf - 1.2*dubbel,
+    landelijk, lang, zeer, rust, wegdek, bochten, dubbel,
+    dichtheid: a.dichtheid, kruisPerKm: a.kruisPerKm, obstakels: a.obstakels
+  };
+}
+
+/* ---------------- rondje-generator ----------------
+   Drie keerpunten op een cirkel om het startpunt, 120 graden uit elkaar.
+   Meet wat de router ervan maakt, schaal de straal met doel/gemeten, herhaal.
+   Startstraal D/6.5: de omtrek van zo een driehoek is 5.196*r en wegen doen
+   er ongeveer een kwart bij. Getest vanaf Delft: 60 km landt binnen 1% na
+   twee iteraties.                                                         */
+/* Twee vormen, allebei met genoeg punten om een echt rondje af te dwingen.
+
+   De oude driehoek is eruit. Met drie punten op 120 graden loopt de kortste weg
+   tussen twee keerpunten dwars door het midden, dus telkens terug door je eigen
+   startplaats: je krijgt een ster in plaats van een lus. Gemeten bij Delft was
+   17,7% van de route dubbel. Met zes punten kan de router niet meer door het
+   midden snijden, want de koorde tussen twee buren ligt dan op 87% van de
+   straal in plaats van op 50%.
+
+   De verspringende cirkel ligt naast je startpunt in plaats van eromheen: je
+   rijdt een kant op, maakt daar een lus en komt anders terug. Dat is hoe een
+   fietsrit er hoort uit te zien, en het gaf 0,1% dubbel. */
+const RING_N = 6;
+function shapeRing(start, th, r) {
+  const out = [];
+  for (let k = 0; k < RING_N; k++)
+    out.push(destPoint(start.lat, start.lon, (th + 360*k/RING_N) % 360, r));
+  return out;
+}
+function shapeOffsetRing(start, th, r) {
+  const c = destPoint(start.lat, start.lon, th % 360, r);   // middelpunt opzij
+  const out = [];
+  for (let k = 0; k < RING_N; k++)
+    out.push(destPoint(c.lat, c.lon, (th + 180 + 360*(k+1)/(RING_N+1)) % 360, r));
+  return out;
+}
+// omtrek van de veelhoek bij straal 1 km, om de startstraal te schatten in
+// plaats van met een magisch getal te werken
+function shapePerim(start, mk) {
+  const p = mk(start, 0, 1);
+  const seq = [[start.lat,start.lon], ...p.map(x=>[x.lat,x.lon]), [start.lat,start.lon]];
+  let d = 0;
+  for (let i = 0; i < seq.length - 1; i++) d += hav(seq[i], seq[i+1]);
+  return d / 1000;
+}
+
+async function makeLoop(targetKm, dirDeg) {
+  if (!S.wps.length) { toast('Zet eerst een startpunt op de kaart'); return; }
+  pushHist();
+  const start = S.wps[0];
+
+  spin(true, 'Fietsknooppunten ophalen');
+  const kn = await fetchKnooppunten(start.lat, start.lon,
+                                    Math.min(25000, targetKm / 6.5 * 1000 * 1.45));
+
+  /* Vier kandidaten, bewust verschillend: twee vormen, drie richtingen, en de
+     helft met de keerpunten op een fietsknooppunt. Dat laatste is namelijk
+     geen zekere winst. Gemeten over drie richtingen bij Uden: knooppunten
+     geven 15% minder bochten en langere rechte stukken, maar leveren daar
+     meer paaltjes en hekken voor in - eindstand 0.68 tegen 0.67, oftewel
+     gelijkspel. Als variant is het nuttig, als vaste keuze niet. */
+  /* Vier kandidaten. Drie verspringende cirkels in verschillende windstreken -
+     die kant bepaalt namelijk alles, want een rit naar de polder is iets heel
+     anders dan dezelfde lus richting de stad - plus een cirkel rondom het
+     startpunt voor het geval geen enkele richting bevalt. */
+  /* Vier windstreken proberen. Welke kant je op rijdt bepaalt namelijk alles:
+     dezelfde generator gaf vanaf Uden dichtheid 2,9 en vanaf Delft 8,0. Bij een
+     gekozen windstreek varieren we er iets omheen en houden we een cirkel
+     rondom het startpunt achter de hand. */
+  const base = dirDeg === null ? Math.random() * 360 : dirDeg;
+  const plan = dirDeg === null
+    ? [[shapeOffsetRing, base, false], [shapeOffsetRing, (base+90)%360, true],
+       [shapeOffsetRing, (base+180)%360, false], [shapeOffsetRing, (base+270)%360, true]]
+    : [[shapeOffsetRing, base, false], [shapeOffsetRing, (base+35)%360, true],
+       [shapeOffsetRing, (base+325)%360, false], [shapeRing, base, true]];
+
+  const build = async (mk, th, r, snap) => {
+    const raw = mk(start, th, r);
+    const wps = [start].concat(snap ? raw.map(p => snapToKn(p, kn, r*1000*0.30)) : raw);
+    wps.push(start);
+    return { route: await valhalla(wps, S.prof), wps, mk, th, sn: snap, r };
+  };
+
+  const cands = [];
+  try {
+    // straal bijregelen op de eerste vorm, daarna delen de andere kandidaten hem
+    const [mk0, th0, sn0] = plan[0];
+    let r = targetKm / (shapePerim(start, mk0) * 1.25);
+    for (let it = 0; it < 4; it++) {
+      spin(true, 'Rondje zoeken ' + (it+1) + '/4');
+      const c = await build(mk0, th0, r, sn0);
+      cands.push(c);
+      const km = c.route.len / 1000;
+      if (Math.abs(km - targetKm) / targetKm < 0.05) break;
+      r *= targetKm / km;
+    }
+    for (let i = 1; i < plan.length; i++) {
+      const [mk, th, sn] = plan[i];
+      // elke vorm heeft zijn eigen omtrek, dus de straal meeschalen
+      const rr = r * shapePerim(start, mk0) / shapePerim(start, mk);
+      spin(true, 'Variant ' + i + ' van ' + (plan.length-1));
+      try { cands.push(await build(mk, th, rr, sn)); } catch (e) {}
+    }
+  } catch (e) {
+    spin(false);
+    if (!cands.length) { toast('Rondje mislukt: ' + e.message, 3800); return; }
+  }
+
+  // alleen kandidaten met een kloppende afstand doorrekenen; wegdata kost een
+  // aanroep per stuk, dus niet aan kansloze varianten verspillen
+  const ok = cands.filter(c => Math.abs(c.route.len/1000 - targetKm) / targetKm <= 0.18);
+  let pool = (ok.length ? ok : cands);
+
+  /* Voorselectie op wat gratis is: dubbel gereden weg en lange stukken komen
+     uit de route zelf. Alleen de beste drie krijgen een wegdata-aanroep, dat
+     scheelt tijd en belasting van de server. */
+  pool = pool.map(c => ({ c, voor: rateRoute(c.route, null).score }))
+             .sort((x, y) => y.voor - x.voor).slice(0, 3).map(x => x.c);
+
+  const rated = [];
+  for (let i = 0; i < pool.length; i++) {
+    spin(true, 'Wegen beoordelen ' + (i+1) + '/' + pool.length);
+    const a = await fetchRoadAttrs(pool[i].route);
+    const r = rateRoute(pool[i].route, a);
+    // Afstand telt mee in plaats van alleen als drempel: anders wint een mooi
+    // maar 7% te lang rondje het van een bijna even mooi rondje dat wel klopt.
+    r.afwijking = Math.abs(pool[i].route.len/1000 - targetKm) / targetKm;
+    r.score -= 0.6 * r.afwijking;
+    rated.push({ c: pool[i], r, mk: pool[i].mk, th: pool[i].th, sn: pool[i].sn, r0: pool[i].r });
+  }
+  rated.sort((x, y) => y.r.score - x.r.score);
+  let win = rated[0];
+
+  /* Zit de winnaar er qua afstand naast, dan die ene nog een keer met een
+     bijgeschaalde straal. Een extra aanroep voor een rondje dat wel klopt. */
+  if (win.mk) {
+    let rr = win.r0, best = win;
+    for (let k = 0; k < 2 && best.r.afwijking > 0.05; k++) {
+      spin(true, 'Afstand bijstellen ' + (k+1) + '/2');
+      try {
+        rr = rr * targetKm / (best.c.route.len / 1000);
+        const c2 = await build(win.mk, win.th, rr, win.sn);
+        const afw = Math.abs(c2.route.len/1000 - targetKm) / targetKm;
+        if (afw >= best.r.afwijking) break;          // geen vooruitgang meer
+        const r2 = rateRoute(c2.route, await fetchRoadAttrs(c2.route));
+        r2.afwijking = afw; r2.score -= 0.6 * afw;
+        best = { c: c2, r: r2, mk: win.mk, th: win.th, sn: win.sn, r0: rr };
+      } catch (e) { break; }
+    }
+    win = best;
+  }
+  spin(false);
+
+  S.wps = win.c.wps;
+  S.route = win.c.route;
+  win.r.km0 = win.c.route.len / Math.max(win.r.bochten, 1);   // meters per bocht
+  S.rating = win.r;
+  renderMarkers(); drawRoute(); fitRoute(); updateStats(); paintQuality(win.r);
+  toast(describeRating(S.route, win.r), 5200);
+  fetchElevation(S.route).then(el => { S.elev = el; drawElevation(el); updateStats(); })
+                         .catch(() => {});
+}
+
+/* De cijfers die er voor een racefietsrit toe doen, in het paneel zodat je ze
+   kunt vergelijken tussen rondjes in plaats van ze in een melding te zien
+   wegvallen. */
+function paintQuality(r) {
+  const box = $('#qual');
+  if (!r || r.ruw) { box.hidden = true; return; }
+  const cel = (lab, val, klasse) =>
+    '<span class="' + (klasse || '') + '">' + lab + ' <b>' + val + '</b></span>';
+  const land = r.dichtheid < 4.5 ? ['landelijk', 'good']
+             : (r.dichtheid < 7 ? ['half landelijk', ''] : ['bebouwd', 'meh']);
+  box.innerHTML =
+    cel('omgeving', land[0], land[1]) +
+    cel('lange stukken', Math.round(r.lang * 100) + '%', r.lang > 0.65 ? 'good' : (r.lang < 0.45 ? 'meh' : '')) +
+    cel('kruisingen', r.kruisPerKm.toFixed(0) + '/km', r.kruisPerKm < 11 ? 'good' : (r.kruisPerKm > 16 ? 'meh' : '')) +
+    cel('paaltjes', r.obstakels, r.obstakels <= 4 ? 'good' : (r.obstakels > 10 ? 'meh' : '')) +
+    cel('dubbel', Math.round((r.dubbel || 0) * 100) + '%',
+        r.dubbel < 0.03 ? 'good' : (r.dubbel > 0.10 ? 'meh' : '')) +
+    cel('bocht per', Math.round(r.km0 || 0) + ' m', '');
+  box.hidden = false;
+}
+
+function describeRating(route, r) {
+  const km = (route.len / 1000).toFixed(1);
+  if (r.ruw) return 'Rondje van ' + km + ' km - ' + Math.round(r.lang*100) + '% lange stukken';
+  const land = r.dichtheid < 4.5 ? 'landelijk'
+             : (r.dichtheid < 7 ? 'half landelijk' : 'veel bebouwing');
+  return km + ' km, ' + land + ' - ' + Math.round(r.lang*100) + '% lange stukken, ' +
+         r.kruisPerKm.toFixed(0) + ' kruisingen/km';
+}
+
+/* ---------------- opslaan, delen, GPX ---------------- */
+function loadSaved() {
+  try { S.saved = JSON.parse(localStorage.getItem('fietsnav.routes') || '[]'); }
+  catch (e) { S.saved = []; }
+  renderSaved();
+}
+function storeSaved() {
+  try { localStorage.setItem('fietsnav.routes', JSON.stringify(S.saved)); } catch (e) {}
+}
+function renderSaved() {
+  const box = $('#savedList');
+  box.innerHTML = '';
+  $('#noSaved').style.display = S.saved.length ? 'none' : 'block';
+  S.saved.forEach((it, i) => {
+    const d = document.createElement('div');
+    d.className = 'saved';
+    const info = document.createElement('div');
+    const b = document.createElement('b'); b.textContent = it.naam;
+    const sm = document.createElement('small'); sm.textContent = it.km.toFixed(1) + ' km';
+    info.appendChild(b); info.appendChild(sm);
+    const open = document.createElement('button');
+    open.className = 'btn sm'; open.textContent = 'Open';
+    open.onclick = () => {
+      S.wps = it.wps.slice(); renderMarkers();
+      doRefresh().then(fitRoute);
+      $('#sheet').classList.add('down');
+    };
+    const del = document.createElement('button');
+    del.className = 'btn sm dan'; del.textContent = 'Wis';
+    del.onclick = () => { S.saved.splice(i, 1); storeSaved(); renderSaved(); };
+    d.appendChild(info); d.appendChild(open); d.appendChild(del);
+    box.appendChild(d);
+  });
+}
+function saveRoute() {
+  if (!S.route) { toast('Nog geen route'); return; }
+  const naam = ($('#rname').value || '').trim() ||
+               ('Route ' + (S.route.len / 1000).toFixed(0) + ' km');
+  S.saved.unshift({ naam, wps: S.wps.slice(), km: S.route.len / 1000, ts: Date.now() });
+  S.saved = S.saved.slice(0, 40);
+  storeSaved(); renderSaved(); $('#rname').value = '';
+  toast('Bewaard als ' + naam);
+}
+
+function routeHash() {
+  return '#r=' + S.wps.map(w => w.lat.toFixed(5) + ',' + w.lon.toFixed(5)).join(';') +
+         '&s=' + S.prof.spd + '&u=' + S.prof.ur + '&a=' + S.prof.ab;
+}
+function loadFromHash() {
+  const h = location.hash;
+  if (!h || h.indexOf('r=') < 0) return;
+  try {
+    const q = new URLSearchParams(h.slice(1));
+    const wps = (q.get('r') || '').split(';').filter(Boolean).map(s => {
+      const a = s.split(',');
+      return { lat: +a[0], lon: +a[1] };
+    }).filter(w => isFinite(w.lat) && isFinite(w.lon));
+    if (q.get('s')) S.prof.spd = +q.get('s');
+    if (q.get('u')) S.prof.ur = +q.get('u');
+    if (q.get('a')) S.prof.ab = +q.get('a');
+    syncProfileUI();
+    if (wps.length >= 2) { S.wps = wps; renderMarkers(); doRefresh().then(fitRoute); }
+  } catch (e) {}
+}
+async function shareRoute() {
+  if (S.wps.length < 2) { toast('Nog geen route'); return; }
+  const url = location.origin + location.pathname + routeHash();
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('Link gekopieerd, open hem op je telefoon');
+  } catch (e) {
+    try {
+      if (navigator.share) { await navigator.share({ title: 'Fietsroute', url }); return; }
+    } catch (e2) {}
+    location.hash = routeHash().slice(1);
+    toast('Link staat nu in de adresbalk');
+  }
+}
+
+/* GPX als trk met de volledige lijn: dat is wat Garmin, Wahoo en Strava het
+   beste slikken, zij leiden de afslagen zelf weer af uit de punten. */
+function exportGPX() {
+  if (!S.route) { toast('Nog geen route'); return; }
+  const naam = ($('#rname').value || '').trim() ||
+               ('Fietsnav ' + (S.route.len / 1000).toFixed(0) + 'km');
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const L = [];
+  L.push('<?xml version="1.0" encoding="UTF-8"?>');
+  L.push('<gpx version="1.1" creator="Fietsnav" xmlns="http://www.topografix.com/GPX/1/1">');
+  L.push('<metadata><name>' + esc(naam) + '</name><time>' + new Date().toISOString() + '</time></metadata>');
+  L.push('<trk><name>' + esc(naam) + '</name><trkseg>');
+  for (const p of S.route.pts) {
+    L.push('<trkpt lat="' + p[0].toFixed(6) + '" lon="' + p[1].toFixed(6) + '"></trkpt>');
+  }
+  L.push('</trkseg></trk>');
+  L.push('</gpx>');
+  const blob = new Blob([L.join('\n') + '\n'], { type: 'application/gpx+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = naam.replace(/[^A-Za-z0-9 _-]/g, '').trim() + '.gpx';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('GPX gedownload');
+}
+/* ---------------- kleine UI-helpers ---------------- */
+let toastTimer = null;
+function toast(msg, ms) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), ms || 2400);
+}
+function spin(on, txt) {
+  $('#spin').classList.toggle('on', !!on);
+  if (txt) $('#spintx').textContent = txt;
+}
+
+/* ---------------- afslagpijl ---------------- */
+function arrowSVG(type, color) {
+  const c = color || '#00e08a';
+  if (ENDT.has(type)) {
+    return '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="8" fill="' + c + '"/>' +
+           '<circle cx="24" cy="24" r="16" fill="none" stroke="' + c + '" stroke-width="3" opacity=".4"/></svg>';
+  }
+  if (isRoundabout(type)) {
+    return '<svg viewBox="0 0 48 48" fill="none" stroke="' + c + '" stroke-width="4.5" ' +
+           'stroke-linecap="round" stroke-linejoin="round">' +
+           '<circle cx="22" cy="26" r="9"/><path d="M22 46 L22 35"/>' +
+           '<path d="M31 21 L41 11"/><path d="M33 9 L41 11 L39 19"/></svg>';
+  }
+  const a = maneuverAngle(type);
+  return '<svg viewBox="0 0 48 48"><g transform="rotate(' + a + ' 24 24)" fill="none" ' +
+         'stroke="' + c + '" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">' +
+         '<path d="M24 43 L24 11"/><path d="M13 22 L24 9 L35 22"/></g></svg>';
+}
+
+/* ---------------- spraak ----------------
+   Safari is hier kieskeurig, vandaar drie maatregelen:
+   1. de stem moet een keer vanuit een echte tik gestart zijn, anders blijft
+      speechSynthesis de hele rit stil. prime() doet dat op de startknop.
+   2. getVoices() is bij de eerste aanroep leeg op iOS, dus wachten op
+      voiceschanged voordat we een nl-stem kiezen.
+   3. de wachtrij loopt soms vast. cancel() voor elke speak, plus een
+      resume-hartslag.                                                      */
+const Voice = {
+  on: true,
+  v: null,
+  primed: false,
+  audio: null,
+
+  pick() {
+    const all = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+    if (!all.length) return;
+    this.v = all.find(x => x.lang === 'nl-NL') ||
+             all.find(x => (x.lang || '').toLowerCase().indexOf('nl') === 0) || null;
+  },
+
+  init() {
+    if (!window.speechSynthesis) return;
+    this.pick();
+    speechSynthesis.addEventListener('voiceschanged', () => this.pick());
+    setInterval(() => {
+      try { if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) {}
+    }, 5000);
+  },
+
+  // moet synchroon vanuit een klik-handler aangeroepen worden
+  prime() {
+    if (this.primed || !window.speechSynthesis) return;
+    try {
+      const u = new SpeechSynthesisUtterance('Navigatie klaar');
+      u.lang = 'nl-NL';
+      if (this.v) u.voice = this.v;
+      u.volume = 1;
+      speechSynthesis.speak(u);
+      this.primed = true;
+    } catch (e) {}
+    this.startSilence();
+  },
+
+  // stil lusje om de audiosessie warm te houden als je even wegklikt.
+  // Best effort: op slot blijft op slot.
+  startSilence() {
+    if (this.audio) return;
+    try {
+      const sr = 8000, n = sr * 1;
+      const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+      const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+      w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true);
+      v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+      const a = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
+      a.loop = true; a.volume = 0.001;
+      a.play().catch(() => {});
+      this.audio = a;
+    } catch (e) {}
+  },
+
+  stopSilence() {
+    if (this.audio) { try { this.audio.pause(); } catch (e) {} this.audio = null; }
+  },
+
+  say(text) {
+    if (!this.on || !text || !window.speechSynthesis) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'nl-NL';
+      if (this.v) u.voice = this.v;
+      u.rate = 1.04;
+      u.pitch = 1;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+};
+
+/* ---------------- scherm wakker houden ---------------- */
+const Wake = {
+  lock: null,
+  async on() {
+    try {
+      if ('wakeLock' in navigator) this.lock = await navigator.wakeLock.request('screen');
+    } catch (e) {}
+  },
+  off() {
+    try { if (this.lock) this.lock.release(); } catch (e) {}
+    this.lock = null;
+  }
+};
+// iOS geeft de wake lock terug zodra je wegklikt, dus opnieuw vragen
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && S.nav) Wake.on();
+});
+/* ---------------- navigatie ---------------- */
+function fmtDist(m) {
+  if (m >= 1000) return { n: (m / 1000).toFixed(1), u: 'km' };
+  return { n: String(Math.max(0, Math.round(m / 10) * 10)), u: 'm' };
+}
+function spokenDist(m) {
+  if (m >= 1000) {
+    const k = m / 1000;
+    return (k >= 2 ? Math.round(k) : k.toFixed(1).replace('.', ',')) + ' kilometer';
+  }
+  return Math.max(10, Math.round(m / 50) * 50) + ' meter';
+}
+function streetOf(m) {
+  if (m.street_names && m.street_names.length) return m.street_names[0];
+  return (m.instruction || '').replace(/\.$/, '');
+}
+
+/* Zoekt het punt op de lijn dat het dichtst bij je staat. Het venster rond de
+   vorige positie is essentieel op een rondje: zonder dat springt de match naar
+   een parallel stuk route dat toevallig dichterbij ligt.                    */
+function snap(pos, moved) {
+  const R = S.route, n = R.pts.length;
+  let lo = 0, hi = n - 1;
+  if (S.nav && S.nav.idx != null) {
+    const a = S.nav.along;
+    // Achteruit smal, vooruit ruim. Op een lus loopt de route vaak vlak langs
+    // zichzelf en pakt een breed venster zo het verkeerde stuk: met het oude
+    // venster van 250 m sprong de match tot 281 m terug. Vooruit moet juist
+    // meegroeien met je snelheid, anders ben je hem kwijt na een gaatje in de
+    // GPS. Hard vastzetten bij een terugsprong werkt niet: dan bevriest het
+    // venster mee en komt hij er nooit meer uit.
+    const ahead = Math.max(400, (S.nav.spd || 8) * 40);
+    // idxAt geeft het segment VOOR de gevraagde afstand, en de lus hieronder
+    // loopt tot hi (exclusief). Zonder de marges eromheen kan het venster op
+    // een stuk met weinig vormpunten inklappen tot een enkel segment, en dan
+    // komt de match nooit meer vooruit zodra je het einde ervan voorbij bent.
+    lo = Math.max(0, idxAt(a - 60) - 1);
+    hi = Math.min(n - 1, idxAt(a + ahead) + 2);
+    if (hi - lo < 3) hi = Math.min(n - 1, lo + 3);
+  }
+  // Waar zou je ongeveer moeten zijn, puur op afgelegde weg? Die schatting is
+  // de scheidsrechter bij gelijkspel. Zonder haar wint op een stuk waar de
+  // route langs zichzelf terugloopt altijd de eerste passage, want die staat
+  // vooraan in de lijst en de loodrechte afstand is even klein. De match blijft
+  // dan stelselmatig achter tot hij helemaal uit het venster valt, en dan denkt
+  // de app dat je van de route bent terwijl je keurig op de lijn rijdt.
+  const expect = (S.nav && moved != null) ? S.nav.along + moved : null;
+  let bd = Infinity, bc = Infinity, bi = lo, bt = 0;
+  for (let i = lo; i < Math.min(hi, n - 1); i++) {
+    const r = ptSeg(pos, R.pts[i], R.pts[i+1]);
+    let cost = r.d;
+    if (expect != null) {
+      const cand = R.cum[i] + r.t * hav(R.pts[i], R.pts[i+1]);
+      cost += 0.25 * Math.abs(cand - expect);
+    }
+    if (cost < bc) { bc = cost; bd = r.d; bi = i; bt = r.t; }
+  }
+  const segLen = hav(R.pts[bi], R.pts[bi+1]);
+  const along = R.cum[bi] + bt * segLen;
+  return { perp: bd, idx: bi, along };
+}
+function idxAt(dist) {
+  const cum = S.route.cum;
+  let lo = 0, hi = cum.length - 1;
+  if (dist <= 0) return 0;
+  if (dist >= cum[hi]) return hi;
+  while (lo < hi - 1) {
+    const mid = (lo + hi) >> 1;
+    if (cum[mid] < dist) lo = mid; else hi = mid;
+  }
+  return lo;
+}
+
+function startNav() {
+  if (!S.route || !S.route.man.length) { toast('Geen route met afslagen'); return; }
+  Voice.prime();                       // moet synchroon vanuit de tik
+  document.body.className = 'mode-ride';
+  S.nav = { idx: 0, along: 0, offCount: 0, rerouting: false,
+            lastPos: null, lastT: 0, spd: 0, heading: 0,
+            fired: new Set(), startT: Date.now(), watchId: null, done: false };
+  S.follow = true;
+  Wake.on();
+  renderMarkers();
+  map.easeTo({ zoom: 16, pitch: 55, duration: 700 });
+
+  const first = S.route.man.find(m => m.speak);
+  Voice.say('Route van ' + (S.route.len / 1000).toFixed(0) + ' kilometer. ' +
+            (first ? 'Eerste afslag over ' + spokenDist(first.at) + '.' : ''));
+
+  if (!navigator.geolocation) { toast('Deze browser geeft geen GPS'); return; }
+  S.nav.watchId = navigator.geolocation.watchPosition(onFix, onGeoErr, {
+    enableHighAccuracy: true, maximumAge: 1000, timeout: 15000
+  });
+}
+
+function stopNav() {
+  if (S.nav && S.nav.watchId != null) navigator.geolocation.clearWatch(S.nav.watchId);
+  S.nav = null;
+  Wake.off(); Voice.stopSilence();
+  try { speechSynthesis.cancel(); } catch (e) {}
+  document.body.className = 'mode-plan';
+  map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+  if (mapReady) map.getSource('done').setData(emptyFC());
+  renderMarkers();
+  fitRoute();
+}
+
+function onGeoErr(e) {
+  if (e.code === 1) toast('Geef de app toegang tot je locatie', 5000);
+  else if (e.code === 3) toast('Geen GPS-fix, even wachten', 3000);
+}
+
+function onFix(p) {
+  if (!S.nav || S.nav.done) return;
+  const pos = [p.coords.latitude, p.coords.longitude];
+  const now = Date.now();
+
+  // snelheid: liefst van de GPS zelf, anders uit twee posities
+  let spd = p.coords.speed;
+  if (spd == null || isNaN(spd) || spd < 0) {
+    if (S.nav.lastPos && now - S.nav.lastT > 900) {
+      spd = hav(S.nav.lastPos, pos) / ((now - S.nav.lastT) / 1000);
+    } else spd = S.nav.spd;
+  }
+  S.nav.spd = spd || 0;
+
+  // koers: GPS-heading is alleen betrouwbaar bij beweging
+  let hd = p.coords.heading;
+  if ((hd == null || isNaN(hd)) && S.nav.lastPos && S.nav.spd > 1.5) {
+    hd = bearingTo(S.nav.lastPos, pos);
+  }
+  if (hd != null && !isNaN(hd)) S.nav.heading = hd;
+
+  const moved = S.nav.lastPos ? hav(S.nav.lastPos, pos) : 0;
+  S.nav.lastPos = pos; S.nav.lastT = now;
+
+  const s = snap(pos, moved);
+  if (s.perp > 40) {
+    S.nav.offCount++;
+    if (S.nav.offCount >= 3 && !S.nav.rerouting) reroute(pos);
+  } else {
+    S.nav.offCount = 0;
+    if (document.body.classList.contains('off')) document.body.classList.remove('off');
+  }
+  if (S.nav.rerouting) { paintMe(pos); return; }
+
+  S.nav.idx = s.idx;
+  S.nav.along = s.along;
+
+  checkInstructions();
+  paintBanner();
+  paintMe(pos);
+  paintDone();
+  paintStats();
+
+  if (S.route.len - S.nav.along < 35) arrive();
+}
+
+function arrive() {
+  S.nav.done = true;
+  Voice.say('Je bent er. Mooie rit.');
+  toast('Aangekomen', 5000);
+  setTimeout(stopNav, 2500);
+}
+function lowerFirst(s) { return s ? s.charAt(0).toLowerCase() + s.slice(1) : s; }
+// Valhalla hangt er soms zelf al een "Daarna ..." aan vast. In de balk willen we
+// alleen de eerste zin, anders loopt de regel dubbel en valt hij toch weg.
+function firstSentence(s) {
+  if (!s) return '';
+  const i = s.indexOf('. ');
+  return i > 0 ? s.slice(0, i + 1) : s;
+}
+function trigOf(t, TD) {
+  return t.kind === 'alert' ? TD.alert : (t.kind === 'pre' ? TD.pre : t.at);
+}
+
+/* Per manoeuvre wordt hooguit een tier uitgesproken: de meest nabije die
+   getriggerd is. Alle eerdere worden meteen als gedaan gemarkeerd, zodat een
+   gemiste GPS-fix niet alsnog een verlate waarschuwing laat afgaan.       */
+function checkInstructions() {
+  const TD = tierDistances(S.nav.spd * 3.6 || S.prof.spd);
+  const along = S.nav.along;
+  const man = S.route.man;
+  for (let i = 0; i < man.length; i++) {
+    const m = man[i];
+    if (!m.speak || !m.tiers.length) continue;
+    const rem = m.at - along;
+    if (rem < -25) continue;
+    if (rem > 1400) break;
+    let chosen = -1;
+    for (let k = 0; k < m.tiers.length; k++) {
+      if (rem <= trigOf(m.tiers[k], TD)) chosen = k;
+    }
+    if (chosen < 0) continue;
+    const key = i + ':' + chosen;
+    if (S.nav.fired.has(key)) continue;
+    for (let k = 0; k <= chosen; k++) S.nav.fired.add(i + ':' + k);
+    const t = m.tiers[chosen];
+    let text = t.text;
+    if (t.kind === 'alert') text = 'Over ' + spokenDist(rem) + ', ' + lowerFirst(text);
+    Voice.say(text);
+  }
+}
+
+function nextManeuvers() {
+  const out = [];
+  for (const m of S.route.man) {
+    if (!m.speak) continue;
+    if (m.at - S.nav.along > -15) { out.push(m); if (out.length === 2) break; }
+  }
+  return out;
+}
+
+function paintBanner() {
+  const nx = nextManeuvers();
+  const m = nx[0];
+  if (!m) {
+    $('#arrow').innerHTML = arrowSVG(4);
+    $('#bandist').innerHTML = '--<s></s>';
+    $('#banstreet').textContent = 'Naar de finish';
+    $('#banthen').textContent = '';
+    return;
+  }
+  const rem = Math.max(0, m.at - S.nav.along);
+  const d = fmtDist(rem);
+  const svg = arrowSVG(m.type);
+  $('#arrow').innerHTML = svg;
+  $('#bandist').innerHTML = d.n + '<s>' + d.u + '</s>';
+  $('#banstreet').textContent = streetOf(m);
+  $('#banthen').textContent = nx[1] ? 'daarna ' + lowerFirst(firstSentence(txtShort(nx[1]))) : '';
+
+  if (document.body.classList.contains('saving')) {
+    $('#parrow').innerHTML = svg;
+    $('#pdist').innerHTML = d.n + '<s>' + d.u + '</s>';
+    $('#pstreet').textContent = streetOf(m);
+  }
+}
+
+function paintMe(pos) {
+  if (!mapReady) return;
+  if (!S.meMarker) {
+    const el = document.createElement('div');
+    el.id = 'me';
+    el.innerHTML = '<svg viewBox="0 0 30 30" width="30" height="30">' +
+      '<circle cx="15" cy="15" r="11" fill="#2b7fff" fill-opacity=".25"/>' +
+      '<path d="M15 4 L22 24 L15 19 L8 24 Z" fill="#2b7fff" stroke="#fff" stroke-width="1.8" ' +
+      'stroke-linejoin="round"/></svg>';
+    S.meMarker = new maplibregl.Marker({ element: el, rotationAlignment: 'map' })
+      .setLngLat([pos[1], pos[0]]).addTo(map);
+  }
+  S.meMarker.setLngLat([pos[1], pos[0]]);
+  S.meMarker.setRotation(S.nav ? S.nav.heading : 0);
+  if (S.nav && S.follow && !document.body.classList.contains('saving')) {
+    map.easeTo({ center: [pos[1], pos[0]], bearing: S.nav.heading,
+                 duration: 800, essential: true });
+  }
+}
+
+function paintDone() {
+  if (!mapReady) return;
+  const i = Math.max(1, S.nav.idx + 1);
+  map.getSource('done').setData(lineFC(S.route.pts.slice(0, i)));
+}
+
+function paintStats() {
+  const left = Math.max(0, S.route.len - S.nav.along);
+  $('#rSpd').innerHTML = (S.nav.spd * 3.6).toFixed(0) + '<s>km/u</s>';
+  $('#rLeft').innerHTML = (left / 1000).toFixed(1) + '<s>km</s>';
+  $('#rDone').innerHTML = (S.nav.along / 1000).toFixed(1) + '<s>km</s>';
+  const v = S.nav.spd > 1.5 ? S.nav.spd : S.prof.spd / 3.6;
+  const eta = new Date(Date.now() + (left / v) * 1000);
+  $('#rEta').textContent = String(eta.getHours()).padStart(2, '0') + ':' +
+                           String(eta.getMinutes()).padStart(2, '0');
+}
+
+/* ---------------- herberekenen ---------------- */
+async function reroute(pos) {
+  S.nav.rerouting = true;
+  document.body.classList.add('off');
+  Voice.say('Je bent van de route. Nieuwe route wordt gezocht.');
+  try {
+    const rem = [];
+    for (let i = 0; i < S.wps.length; i++) {
+      if (S.route.wpAlong[i] > S.nav.along + 80) rem.push(S.wps[i]);
+    }
+    if (!rem.length) rem.push(S.wps[S.wps.length - 1]);
+    const wps = [{ lat: pos[0], lon: pos[1] }].concat(rem);
+    const r = await valhalla(wps, S.prof);
+    S.wps = wps;
+    S.route = r;
+    S.nav.fired = new Set();
+    S.nav.along = 0;
+    S.nav.idx = 0;
+    S.nav.offCount = 0;
+    drawRoute();
+    renderMarkers();
+    document.body.classList.remove('off');
+    const first = r.man.find(m => m.speak);
+    if (first) Voice.say('Nieuwe route. ' + txtFull(first));
+  } catch (e) {
+    toast('Herberekenen mislukt, probeer het zo nog eens', 3500);
+  } finally {
+    S.nav.rerouting = false;
+  }
+}
+/* ---------------- bediening ---------------- */
+function labUr(v) { return v < 0.3 ? 'rustige wegen' : (v > 0.7 ? 'grote wegen' : 'midden'); }
+function labAb(v) { return v < 0.3 ? 'weinig' : (v > 0.7 ? 'veel' : 'gemiddeld'); }
+
+function syncProfileUI() {
+  $('#spd').value = S.prof.spd;
+  $('#ur').value = Math.round(S.prof.ur * 100);
+  $('#ab').value = Math.round(S.prof.ab * 100);
+  $('#spdL').textContent = S.prof.spd + ' km/u';
+  $('#urL').textContent = labUr(S.prof.ur);
+  $('#abL').textContent = labAb(S.prof.ab);
+}
+
+$('#spd').oninput = e => { S.prof.spd = +e.target.value; syncProfileUI(); updateStats(); };
+$('#ur').oninput  = e => { S.prof.ur = +e.target.value / 100; syncProfileUI(); };
+$('#ab').oninput  = e => { S.prof.ab = +e.target.value / 100; syncProfileUI(); };
+$('#ur').onchange = () => refresh();
+$('#ab').onchange = () => refresh();
+$('#loopKm').oninput = e => { $('#loopKmL').textContent = e.target.value + ' km'; };
+
+const DIRS = [['Willekeurig', null], ['N', 0], ['NO', 45], ['O', 90], ['ZO', 135],
+              ['Z', 180], ['ZW', 225], ['W', 270], ['NW', 315]];
+(function buildDirs() {
+  const box = $('#dirs');
+  DIRS.forEach(([lab, deg], i) => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (i === 0 ? ' on' : '');
+    b.textContent = lab;
+    b.onclick = () => {
+      S.loopDir = deg;
+      box.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+      b.classList.add('on');
+    };
+    box.appendChild(b);
+  });
+})();
+
+$('#grip').onclick = () => $('#sheet').classList.toggle('down');
+
+$('#bClear').onclick = () => {
+  if (S.wps.length) pushHist();
+  S.wps = []; S.route = null; S.elev = null;
+  renderMarkers(); drawRoute(); drawElevation(null); updateStats();
+};
+$('#bUndo').onclick = undo;
+$('#bBack').onclick = undo;
+$('#bLocate').onclick = () => {
+  if (!navigator.geolocation) { toast('Geen GPS in deze browser'); return; }
+  spin(true, 'Locatie zoeken');
+  navigator.geolocation.getCurrentPosition(p => {
+    spin(false);
+    const w = { lat: p.coords.latitude, lon: p.coords.longitude };
+    if (!S.wps.length) S.wps.push(w); else S.wps[0] = w;
+    renderMarkers(); refresh();
+    map.easeTo({ center: [w.lon, w.lat], zoom: 14 });
+  }, e => {
+    spin(false);
+    toast(e.code === 1 ? 'Geen toegang tot je locatie' : 'Locatie niet gevonden', 4000);
+  }, { enableHighAccuracy: true, timeout: 12000 });
+};
+$('#bLoop').onclick = () => makeLoop(+$('#loopKm').value, S.loopDir);
+$('#bSave').onclick = saveRoute;
+$('#bShare').onclick = shareRoute;
+$('#bGpx').onclick = exportGPX;
+$('#bRide').onclick = startNav;
+$('#bStop').onclick = stopNav;
+$('#bRecenter').onclick = () => {
+  S.follow = true;
+  if (S.nav && S.nav.lastPos) {
+    map.easeTo({ center: [S.nav.lastPos[1], S.nav.lastPos[0]],
+                 bearing: S.nav.heading, zoom: 16, duration: 600 });
+  }
+};
+$('#bMute').onclick = () => {
+  Voice.on = !Voice.on;
+  $('#bMute').classList.toggle('off', !Voice.on);
+  $('#bMute').innerHTML = Voice.on ? '&#128266;' : '&#128263;';
+  if (!Voice.on) { try { speechSynthesis.cancel(); } catch (e) {} }
+  toast(Voice.on ? 'Stem aan' : 'Stem uit');
+};
+$('#bSaveMode').onclick = () => {
+  document.body.classList.add('saving');
+  paintBanner();
+};
+$('#power').onclick = () => {
+  document.body.classList.remove('saving');
+  if (S.nav && S.nav.lastPos) paintMe(S.nav.lastPos);
+};
+// zodra je de kaart zelf pakt, stopt het meedraaien tot je op centreren tikt
+map.on('dragstart', () => { if (S.nav) S.follow = false; });
+
+/* ---------------- start ---------------- */
+Voice.init();
+loadSaved();
+syncProfileUI();
+$('#loopKmL').textContent = $('#loopKm').value + ' km';
+updateStats();
+window.addEventListener('hashchange', loadFromHash);
+loadFromHash();          // losgekoppeld van de kaart: een gedeelde link moet
+                         // ook openen als de tegels niet komen
+
+// Zonder https geeft iOS geen GPS. Beter dat meteen zeggen dan de gebruiker
+// laten raden waarom de Hier-knop en het navigeren niets doen.
+if (!window.isSecureContext) {
+  setTimeout(() => toast('Zonder https geeft je telefoon geen GPS. Plannen kan wel.', 6000), 900);
+  $('#bRide').title = 'Navigeren vereist een https-adres';
+}
+
+// haakje voor de testopstelling: posities injecteren zonder echt te fietsen
+window.__fietsnav = { S, onFix, snap, decodePoly, buildRoute, prepSpeech, Voice,
+                      valhalla, makeLoop, tierDistances, hav };
+</script>
+</body>
+</html>
