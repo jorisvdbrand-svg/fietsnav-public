@@ -13,6 +13,8 @@ geen API-sleutel, geen abonnement.
 | Hoogteprofiel | Valhalla /height | gratis |
 | Reserve-router | BRouter | gratis |
 | Fietsknooppunten | OpenStreetMap via Overpass | gratis |
+| Zoeken op plaatsnaam | Photon (Komoot) | gratis |
+| Wind | Open-Meteo | gratis |
 | Stem | Web Speech API van je telefoon | ingebouwd |
 
 Valhalla draait op een gemeenschapsserver. Wees er zuinig mee: de app wacht
@@ -35,6 +37,21 @@ of via je wifi-IP werkt daarom niet.
 
 Bij de eerste rit vraagt iOS om je locatie: sta toe, anders werkt navigeren niet.
 
+## Onderweg: drie schermen
+
+Tijdens het rijden veeg je tussen drie schermen, of tik je op de knoppen rechts:
+
+1. **Navigatie** met de kaart en de afslagbanner
+2. **Cijfers** met snelheid, de laatste 5 km, gemiddelde, klim, afstand en aankomst
+3. **Spaarstand**: zwart scherm met alleen de volgende afslag
+
+Tik op de cijferbalk onderin om naar het cijferscherm te gaan, tik bovenaan om
+terug te keren. De spraak loopt door op welk scherm je ook staat.
+
+Op een kwart, de helft en driekwart van de rit krijg je gesproken te horen
+hoeveel er nog te gaan is en hoe lang dat ongeveer duurt. Die tijdschatting gaat
+op je werkelijke gemiddelde tot dan toe, niet op de ingestelde profielsnelheid.
+
 ## Onderweg
 
 Het scherm moet aan blijven en de app moet vooraan staan. De app houdt het
@@ -50,9 +67,43 @@ Op een OLED-scherm scheelt dat flink.
 - Tik op een punt: weghalen.
 - De pijl linksboven draait de laatste stap terug. Ook **Wis** en een gegenereerd
   rondje zijn daarmee terug te halen, dus je raakt nooit per ongeluk alles kwijt.
+- Bij een bewaarde route: tik de naam om hem te openen, de dubbele pijl om hem
+  **omgekeerd** te rijden (de app zegt er meteen bij wat de wind ermee doet), of
+  het driehoekje om **direct te gaan rijden**.
 - **Deel link** zet de route in de URL. Zo stuur je hem van je laptop naar je
   telefoon zonder server.
 - **GPX** exporteert een track die Garmin, Wahoo en Strava inlezen.
+
+## De kaart offline meenemen
+
+Navigeren werkte al zonder bereik, want de route en de instructies staan in je
+telefoon. Nu haalt de knop **Deze route offline opslaan** ook de kaart binnen.
+
+Reken op ongeveer 12 MB voor een lus van 60 km; door de stad meer, in de polder
+minder. Het ophalen duurt een seconde of vier op wifi. Onder de knop staat
+hoeveel er opgeslagen is, met een knop om het te wissen.
+
+Getest met het netwerk naar de tegelserver volledig geblokkeerd: de kaart tekent
+gewoon door, nul verzoeken, nul fouten.
+
+Eén ding om te weten: Safari ruimt opslag op van sites die je een week niet
+opent. De app vraagt om een uitzondering, maar dat is geen garantie. Haal je
+route dus liever de avond ervoor binnen dan een week van tevoren.
+
+## Je rit wordt opgenomen
+
+Je **rijtijd** wordt apart bijgehouden van de totale tijd: stilstaan telt niet
+mee. Je gemiddelde gaat op de rijtijd, want anders drukt elke koffiestop je
+cijfers. Op het cijferscherm zie je beide naast elkaar staan.
+
+Zodra je op Start rit tikt legt de app je spoor vast, met tijdstip en hoogte per
+punt. Stop je, dan komt de rit onder **Gereden ritten** te staan met een
+GPX-knop. Die GPX kun je zo in Strava laden: de tijdstippen per punt zijn precies
+wat Strava nodig heeft om er een activiteit van te maken. De laatste tien ritten
+blijven bewaard.
+
+Tussentijds wordt elke 15 seconden opgeslagen, dus een crash of een per ongeluk
+gesloten tab kost je de rit niet.
 
 ## Sleutelen
 
@@ -94,6 +145,25 @@ Alles zit in `index.html`. De stukken die er echt toe doen:
   centrum van Den Haag. Daarom kruisingen per kilometer als vervanger.
   Een uitgedunde lijn van ~420 punten dekt met `map_snap` een hele lus van
   60 km in één aanroep.
+- `tierDistances()` bepaalt wanneer de spraak afgaat, in seconden voor de bocht.
+  Hier ging het eerst mis: de regel was `max(110, v*9)`, en die ondergrens van
+  110 meter wint bij elke fietssnelheid onder 44 km/u. De instructie kwam dus
+  altijd op 110 meter, oftewel 14 seconden vooraf bij 28 km/u en 18 bij 22.
+  Nu domineert de tijdterm: gemeten bij 22, 28 en 35 km/u komt de hoofdinstructie
+  op 7,4 / 7,0 / 7,0 seconden. Vroege waarschuwing op 36 s, korte bevestiging op
+  2,5 s in de drukke stukken.
+- `windScore()` vergelijkt de netto koers van het eerste en laatste kwart van de
+  route met waar de wind vandaan komt. Tegenwind heen en rugwind terug is wat je
+  wilt. Het gewicht schaalt mee met de windkracht: onder 12 km/u telt het niet,
+  boven 30 vol. Wind stuurt mee maar wint niet van een duidelijk mooiere route.
+- `importGPX()` leest een GPX en haalt de punten door Valhalla's `/trace_route`.
+  Dat endpoint legt een spoor op het wegennet en geeft er Nederlandse
+  afslaginstructies bij. Een route van Komoot of een vriend krijgt daarmee
+  volledige spraaknavigatie. Getest met een heen-en-weer: 11,4 km en 13 afslagen
+  eruit, 11,4 km en 13 afslagen er weer in.
+- `splitSpeed()` houdt een buffer van (afstand, tijd) bij en kijkt terug naar het
+  monster van 5 km geleden. Dat getal reageert veel sneller op een versnelling
+  dan het gemiddelde over de hele rit.
 - `fetchKnooppunten()` haalt het Nederlandse fietsknooppuntennetwerk op uit
   OpenStreetMap via Overpass. Dat zijn de routes die provincies hebben uitgezet
   en bewegwijzerd. Eerlijk over wat het oplevert: gemeten over drie richtingen

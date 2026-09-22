@@ -85,8 +85,51 @@ input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);
 .saved div{flex:1;min-width:0}
 .saved b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .saved small{color:var(--dim);font-size:12px}
+#search{position:absolute;top:0;left:0;right:0;z-index:12;background:var(--panel);
+  padding:calc(var(--safe-t) + 10px) 12px 12px;display:none;
+  border-bottom:1px solid var(--line);box-shadow:0 8px 30px #0009}
+body.searching #search{display:block}
+#search .row{margin:0}
+#sInput{flex:1}
+#sRes{max-height:52vh;overflow-y:auto;margin-top:8px}
+.sres{display:block;width:100%;text-align:left;padding:11px 12px;border-radius:11px;
+  background:var(--bg);border:1px solid var(--line);margin-bottom:6px}
+.sres b{display:block;font-size:14.5px;font-weight:600}
+.sres small{color:var(--dim);font-size:12px}
 body.mode-ride #planbar,body.mode-ride #sheet{display:none}
 body.mode-plan #banner,body.mode-plan #ridebar,body.mode-plan #ridectl{display:none}
+/* Drie ritschermen: 0 navigatie, 1 cijfers, 2 spaarstand. Vegen of tikken. */
+body.mode-ride.rs1 #banner,body.mode-ride.rs1 #ridebar,body.mode-ride.rs1 #ridectl,
+body.mode-ride.rs2 #banner,body.mode-ride.rs2 #ridebar,body.mode-ride.rs2 #ridectl{display:none}
+#data{position:fixed;inset:0;z-index:18;background:var(--bg);display:none;
+  flex-direction:column;padding:calc(var(--safe-t) + 8px) 12px calc(var(--safe-b) + 8px)}
+body.mode-ride.rs1 #data{display:flex}
+#dstrip{display:flex;align-items:center;gap:10px;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;padding:9px 12px;margin-bottom:10px;
+  flex:none;cursor:pointer}
+#dsarrow{width:34px;height:34px;flex:none}
+#dsarrow svg{width:100%;height:100%;display:block}
+#dsdist{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;flex:none}
+#dsdist s{font-size:12px;color:var(--dim);text-decoration:none;margin-left:2px}
+#dsstreet{font-size:14px;color:var(--dim);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;flex:1;min-width:0}
+#dgrid{flex:1;display:grid;grid-template-columns:1fr 1fr;
+  grid-template-rows:1.3fr 1fr 1fr 1fr .85fr;gap:8px;min-height:0}
+#dgrid>div{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:10px 12px;display:flex;flex-direction:column;justify-content:center;
+  gap:4px;min-height:0;overflow:hidden}
+#dgrid>div.wide{grid-column:1 / -1}
+#dgrid u{font-size:10.5px;letter-spacing:.7px;color:var(--dim);text-transform:uppercase;
+  text-decoration:none;margin-bottom:3px}
+#dgrid b{font-size:clamp(30px,10vw,54px);font-weight:800;line-height:1.02;
+  font-variant-numeric:tabular-nums;letter-spacing:-1.5px}
+#dgrid b s{font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;margin-left:3px;
+  letter-spacing:0}
+#dgrid .hero b{font-size:clamp(40px,15vw,80px)}
+#dgrid .hero.split b{color:var(--accent)}
+#dgrid b.leeg{font-size:15px;font-weight:600;color:var(--dim);letter-spacing:0}
+#dgrid .hero.split b.leeg{color:var(--dim)}
+#dhint{flex:none;text-align:center;color:#4a5568;font-size:12px;padding-top:8px}
 #banner{position:absolute;top:0;left:0;right:0;z-index:7;
   padding:calc(var(--safe-t) + 12px) 14px 14px;
   background:linear-gradient(#0b0e14,#0b0e14 84%,#0b0e1400);
@@ -121,7 +164,7 @@ body.off #offroute{display:block}
 #power{position:fixed;inset:0;z-index:20;background:#000;display:none;
   flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;
   text-align:center}
-body.saving #power{display:flex}
+body.mode-ride.rs2 #power{display:flex}
 #parrow{width:150px;height:150px}
 #parrow svg{width:100%;height:100%;display:block}
 #pdist{font-size:76px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;
@@ -158,8 +201,17 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
 <div id="planbar">
   <div class="logo">Fiets<b>nav</b></div>
   <button class="btn sm" id="bBack" title="Laatste stap terug" disabled>&#8630;</button>
+  <button class="btn sm" id="bSearch" title="Zoeken">&#128269;</button>
   <button class="btn sm" id="bLocate">Hier</button>
   <button class="btn sm" id="bClear">Wis</button>
+</div>
+
+<div id="search">
+  <div class="row">
+    <input type="text" id="sInput" placeholder="Plaats, straat of station" autocomplete="off">
+    <button class="btn" id="sClose" style="flex:0 0 auto">Sluit</button>
+  </div>
+  <div id="sRes"></div>
 </div>
 
 <div id="spin"><i></i><span id="spintx">Route berekenen</span></div>
@@ -196,10 +248,11 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
   <div class="card">
     <label class="fld"><span>Jouw snelheid <b id="spdL">28 km/u</b></span>
       <input type="range" id="spd" min="12" max="45" step="1" value="28"></label>
-    <label class="fld"><span>Liever grote wegen <b id="urL">midden</b></span>
-      <input type="range" id="ur" min="0" max="100" step="5" value="50"></label>
-    <label class="fld" style="margin-bottom:0"><span>Slecht wegdek mijden <b id="abL">veel</b></span>
-      <input type="range" id="ab" min="0" max="100" step="5" value="70"></label>
+    <button class="chip on" id="bPaved" style="width:100%;justify-content:center">
+      Racefiets: mijd onverhard</button>
+    <div class="hint" style="margin-top:8px">Zet dit aan en er zit geen grind of
+      zandpad meer in je route. Gemeten op een rit bij Uden: onverhard van 4,9%
+      naar 0%, glad asfalt van 77% naar 84%.</div>
   </div>
 
   <h3>Opslaan en delen</h3>
@@ -209,12 +262,32 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
       <button class="btn" id="bSave">Bewaar</button>
       <button class="btn" id="bShare">Deel link</button>
       <button class="btn" id="bGpx">GPX</button>
+      <button class="btn" id="bImport">Inladen</button>
     </div>
+    <input type="file" id="gpxFile" accept=".gpx,application/gpx+xml,text/xml" hidden>
+    <div class="hint" style="margin-top:9px">Inladen leest een GPX van Komoot,
+      Strava of een vriend in, en maakt er Nederlandse afslaginstructies bij.</div>
   </div>
 
   <h3>Bewaarde routes</h3>
   <div id="savedList"></div>
   <div class="hint" id="noSaved">Nog niets bewaard.</div>
+
+  <h3>Offline kaart</h3>
+  <div class="card">
+    <button class="btn" id="bOffline" style="width:100%">Deze route offline opslaan</button>
+    <div class="hint" id="offHint" style="margin-top:9px">Navigeren werkt al zonder
+      bereik, want de route en de instructies staan in je telefoon. Dit haalt ook
+      de kaart binnen. Reken op zo'n 5 MB voor 60 km buitengebied, meer door de stad.</div>
+    <div class="row" style="margin:10px 0 0">
+      <button class="btn sm" id="bOffClear">Opslag wissen</button>
+    </div>
+  </div>
+
+  <h3>Gereden ritten</h3>
+  <div id="rideList"></div>
+  <div class="hint" id="noRides">Nog geen ritten opgenomen. Zodra je een rit
+    stopt komt hij hier te staan, met een GPX die je in Strava kunt laden.</div>
 
   <h3 style="margin-top:20px">Onderweg</h3>
   <div class="hint" style="padding-bottom:6px">
@@ -244,9 +317,30 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
 
 <div id="ridectl">
   <button class="btn" id="bMute" title="Stem aan of uit">&#128266;</button>
+  <button class="btn" id="bData" title="Cijfers">&#128200;</button>
   <button class="btn" id="bSaveMode" title="Spaarstand">&#127769;</button>
   <button class="btn" id="bRecenter" title="Centreren">&#9678;</button>
   <button class="btn dan" id="bStop" title="Stop">&#9632;</button>
+</div>
+
+<div id="data">
+  <div id="dstrip" title="Terug naar de kaart">
+    <span id="dsarrow"></span>
+    <b id="dsdist">--<s>m</s></b>
+    <span id="dsstreet">Nog niet gestart</span>
+  </div>
+  <div id="dgrid">
+    <div class="hero"><u>Snelheid</u><b id="dSpd">0<s>km/u</s></b></div>
+    <div class="hero split"><u>Laatste 5 km</u><b id="dSplit">&ndash;<s>km/u</s></b></div>
+    <div><u>Gemiddeld</u><b id="dAvg">0<s>km/u</s></b></div>
+    <div><u>Klim</u><b id="dClimb">0<s>m</s></b></div>
+    <div><u>Gereden</u><b id="dDone">0<s>km</s></b></div>
+    <div><u>Nog te gaan</u><b id="dLeft">0<s>km</s></b></div>
+    <div><u>Rijtijd</u><b id="dRij">0:00</b></div>
+    <div><u>Onderweg</u><b id="dElapsed">0:00</b></div>
+    <div class="wide"><u>Aankomst</u><b id="dEta">--</b></div>
+  </div>
+  <div id="dhint">Veeg opzij, of tik bovenaan om terug te gaan</div>
 </div>
 
 <div id="power">
@@ -271,15 +365,17 @@ const VALHALLA = 'https://valhalla1.openstreetmap.de';
 const S = {
   wps: [],          // [{lat,lon}] door gebruiker geplaatst
   route: null,      // {pts, cum, man, len, time, wpAlong}
-  prof: { spd: 28, ur: 0.5, ab: 0.7 },
+  prof: { spd: 28, ur: 0.7, ab: 1.0 },
   loopDir: null,    // graden, of null = willekeurig
   saved: [],
   hist: [],
+  wind: null,
   nav: null,
   elev: null,
   markers: [],
   meMarker: null,
-  follow: true
+  follow: true,
+  rideScreen: 0
 };
 
 /* ---------------- geo ---------------- */
@@ -419,24 +515,38 @@ function prepSpeech(man) {
 
     if (m.chained) {
       // al meegenomen in de vorige zin: hooguit nog een korte bevestiging
-      if (gap > 60) m.tiers.push({ at: 30, kind: 'now', text: txtShort(m) });
+      if (gap > 60) m.tiers.push({ kind: 'now', text: txtShort(m) });
     } else if (gap >= 700) {
-      m.tiers.push({ at: 0, kind: 'alert', text: txtAlert(m) });   // at wordt straks gezet
-      m.tiers.push({ at: 0, kind: 'pre', text: txtFull(m) });
+      m.tiers.push({ kind: 'alert', text: txtAlert(m) });
+      m.tiers.push({ kind: 'pre', text: txtFull(m) });
     } else if (gap >= 250) {
-      m.tiers.push({ at: 0, kind: 'pre', text: txtFull(m) });
+      m.tiers.push({ kind: 'pre', text: txtFull(m) });
     } else {
-      m.tiers.push({ at: 35, kind: 'now', text: txtShort(m) });
+      m.tiers.push({ kind: 'now', text: txtShort(m) });
     }
     prevSpoken = m;
   }
 }
 
-/* Afstanden waarop de tiers afgaan hangen af van je snelheid: bij 35 km/u
-   wil je eerder gewaarschuwd worden dan bij 18. */
+/* Wanneer gaat een melding af? In seconden voor de bocht, niet in meters.
+
+   Dit ging eerder mis. De regel was `max(110, v*9)`, en die ondergrens van
+   110 meter wint bij elke fietssnelheid onder 44 km/u - dus de v*9 die als
+   hoofdregel bedoeld was kwam nooit aan bod. Gevolg: de instructie kwam altijd
+   op 110 meter, oftewel 14 seconden vooraf bij 28 km/u en 18 seconden bij 22.
+   Joris merkte dat op de fiets meteen.
+
+   Nu domineert de tijdterm en is de ondergrens klein genoeg om alleen bij
+   stapvoets nog iets te doen. Dat geeft bij 22, 28 en 35 km/u netjes 7,4 / 7,0
+   / 7,0 seconden voor de pre-melding. Met de vertraging van GPS en spraak erbij
+   hoor je hem zo'n 5,5 seconde voor de bocht. */
 function tierDistances(spdKmh) {
   const v = Math.max(3, spdKmh / 3.6);
-  return { alert: Math.max(350, v * 25), pre: Math.max(110, v * 9) };
+  return {
+    alert: Math.max(280, v * 32),    // ~36 s: er komt een afslag aan
+    pre:   Math.max(45,  v * 7),     // ~7 s: nu voorsorteren
+    now:   Math.max(18,  v * 2.5)    // ~2,5 s: korte bevestiging in het drukke stuk
+  };
 }
 /* ---------------- routering ---------------- */
 function profileBody(wps, prof) {
@@ -526,7 +636,9 @@ async function fetchElevation(route) {
   const j = await r.json();
   const raw = j.range_height.map(x => x[1]);
   const hs = smoothProfile(raw, 9);
-  return { hs, raw, up: ascent(hs, 4), dists: j.range_height.map(x => x[0]) };
+  const cumUp = ascentSeries(hs, 4);
+  return { hs, raw, cumUp, up: Math.round(cumUp[cumUp.length - 1] || 0),
+           dists: j.range_height.map(x => x[0]) };
 }
 
 /* Het hoogtemodel achter Valhalla is op hele meters afgerond en ruist een paar
@@ -548,9 +660,12 @@ function smoothProfile(hs, w) {
   }
   return out;
 }
-// telt pas een klim mee als hij minstens th meter doorzet (hysterese)
-function ascent(hs, th) {
-  if (hs.length < 2) return 0;
+/* Telt pas een klim mee als hij minstens th meter doorzet (hysterese). Geeft de
+   lopende stand per monster terug, zodat het cijferscherm onderweg kan tonen
+   hoeveel je al geklommen hebt. */
+function ascentSeries(hs, th) {
+  const out = new Array(hs.length).fill(0);
+  if (hs.length < 2) return out;
   let up = 0, anchor = hs[0], ext = hs[0], dir = 0;
   for (let i = 1; i < hs.length; i++) {
     const v = hs[i];
@@ -561,9 +676,24 @@ function ascent(hs, th) {
       if (v < ext) ext = v;
       else if (v - ext > th) { anchor = ext; ext = v; dir = 1; }
     }
+    out[i] = up + (dir >= 0 && ext > anchor ? ext - anchor : 0);
   }
-  if (dir >= 0 && ext > anchor) up += ext - anchor;
-  return Math.round(up);
+  return out;
+}
+function ascent(hs, th) {
+  const a = ascentSeries(hs, th);
+  return Math.round(a[a.length - 1] || 0);
+}
+// hoeveel is er geklommen tot deze afstand langs de route?
+function climbSoFar(along) {
+  const e = S.elev;
+  if (!e || !e.cumUp || !e.dists || !e.dists.length) return 0;
+  const d = e.dists;
+  let lo = 0, hi = d.length - 1;
+  if (along <= d[0]) return 0;
+  if (along >= d[hi]) return Math.round(e.cumUp[hi]);
+  while (lo < hi - 1) { const m = (lo + hi) >> 1; if (d[m] < along) lo = m; else hi = m; }
+  return Math.round(e.cumUp[lo]);
 }
 
 function drawElevation(el) {
@@ -584,10 +714,147 @@ function drawElevation(el) {
     '<path d="' + d + 'L' + W + ',' + H + 'L0,' + H + 'Z" fill="rgba(230,0,126,.18)"/>' +
     '<path d="' + d + '" fill="none" stroke="#e6007e" stroke-width="1.6"/>';
 }
+/* ---------------- offline kaart ----------------
+   Navigeren werkte al zonder bereik: route en instructies staan in het geheugen.
+   Alleen de tegels kwamen niet, dus je staarde naar een lege ondergrond.
+
+   De truc: we geven MapLibre niet de gewone stijl-URL maar een eigen protocol.
+   Alles wat de kaart ophaalt loopt dan door onze handler, die eerst in de Cache
+   Storage kijkt en anders het netwerk pakt en meteen opslaat. Omdat ook de stijl
+   zelf erdoorheen komt, kunnen we daarin de tegel- en lettertype-adressen
+   onderweg omschrijven - zonder de kaartopbouw te verbouwen.
+
+   Bewust NIET omgeschreven: het sprite-plaatje en de reliefachtergrond. Dat zijn
+   plaatjes, en die laadt MapLibre via een ander pad waar een eigen protocol niet
+   altijd werkt. Ze zijn klein en hebben tien jaar houdbaarheid, dus de browser
+   bewaart ze zelf al. */
+const TEGELCACHE = 'fietsnav-kaart-v1';
+const OFM = 'https://tiles.openfreemap.org';
+
+function naarOfm(u) {
+  return (typeof u === 'string' && u.indexOf('https://') === 0) ? 'ofm://' + u.slice(8) : u;
+}
+function herschrijfStijl(j) {
+  if (j && j.glyphs) j.glyphs = naarOfm(j.glyphs);
+  if (j && j.sources) {
+    for (const k of Object.keys(j.sources)) {
+      const src = j.sources[k];
+      if (src.type !== 'vector') continue;              // rasterlagen met rust laten
+      if (src.url) src.url = naarOfm(src.url);
+      if (Array.isArray(src.tiles)) src.tiles = src.tiles.map(naarOfm);
+    }
+  }
+  // TileJSON van de bron zelf
+  if (j && Array.isArray(j.tiles) && !j.sources) j.tiles = j.tiles.map(naarOfm);
+  return j;
+}
+
+if (window.maplibregl && maplibregl.addProtocol) {
+  maplibregl.addProtocol('ofm', async (params, ac) => {
+    const url = 'https://' + params.url.slice(6);
+    let cache = null;
+    try { cache = await caches.open(TEGELCACHE); } catch (e) {}
+    let res = cache ? await cache.match(url) : null;
+    if (!res) {
+      res = await fetch(url, ac ? { signal: ac.signal } : undefined);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (cache) { try { await cache.put(url, res.clone()); } catch (e) {} }
+    }
+    const isJson = params.type === 'json' || /\/styles\/|\/planet$/.test(url);
+    if (isJson) return { data: herschrijfStijl(await res.json()) };
+    return { data: await res.arrayBuffer() };
+  });
+}
+
+/* Welke tegels heb je nodig voor een route? Een corridor van drie tegels breed
+   langs de lijn, zoom 10 tot en met 14. Dieper hoeft niet: de bron houdt bij 14
+   op en MapLibre rekt daarboven zelf op. Gemeten voor een lus van 60 km bij Uden:
+   179 tegels, zo'n 4,5 MB. Door de stad loopt dat op, want daar zit veel meer in
+   een tegel. */
+function deg2tile(lat, lon, z) {
+  const n = Math.pow(2, z);
+  const la = lat * Math.PI / 180;
+  return [Math.floor((lon + 180) / 360 * n),
+          Math.floor((1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2 * n)];
+}
+function tegelSjabloon() {
+  try {
+    const t = map.getSource('openmaptiles').tiles[0];
+    return t.indexOf('ofm://') === 0 ? 'https://' + t.slice(6) : t;
+  } catch (e) { return null; }
+}
+function routeTegels(route, zooms) {
+  const sjab = tegelSjabloon();
+  if (!sjab) return [];
+  const uit = new Set();
+  for (const z of (zooms || [10, 11, 12, 13, 14])) {
+    // stapgrootte zo kiezen dat we geen tegel overslaan tussen twee monsters
+    const stapM = 40075016 * Math.cos(52 * Math.PI / 180) / Math.pow(2, z) / 512;
+    const stap = Math.max(1, Math.floor(stapM / 12));
+    for (let i = 0; i < route.pts.length; i += stap) {
+      const [x, y] = deg2tile(route.pts[i][0], route.pts[i][1], z);
+      for (let dx = -1; dx <= 1; dx++)
+        for (let dy = -1; dy <= 1; dy++)
+          uit.add(sjab.replace('{z}', z).replace('{x}', x + dx).replace('{y}', y + dy));
+    }
+  }
+  return Array.from(uit);
+}
+function lettertypeUrls() {
+  let g;
+  try { g = map.getStyle().glyphs; } catch (e) { return []; }
+  if (!g) return [];
+  if (g.indexOf('ofm://') === 0) g = 'https://' + g.slice(6);
+  const uit = [];
+  for (const f of ['Noto Sans Regular', 'Noto Sans Bold', 'Noto Sans Italic'])
+    for (const r of ['0-255', '256-511'])
+      uit.push(g.replace('{fontstack}', encodeURIComponent(f)).replace('{range}', r));
+  return uit;
+}
+
+/* Haalt alles binnen in groepjes van zes. Niet alles tegelijk: dat is onbeleefd
+   tegen een gratis tegelserver en je telefoon wordt er niet sneller van. */
+async function downloadOffline(route, meld) {
+  let cache;
+  try { cache = await caches.open(TEGELCACHE); }
+  catch (e) { toast('Geen opslag beschikbaar'); return; }
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); }
+  catch (e) {}
+  const urls = routeTegels(route).concat(lettertypeUrls());
+  let klaar = 0, mislukt = 0;
+  for (let i = 0; i < urls.length; i += 6) {
+    await Promise.all(urls.slice(i, i + 6).map(async u => {
+      try {
+        if (!(await cache.match(u))) {
+          const r = await fetch(u);
+          if (r.ok) await cache.put(u, r.clone());
+          else if (r.status !== 404) mislukt++;      // 404 is gewoon zee of buitenland
+        }
+      } catch (e) { mislukt++; }
+      klaar++;
+    }));
+    meld(klaar, urls.length);
+  }
+  return { totaal: urls.length, mislukt };
+}
+
+async function opslagInfo() {
+  let gebruikt = 0, tegels = 0;
+  try {
+    const c = await caches.open(TEGELCACHE);
+    const keys = await c.keys();
+    tegels = keys.length;
+    const est = navigator.storage && navigator.storage.estimate
+      ? await navigator.storage.estimate() : null;
+    gebruikt = est ? est.usage || 0 : 0;
+  } catch (e) {}
+  return { tegels, mb: gebruikt / 1048576 };
+}
+
 /* ---------------- kaart ---------------- */
 const map = new maplibregl.Map({
   container: 'map',
-  style: 'https://tiles.openfreemap.org/styles/liberty',
+  style: 'ofm://tiles.openfreemap.org/styles/liberty',
   center: [4.3571, 52.0116],
   zoom: 12,
   attributionControl: { compact: true }
@@ -852,6 +1119,65 @@ async function fetchRoadAttrs(route) {
   } catch (e) { clearTimeout(timer); return null; }
 }
 
+/* ---------------- wind ----------------
+   In Nederland bepaalt de wind meer over hoe een rit voelt dan het profiel.
+   Open-Meteo is gratis en zonder sleutel. We willen tegenwind op de heenweg en
+   rugwind naar huis: dan is het zware deel achter de rug als je nog fris bent.
+
+   wind_direction_10m is waar de wind VANDAAN komt. Tegenwind heen betekent dus
+   dat je koers gelijk loopt met die richting. */
+const KOMPAS = ['N','NNO','NO','ONO','O','OZO','ZO','ZZO','Z','ZZW','ZW','WZW','W','WNW','NW','NNW'];
+function kompas(deg) { return KOMPAS[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16]; }
+
+async function fetchWind(lat, lon) {
+  const key = 'fietsnav.wind.' + lat.toFixed(1) + ',' + lon.toFixed(1);
+  try {
+    const c = JSON.parse(localStorage.getItem(key) || 'null');
+    if (c && Date.now() - c.ts < 30 * 60 * 1000) return c.w;   // half uur is vers genoeg
+  } catch (e) {}
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(3) +
+      '&longitude=' + lon.toFixed(3) + '&current=wind_speed_10m,wind_direction_10m' +
+      '&wind_speed_unit=kmh', { signal: ctl.signal });
+    clearTimeout(timer);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const cur = j.current;
+    if (!cur) return null;
+    const w = { kmh: cur.wind_speed_10m, from: cur.wind_direction_10m };
+    try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), w })); } catch (e) {}
+    return w;
+  } catch (e) { clearTimeout(timer); return null; }
+}
+
+// netto koers van het eerste en het laatste kwart van de route
+function legBearings(route) {
+  const punt = f => {
+    const doel = f * route.len;
+    let lo = 0, hi = route.cum.length - 1;
+    if (doel <= 0) return route.pts[0];
+    if (doel >= route.cum[hi]) return route.pts[hi];
+    while (lo < hi - 1) { const m = (lo + hi) >> 1; if (route.cum[m] < doel) lo = m; else hi = m; }
+    return route.pts[lo];
+  };
+  return { uit: bearingTo(route.pts[0], punt(0.25)),
+           terug: bearingTo(punt(0.75), route.pts[route.pts.length - 1]) };
+}
+
+/* -1 (pal verkeerd om) tot +1 (tegenwind heen, rugwind terug). Schaalt mee met
+   de windkracht: onder 12 km/u maakt het niets uit, boven 30 telt het vol. */
+function windScore(route, w) {
+  if (!w || w.kmh < 12) return null;
+  const b = legBearings(route);
+  const rad = d => d * Math.PI / 180;
+  const heen = Math.cos(rad(b.uit - w.from));
+  const terug = Math.cos(rad(b.terug - (w.from + 180)));
+  const kracht = Math.min(1, (w.kmh - 12) / 18);
+  return { waarde: 0.5 * heen + 0.5 * terug, kracht };
+}
+
 /* Hoeveel van de route ligt bovenop zichzelf? Dat is precies wat "het is geen
    rondje maar heen en weer" betekent. Twee punten tellen als dubbel als ze
    ruimtelijk binnen 35 m van elkaar liggen maar meer dan 2 km uit elkaar in
@@ -922,11 +1248,16 @@ function rateRoute(route, a) {
   const wegdek = Math.max(0, a.glad - 2 * a.onverhard);
   const straf = Math.min(0.25, a.obstakels * 0.012);
   // Dubbel gereden weg weegt zwaar: een rondje dat over zichzelf heen loopt is
-  // geen rondje, hoe mooi de wegen ook zijn.
+  // geen rondje, hoe mooi de wegen ook zijn. De wind stuurt mee maar wint niet:
+  // bij twee vergelijkbare rondjes geeft hij de doorslag, een duidelijk mooiere
+  // route blijft voorgaan.
+  const ws = windScore(route, S.wind);
+  const windDeel = ws ? 0.14 * ws.kracht * ws.waarde : 0;
   return {
     score: 0.34*landelijk + 0.30*lang + 0.15*zeer + 0.11*rust + 0.10*wegdek
-           - straf - 1.2*dubbel,
+           - straf - 1.2*dubbel + windDeel,
     landelijk, lang, zeer, rust, wegdek, bochten, dubbel,
+    wind: ws ? ws.waarde : null,
     dichtheid: a.dichtheid, kruisPerKm: a.kruisPerKm, obstakels: a.obstakels
   };
 }
@@ -978,9 +1309,12 @@ async function makeLoop(targetKm, dirDeg) {
   pushHist();
   const start = S.wps[0];
 
-  spin(true, 'Fietsknooppunten ophalen');
-  const kn = await fetchKnooppunten(start.lat, start.lon,
-                                    Math.min(25000, targetKm / 6.5 * 1000 * 1.45));
+  spin(true, 'Wind en knooppunten ophalen');
+  const [kn, wind] = await Promise.all([
+    fetchKnooppunten(start.lat, start.lon, Math.min(25000, targetKm / 6.5 * 1000 * 1.45)),
+    fetchWind(start.lat, start.lon)
+  ]);
+  S.wind = wind;
 
   /* Vier kandidaten, bewust verschillend: twee vormen, drie richtingen, en de
      helft met de keerpunten op een fietsknooppunt. Dat laatste is namelijk
@@ -1107,8 +1441,20 @@ function paintQuality(r) {
     cel('paaltjes', r.obstakels, r.obstakels <= 4 ? 'good' : (r.obstakels > 10 ? 'meh' : '')) +
     cel('dubbel', Math.round((r.dubbel || 0) * 100) + '%',
         r.dubbel < 0.03 ? 'good' : (r.dubbel > 0.10 ? 'meh' : '')) +
-    cel('bocht per', Math.round(r.km0 || 0) + ' m', '');
+    cel('bocht per', Math.round(r.km0 || 0) + ' m', '') +
+    (S.wind ? cel('wind ' + kompas(S.wind.from) + ' ' + Math.round(S.wind.kmh),
+        windUitleg(r.wind),
+        r.wind == null ? '' : (r.wind > 0.3 ? 'good' : (r.wind < -0.3 ? 'meh' : ''))) : '');
   box.hidden = false;
+}
+
+/* Wat betekent die wind voor deze rit? Rugwind op de terugweg is wat je wilt:
+   dan heb je het zware deel gehad terwijl je nog fris was. */
+function windUitleg(w) {
+  if (w == null) return 'zwak';
+  if (w > 0.3) return 'rugwind terug';
+  if (w < -0.3) return 'tegenwind terug';
+  return 'zijwind';
 }
 
 function describeRating(route, r) {
@@ -1118,6 +1464,74 @@ function describeRating(route, r) {
              : (r.dichtheid < 7 ? 'half landelijk' : 'veel bebouwing');
   return km + ' km, ' + land + ' - ' + Math.round(r.lang*100) + '% lange stukken, ' +
          r.kruisPerKm.toFixed(0) + ' kruisingen/km';
+}
+
+/* ---------------- GPX inladen ----------------
+   De punten uit het bestand gaan door Valhalla's /trace_route. Dat endpoint legt
+   een spoor op het wegennet en geeft er gewoon Nederlandse afslaginstructies bij
+   terug - getest: 29 manoeuvres op een spoor van 8,6 km. Een route van Komoot of
+   van een vriend krijgt daarmee volledige spraaknavigatie, niet alleen een lijn
+   om zelf te volgen. */
+async function importGPX(file) {
+  let txt;
+  try { txt = await file.text(); } catch (e) { toast('Kan het bestand niet lezen'); return; }
+  const doc = new DOMParser().parseFromString(txt, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) {
+    toast('Dit lijkt geen geldige GPX', 3600); return;
+  }
+  let nodes = Array.from(doc.getElementsByTagName('trkpt'));
+  if (nodes.length < 2) nodes = Array.from(doc.getElementsByTagName('rtept'));
+  const coords = nodes.map(n => [parseFloat(n.getAttribute('lat')), parseFloat(n.getAttribute('lon'))])
+                      .filter(c => isFinite(c[0]) && isFinite(c[1]));
+  if (coords.length < 2) { toast('Geen route gevonden in dit bestand', 3600); return; }
+
+  const step = Math.max(1, Math.floor(coords.length / 400));
+  const sub = [];
+  for (let i = 0; i < coords.length; i += step) sub.push(coords[i]);
+  const laatste = coords[coords.length - 1];
+  if (sub[sub.length - 1] !== laatste) sub.push(laatste);
+
+  spin(true, 'Route uit GPX opbouwen');
+  try {
+    const r = await fetch(VALHALLA + '/trace_route', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shape: sub.map(c => ({ lat: +c[0].toFixed(6), lon: +c[1].toFixed(6) })),
+        costing: 'bicycle', shape_match: 'map_snap',
+        directions_options: { language: 'nl-NL', units: 'kilometers' }
+      })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if (!j.trip || !j.trip.legs) throw new Error('geen route');
+    pushHist();
+    const route = buildRoute(j.trip);
+
+    /* Een paar punten langs het spoor als tussenpunten, zodat een herberekening
+       onderweg de vorm van de ingeladen route aanhoudt in plaats van rechtstreeks
+       naar het eind te schieten. Hun positie langs de route schatten we op de
+       verdeling van de punten; dat is nauwkeurig genoeg om te bepalen wat er nog
+       voor je ligt. */
+    const N = Math.min(6, Math.max(2, Math.round(route.len / 8000)));
+    S.wps = []; route.wpAlong = [];
+    for (let k = 0; k < N; k++) {
+      const f = k / (N - 1);
+      const idx = Math.round(f * (coords.length - 1));
+      S.wps.push({ lat: coords[idx][0], lon: coords[idx][1] });
+      route.wpAlong.push(f * route.len);
+    }
+    S.route = route;
+    S.rating = null; $('#qual').hidden = true;
+    renderMarkers(); drawRoute(); fitRoute(); updateStats();
+    spin(false);
+    toast('Ingeladen: ' + (route.len/1000).toFixed(1).replace('.', ',') + ' km, ' +
+          route.man.filter(m => m.speak).length + ' afslagen', 4200);
+    fetchElevation(route).then(el => { S.elev = el; drawElevation(el); updateStats(); })
+                         .catch(() => {});
+  } catch (e) {
+    spin(false);
+    toast('Inladen mislukt: ' + e.message, 4000);
+  }
 }
 
 /* ---------------- opslaan, delen, GPX ---------------- */
@@ -1140,17 +1554,47 @@ function renderSaved() {
     const b = document.createElement('b'); b.textContent = it.naam;
     const sm = document.createElement('small'); sm.textContent = it.km.toFixed(1) + ' km';
     info.appendChild(b); info.appendChild(sm);
-    const open = document.createElement('button');
-    open.className = 'btn sm'; open.textContent = 'Open';
-    open.onclick = () => {
-      S.wps = it.wps.slice(); renderMarkers();
-      doRefresh().then(fitRoute);
+    // de naam zelf opent de route; de knoppen blijven zo smal mogelijk
+    info.style.cursor = 'pointer';
+    const laad = (omgekeerd) => {
+      pushHist();
+      S.wps = omgekeerd ? it.wps.slice().reverse() : it.wps.slice();
+      renderMarkers();
+      const klaar = doRefresh().then(fitRoute);
       $('#sheet').classList.add('down');
+      return klaar;
     };
+    info.onclick = () => laad(false);
+
+    const om = document.createElement('button');
+    om.className = 'btn sm'; om.textContent = '⇄'; om.title = 'Omgekeerd rijden';
+    om.onclick = () => {
+      laad(true).then(() => {
+        const w = S.wind, b = S.route ? legBearings(S.route) : null;
+        toast(w && b
+          ? 'Omgedraaid - wind ' + kompas(w.from) + ', ' +
+            windUitleg(0.5*Math.cos((b.uit - w.from)*Math.PI/180) +
+                       0.5*Math.cos((b.terug - w.from - 180)*Math.PI/180))
+          : 'Route omgedraaid', 3800);
+      });
+    };
+
+    const rijd = document.createElement('button');
+    rijd.className = 'btn sm'; rijd.textContent = '▶'; rijd.title = 'Nu rijden';
+    rijd.onclick = () => {
+      // De spraak moet ontgrendeld worden bínnen de tik zelf. Wachten we eerst
+      // op de route, dan is die context weg en blijft iOS de hele rit stil.
+      Voice.prime();
+      laad(false).then(() => {
+        if (S.route && S.route.man.length) startNav();
+        else toast('Route kon niet berekend worden', 3500);
+      });
+    };
+
     const del = document.createElement('button');
-    del.className = 'btn sm dan'; del.textContent = 'Wis';
+    del.className = 'btn sm dan'; del.textContent = '✕';
     del.onclick = () => { S.saved.splice(i, 1); storeSaved(); renderSaved(); };
-    d.appendChild(info); d.appendChild(open); d.appendChild(del);
+    d.appendChild(info); d.appendChild(om); d.appendChild(rijd); d.appendChild(del);
     box.appendChild(d);
   });
 }
@@ -1434,8 +1878,10 @@ function startNav() {
   document.body.className = 'mode-ride';
   S.nav = { idx: 0, along: 0, offCount: 0, rerouting: false,
             lastPos: null, lastT: 0, spd: 0, heading: 0,
-            fired: new Set(), startT: Date.now(), watchId: null, done: false };
+            fired: new Set(), startT: Date.now(), watchId: null, done: false,
+            splitBuf: [], track: [], trackSaved: 0, rijtijd: 0 };
   S.follow = true;
+  setRideScreen(0);
   Wake.on();
   renderMarkers();
   map.easeTo({ zoom: 16, pitch: 55, duration: 700 });
@@ -1452,7 +1898,10 @@ function startNav() {
 
 function stopNav() {
   if (S.nav && S.nav.watchId != null) navigator.geolocation.clearWatch(S.nav.watchId);
+  const rit = S.nav ? finishRide() : null;
   S.nav = null;
+  S.rideScreen = 0;
+  document.body.classList.remove('rs0', 'rs1', 'rs2');
   Wake.off(); Voice.stopSilence();
   try { speechSynthesis.cancel(); } catch (e) {}
   document.body.className = 'mode-plan';
@@ -1460,6 +1909,7 @@ function stopNav() {
   if (mapReady) map.getSource('done').setData(emptyFC());
   renderMarkers();
   fitRoute();
+  if (rit) toast('Rit bewaard: ' + rit.km.toFixed(1).replace('.', ',') + ' km', 4200);
 }
 
 function onGeoErr(e) {
@@ -1488,6 +1938,12 @@ function onFix(p) {
   }
   if (hd != null && !isNaN(hd)) S.nav.heading = hd;
 
+  /* Rijtijd los van totale tijd: stilstaan telt niet mee. Het venster van 15 s
+     vangt een gat in de GPS op - anders zou een tunnel of een pauze met het
+     scherm uit zomaar minuten rijtijd toevoegen. */
+  const dtms = S.nav.lastT ? now - S.nav.lastT : 0;
+  if (dtms > 0 && dtms < 15000 && S.nav.spd > 1.5) S.nav.rijtijd += dtms;
+
   const moved = S.nav.lastPos ? hav(S.nav.lastPos, pos) : 0;
   S.nav.lastPos = pos; S.nav.lastT = now;
 
@@ -1504,11 +1960,18 @@ function onFix(p) {
   S.nav.idx = s.idx;
   S.nav.along = s.along;
 
+  // buffer voor de 5 km-split; alles ouder dan 8 km mag weg
+  trackPush(pos, now, p.coords.altitude);
+
+  const sb = S.nav.splitBuf;
+  if (!sb.length || S.nav.along - sb[sb.length-1].a > 25) sb.push({ a: S.nav.along, t: now });
+  while (sb.length > 2 && S.nav.along - sb[0].a > 8000) sb.shift();
+
   checkInstructions();
+  checkProgress();
   paintBanner();
-  paintMe(pos);
-  paintDone();
-  paintStats();
+  if (S.rideScreen === 0) { paintMe(pos); paintDone(); paintStats(); }
+  else if (S.rideScreen === 1) paintData();
 
   if (S.route.len - S.nav.along < 35) arrive();
 }
@@ -1528,7 +1991,7 @@ function firstSentence(s) {
   return i > 0 ? s.slice(0, i + 1) : s;
 }
 function trigOf(t, TD) {
-  return t.kind === 'alert' ? TD.alert : (t.kind === 'pre' ? TD.pre : t.at);
+  return t.kind === 'alert' ? TD.alert : (t.kind === 'pre' ? TD.pre : TD.now);
 }
 
 /* Per manoeuvre wordt hooguit een tier uitgesproken: de meest nabije die
@@ -1559,6 +2022,52 @@ function checkInstructions() {
   }
 }
 
+/* ---------------- gesproken voortgang ----------------
+   Op een kwart, de helft en driekwart: hoeveel nog en hoe lang dat ongeveer
+   duurt. De tijdschatting gaat op je werkelijke gemiddelde tot dan toe, niet op
+   de ingestelde profielsnelheid - anders klopt hij niet zodra je harder of
+   rustiger rijdt dan je had opgegeven. */
+function effSpeed() {
+  const n = S.nav;
+  const dt = n.rijtijd / 1000;
+  // op rijtijd, niet op klokduur: anders zegt hij na een koffiestop dat je nog
+  // twee uur nodig hebt terwijl je gewoon 28 rijdt
+  if (dt > 120 && n.along > 500) return n.along / dt;
+  return Math.max(2, (n.spd || S.prof.spd / 3.6));
+}
+function spokenKm(m) {
+  const k = m / 1000;
+  if (k < 1) return Math.max(100, Math.round(m / 100) * 100) + ' meter';
+  if (k < 10) return k.toFixed(1).replace('.', ',') + ' kilometer';
+  return Math.round(k) + ' kilometer';
+}
+function spokenTime(sec) {
+  const min = Math.round(sec / 60);
+  if (min < 1) return 'nog geen minuut';
+  if (min < 60) return 'ongeveer ' + min + ' minuten';
+  const u = Math.floor(min / 60), m = min % 60;
+  const uur = (u === 1 ? 'ongeveer een uur' : 'ongeveer ' + u + ' uur');
+  return m ? uur + ' en ' + m + ' minuten' : uur;
+}
+const PROGRESS = [[0.25, 'Een kwart gereden'], [0.5, 'Halverwege'], [0.75, 'Driekwart gereden']];
+function checkProgress() {
+  const n = S.nav, R = S.route;
+  const frac = n.along / Math.max(R.len, 1);
+  for (let i = 0; i < PROGRESS.length; i++) {
+    const key = 'prog' + i;
+    if (frac < PROGRESS[i][0] || n.fired.has(key)) continue;
+    // Voice.say() kapt af wat er nog klinkt, dus nooit vlak voor een afslag
+    // praten. Blijft staan tot er ruimte is.
+    const nx = nextManeuvers()[0];
+    if (nx && nx.at - n.along < 400) return;
+    n.fired.add(key);
+    const left = Math.max(0, R.len - n.along);
+    Voice.say(PROGRESS[i][1] + '. Nog ' + spokenKm(left) + ', ' +
+              spokenTime(left / effSpeed()) + '.');
+    return;
+  }
+}
+
 function nextManeuvers() {
   const out = [];
   for (const m of S.route.man) {
@@ -1586,11 +2095,13 @@ function paintBanner() {
   $('#banstreet').textContent = streetOf(m);
   $('#banthen').textContent = nx[1] ? 'daarna ' + lowerFirst(firstSentence(txtShort(nx[1]))) : '';
 
-  if (document.body.classList.contains('saving')) {
-    $('#parrow').innerHTML = svg;
-    $('#pdist').innerHTML = d.n + '<s>' + d.u + '</s>';
-    $('#pstreet').textContent = streetOf(m);
-  }
+  // spaarstand en de strook boven het cijferscherm krijgen hetzelfde te zien
+  $('#parrow').innerHTML = svg;
+  $('#pdist').innerHTML = d.n + '<s>' + d.u + '</s>';
+  $('#pstreet').textContent = streetOf(m);
+  $('#dsarrow').innerHTML = svg;
+  $('#dsdist').innerHTML = d.n + '<s>' + d.u + '</s>';
+  $('#dsstreet').textContent = streetOf(m);
 }
 
 function paintMe(pos) {
@@ -1607,7 +2118,7 @@ function paintMe(pos) {
   }
   S.meMarker.setLngLat([pos[1], pos[0]]);
   S.meMarker.setRotation(S.nav ? S.nav.heading : 0);
-  if (S.nav && S.follow && !document.body.classList.contains('saving')) {
+  if (S.nav && S.follow && S.rideScreen === 0) {
     map.easeTo({ center: [pos[1], pos[0]], bearing: S.nav.heading,
                  duration: 800, essential: true });
   }
@@ -1617,6 +2128,217 @@ function paintDone() {
   if (!mapReady) return;
   const i = Math.max(1, S.nav.idx + 1);
   map.getSource('done').setData(lineFC(S.route.pts.slice(0, i)));
+}
+
+/* ---------------- de rit opnemen ----------------
+   Elke fix wegschrijven is te veel; een punt per 3 seconden of per 10 meter is
+   ruim genoeg voor Strava en houdt het bestand klein. Tussentijds opslaan zodat
+   een crash of een per ongeluk gesloten tab de rit niet wist. */
+function trackPush(pos, t, ele) {
+  const n = S.nav;
+  if (!n.track) n.track = [];
+  const l = n.track[n.track.length - 1];
+  if (l && t - l.t < 3000 && hav([l.lat, l.lon], pos) < 10) return;
+  n.track.push({ lat: pos[0], lon: pos[1], t, e: (ele == null ? null : Math.round(ele)) });
+  if (t - (n.trackSaved || 0) > 15000) {
+    n.trackSaved = t;
+    try { localStorage.setItem('fietsnav.ritLopend',
+      JSON.stringify({ startT: n.startT, p: packTrack(n.track) })); } catch (e) {}
+  }
+}
+/* Een spoor als losse objecten wegschrijven kost 4,7 KB per kilometer. Tien
+   ritten van 100 km is dan 4,6 MB, tegen zo'n 5,9 MB die localStorage biedt -
+   en als het vol zit faalt het opslaan stil, ook de tussentijdse redding. Dan
+   rijd je 100 km en ben je hem bij het stoppen kwijt.
+
+   Daarom ingepakt: coordinaten op vijf decimalen (ruim een meter nauwkeurig) en
+   alles als verschil met het vorige punt. Dat scheelt ruwweg een factor vijf. */
+function packTrack(track) {
+  const out = [];
+  let la = 0, lo = 0, t = 0;
+  for (const p of track) {
+    const nla = Math.round(p.lat * 1e5), nlo = Math.round(p.lon * 1e5);
+    const nt = Math.round(p.t / 1000);
+    out.push([nla - la, nlo - lo, nt - t, p.e == null ? '' : p.e]);
+    la = nla; lo = nlo; t = nt;
+  }
+  return out;
+}
+function unpackTrack(packed) {
+  const out = [];
+  let la = 0, lo = 0, t = 0;
+  for (const d of packed) {
+    la += d[0]; lo += d[1]; t += d[2];
+    out.push({ lat: la / 1e5, lon: lo / 1e5, t: t * 1000,
+               e: (d[3] === '' || d[3] == null) ? null : d[3] });
+  }
+  return out;
+}
+// oude ritten stonden als losse objecten opgeslagen; die blijven leesbaar
+function ritTrack(rit) { return rit.p ? unpackTrack(rit.p) : (rit.track || []); }
+
+/* Schrijft weg, en gooit bij plaatsgebrek de oudste rit weg in plaats van stil
+   te falen. Liever een oude rit kwijt dan de rit die je net gereden hebt. */
+function saveRitten(all) {
+  for (let poging = 0; poging < 6; poging++) {
+    try { localStorage.setItem('fietsnav.ritten', JSON.stringify(all)); return true; }
+    catch (e) {
+      if (all.length <= 1) return false;
+      all.pop();
+    }
+  }
+  return false;
+}
+
+function finishRide() {
+  const n = S.nav;
+  if (!n || !n.track || n.track.length < 10) { clearLopend(); return null; }
+  let d = 0;
+  for (let i = 1; i < n.track.length; i++)
+    d += hav([n.track[i-1].lat, n.track[i-1].lon], [n.track[i].lat, n.track[i].lon]);
+  const dur = (n.track[n.track.length-1].t - n.track[0].t) / 1000;
+  const rit = { ts: n.track[0].t, km: d / 1000, sec: dur,
+                rij: Math.round(n.rijtijd / 1000), p: packTrack(n.track) };
+  let all = [];
+  try { all = JSON.parse(localStorage.getItem('fietsnav.ritten') || '[]'); } catch (e) {}
+  all.unshift(rit);
+  if (!saveRitten(all.slice(0, 10))) toast('Geen ruimte meer voor ritten', 4200);
+  clearLopend();
+  renderRides();
+  return rit;
+}
+function clearLopend() {
+  try { localStorage.removeItem('fietsnav.ritLopend'); } catch (e) {}
+}
+function loadRides() {
+  try { return JSON.parse(localStorage.getItem('fietsnav.ritten') || '[]'); }
+  catch (e) { return []; }
+}
+function rideGPX(rit) {
+  const naam = 'Fietsnav ' + new Date(rit.ts).toLocaleDateString('nl-NL');
+  const L = [];
+  L.push('<?xml version="1.0" encoding="UTF-8"?>');
+  L.push('<gpx version="1.1" creator="Fietsnav" xmlns="http://www.topografix.com/GPX/1/1">');
+  L.push('<metadata><time>' + new Date(rit.ts).toISOString() + '</time></metadata>');
+  L.push('<trk><name>' + naam + '</name><type>cycling</type><trkseg>');
+  for (const p of ritTrack(rit)) {
+    // Strava heeft de tijd per punt nodig om er een activiteit van te maken
+    L.push('<trkpt lat="' + p.lat.toFixed(6) + '" lon="' + p.lon.toFixed(6) + '">' +
+           (p.e != null ? '<ele>' + p.e + '</ele>' : '') +
+           '<time>' + new Date(p.t).toISOString() + '</time></trkpt>');
+  }
+  L.push('</trkseg></trk>');
+  L.push('</gpx>');
+  return L.join(String.fromCharCode(10)) + String.fromCharCode(10);
+}
+function downloadText(txt, filename, mime) {
+  const blob = new Blob([txt], { type: mime || 'application/gpx+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function renderRides() {
+  const box = $('#rideList');
+  if (!box) return;
+  const all = loadRides();
+  box.innerHTML = '';
+  $('#noRides').style.display = all.length ? 'none' : 'block';
+  all.forEach((r, i) => {
+    const d = document.createElement('div');
+    d.className = 'saved';
+    const info = document.createElement('div');
+    const b = document.createElement('b');
+    b.textContent = new Date(r.ts).toLocaleDateString('nl-NL',
+      { weekday: 'short', day: 'numeric', month: 'short' });
+    const sm = document.createElement('small');
+    // gemiddelde op rijtijd als we die hebben; oudere ritten hebben alleen de klok
+    const basis = r.rij || r.sec;
+    const gem = basis > 60 ? (r.km / (basis / 3600)).toFixed(1).replace('.', ',') : '0';
+    sm.textContent = r.km.toFixed(1).replace('.', ',') + ' km, ' + hhmm(basis) + ', ' + gem + ' km/u';
+    info.appendChild(b); info.appendChild(sm);
+    const g = document.createElement('button');
+    g.className = 'btn sm'; g.textContent = 'GPX';
+    g.onclick = () => {
+      downloadText(rideGPX(r), 'rit-' + new Date(r.ts).toISOString().slice(0,10) + '.gpx');
+      toast('GPX gedownload, klaar voor Strava');
+    };
+    const del = document.createElement('button');
+    del.className = 'btn sm dan'; del.textContent = 'Wis';
+    del.onclick = () => {
+      const all2 = loadRides(); all2.splice(i, 1);
+      saveRitten(all2);
+      renderRides();
+    };
+    d.appendChild(info); d.appendChild(g); d.appendChild(del);
+    box.appendChild(d);
+  });
+}
+
+/* ---------------- ritschermen ----------------
+   0 = navigatie met kaart, 1 = cijfers, 2 = spaarstand. De spraak loopt door,
+   welk scherm je ook voor je hebt. */
+function setRideScreen(i) {
+  if (!S.nav) return;
+  S.rideScreen = ((i % 3) + 3) % 3;
+  document.body.classList.remove('rs0', 'rs1', 'rs2');
+  document.body.classList.add('rs' + S.rideScreen);
+  if (S.rideScreen === 0 && S.nav.lastPos) paintMe(S.nav.lastPos);
+  paintBanner();
+  if (S.rideScreen === 1) paintData();
+  if (S.rideScreen === 0 && mapReady) setTimeout(() => map.resize(), 60);
+}
+
+/* Hoe hard ging je de afgelopen vijf kilometer? Een buffer van (afstand, tijd)
+   per fix, terugzoeken naar het monster van 5 km geleden en delen. Dit is het
+   getal waar je tijdens een training echt iets aan hebt - het gemiddelde over de
+   hele rit reageert veel te traag. */
+function splitSpeed() {
+  const n = S.nav;
+  if (!n || !n.splitBuf || !n.splitBuf.length) return null;
+  const doel = n.along - 5000;
+  if (doel < 0) return null;
+  let k = 0;
+  for (let i = 0; i < n.splitBuf.length; i++) {
+    if (n.splitBuf[i].a >= doel) { k = i; break; }
+  }
+  const s0 = n.splitBuf[k];
+  const dt = (Date.now() - s0.t) / 1000, da = n.along - s0.a;
+  if (dt < 20 || da < 1000) return null;
+  return da / dt;
+}
+
+function hhmm(sec) {
+  const m = Math.floor(sec / 60);
+  return (m >= 60 ? Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0')
+                  : m + ':' + String(Math.floor(sec % 60)).padStart(2, '0'));
+}
+
+function paintData() {
+  const n = S.nav, R = S.route;
+  if (!n || !R) return;
+  const left = Math.max(0, R.len - n.along);
+  const el = (id, v, u) => {
+    const b = $(id);
+    b.innerHTML = v + (u ? '<s>' + u + '</s>' : '');
+  };
+  el('#dSpd', (n.spd * 3.6).toFixed(0), 'km/u');
+  const sp = splitSpeed();
+  const sb = $('#dSplit');
+  if (sp === null) { sb.classList.add('leeg'); sb.textContent = 'na 5 km'; }
+  else { sb.classList.remove('leeg'); el('#dSplit', (sp * 3.6).toFixed(1).replace('.', ','), 'km/u'); }
+  const rij = n.rijtijd / 1000;
+  el('#dAvg', rij > 30 ? (n.along / rij * 3.6).toFixed(1).replace('.', ',') : '0', 'km/u');
+  el('#dClimb', climbSoFar(n.along), 'm');
+  el('#dDone', (n.along / 1000).toFixed(1).replace('.', ','), 'km');
+  el('#dLeft', (left / 1000).toFixed(1).replace('.', ','), 'km');
+  el('#dRij', hhmm(rij), '');
+  el('#dElapsed', hhmm((Date.now() - n.startT) / 1000), '');
+  const v = Math.max(2, n.spd > 1.5 ? n.spd : effSpeed());
+  const eta = new Date(Date.now() + (left / v) * 1000);
+  el('#dEta', String(eta.getHours()).padStart(2, '0') + ':' +
+              String(eta.getMinutes()).padStart(2, '0'), '');
 }
 
 function paintStats() {
@@ -1661,23 +2383,25 @@ async function reroute(pos) {
   }
 }
 /* ---------------- bediening ---------------- */
-function labUr(v) { return v < 0.3 ? 'rustige wegen' : (v > 0.7 ? 'grote wegen' : 'midden'); }
-function labAb(v) { return v < 0.3 ? 'weinig' : (v > 0.7 ? 'veel' : 'gemiddeld'); }
-
 function syncProfileUI() {
   $('#spd').value = S.prof.spd;
-  $('#ur').value = Math.round(S.prof.ur * 100);
-  $('#ab').value = Math.round(S.prof.ab * 100);
   $('#spdL').textContent = S.prof.spd + ' km/u';
-  $('#urL').textContent = labUr(S.prof.ur);
-  $('#abL').textContent = labAb(S.prof.ab);
+  $('#bPaved').classList.toggle('on', S.prof.ab >= 0.9);
 }
 
 $('#spd').oninput = e => { S.prof.spd = +e.target.value; syncProfileUI(); updateStats(); };
-$('#ur').oninput  = e => { S.prof.ur = +e.target.value / 100; syncProfileUI(); };
-$('#ab').oninput  = e => { S.prof.ab = +e.target.value / 100; syncProfileUI(); };
-$('#ur').onchange = () => refresh();
-$('#ab').onchange = () => refresh();
+/* De twee oude schuifjes zijn eruit. use_roads deed vrijwel niets: zelfs op de
+   hoogste stand bleef 59% van een route over fietspad lopen, dus dat staat nu
+   vast op 0.7. avoid_bad_surfaces doet wel iets, maar als schakelaar en niet als
+   dial - 0,0 en 0,5 gaven letterlijk dezelfde route, pas op 1,0 verdwijnt het
+   onverhard. Vandaar een knop in plaats van een schuif. */
+$('#bPaved').onclick = () => {
+  const aan = !$('#bPaved').classList.contains('on');
+  $('#bPaved').classList.toggle('on', aan);
+  S.prof.ab = aan ? 1.0 : 0.3;
+  try { localStorage.setItem('fietsnav.paved', aan ? '1' : '0'); } catch (e) {}
+  refresh();
+};
 $('#loopKm').oninput = e => { $('#loopKmL').textContent = e.target.value + ' km'; };
 
 const DIRS = [['Willekeurig', null], ['N', 0], ['NO', 45], ['O', 90], ['ZO', 135],
@@ -1696,6 +2420,100 @@ const DIRS = [['Willekeurig', null], ['N', 0], ['NO', 45], ['O', 90], ['ZO', 135
     box.appendChild(b);
   });
 })();
+
+/* ---------------- zoeken ----------------
+   Photon van Komoot: gratis, geen sleutel, en goed in Nederlandse plaatsnamen.
+   Let op: lang=nl wordt geweigerd, alleen default, de, en en fr - dus laten we
+   hem weg. Zoekresultaat wordt je startpunt, zodat je thuis een rit vanaf Uden
+   kunt uitzetten in plaats van de kaart erheen te moeten slepen. */
+let sTimer = null, sSeq = 0;
+function openSearch(aan) {
+  document.body.classList.toggle('searching', aan);
+  if (aan) { $('#sInput').value = ''; $('#sRes').innerHTML = ''; $('#sInput').focus(); }
+}
+async function doSearch(q) {
+  if (!q || q.trim().length < 2) { $('#sRes').innerHTML = ''; return; }
+  const seq = ++sSeq;
+  const c = map.getCenter();
+  const url = 'https://photon.komoot.io/api?limit=6&q=' + encodeURIComponent(q.trim()) +
+              '&lat=' + c.lat.toFixed(3) + '&lon=' + c.lng.toFixed(3);
+  try {
+    const r = await fetch(url);
+    if (!r.ok || seq !== sSeq) return;
+    const j = await r.json();
+    if (seq !== sSeq) return;
+    const box = $('#sRes');
+    box.innerHTML = '';
+    const feats = j.features || [];
+    if (!feats.length) {
+      const d = document.createElement('div');
+      d.className = 'hint'; d.textContent = 'Niets gevonden';
+      box.appendChild(d); return;
+    }
+    for (const f of feats) {
+      const p = f.properties, co = f.geometry.coordinates;
+      const b = document.createElement('button');
+      b.className = 'sres';
+      const naam = document.createElement('b');
+      naam.textContent = p.name || p.street || '?';
+      const sub = document.createElement('small');
+      sub.textContent = [p.street && p.name !== p.street ? p.street : null,
+                         p.city || p.county, p.state, p.country]
+                        .filter(Boolean).join(', ');
+      b.appendChild(naam); b.appendChild(sub);
+      b.onclick = () => {
+        const w = { lat: co[1], lon: co[0] };
+        pushHist();
+        if (!S.wps.length) S.wps.push(w); else S.wps[0] = w;
+        renderMarkers(); refresh();
+        map.easeTo({ center: [w.lon, w.lat], zoom: 13, duration: 800 });
+        openSearch(false);
+        toast('Startpunt: ' + (p.name || p.city || 'gekozen plek'));
+      };
+      box.appendChild(b);
+    }
+  } catch (e) { /* geen net, geen resultaten */ }
+}
+$('#bSearch').onclick = () => openSearch(true);
+$('#sClose').onclick = () => openSearch(false);
+$('#sInput').oninput = e => {
+  clearTimeout(sTimer);
+  const v = e.target.value;
+  sTimer = setTimeout(() => doSearch(v), 280);
+};
+$('#sInput').onkeydown = e => {
+  if (e.key === 'Enter') { clearTimeout(sTimer); doSearch(e.target.value); }
+  if (e.key === 'Escape') openSearch(false);
+};
+
+async function toonOpslag() {
+  const o = await opslagInfo();
+  $('#offHint').textContent = o.tegels
+    ? o.tegels + ' kaartdelen opgeslagen, samen ' + o.mb.toFixed(1).replace('.', ',') +
+      ' MB. Navigeren werkt ook zonder bereik.'
+    : 'Navigeren werkt al zonder bereik, want de route en de instructies staan in ' +
+      "je telefoon. Dit haalt ook de kaart binnen. Reken op ongeveer 5 MB voor " +
+      "60 km buitengebied, meer door de stad.";
+}
+$('#bOffline').onclick = async () => {
+  if (!S.route) { toast('Maak eerst een route'); return; }
+  const knop = $('#bOffline');
+  knop.disabled = true;
+  const r = await downloadOffline(S.route, (k, n) => {
+    knop.textContent = 'Ophalen ' + k + ' van ' + n;
+  });
+  knop.textContent = 'Deze route offline opslaan';
+  knop.disabled = false;
+  await toonOpslag();
+  toast(r && r.mislukt ? 'Klaar, ' + r.mislukt + ' delen niet gelukt'
+                       : 'Kaart staat offline klaar', 3600);
+};
+$('#bOffClear').onclick = async () => {
+  try { await caches.delete(TEGELCACHE); } catch (e) {}
+  await toonOpslag();
+  toast('Offline kaart gewist');
+};
+toonOpslag();
 
 $('#grip').onclick = () => $('#sheet').classList.toggle('down');
 
@@ -1724,6 +2542,12 @@ $('#bLoop').onclick = () => makeLoop(+$('#loopKm').value, S.loopDir);
 $('#bSave').onclick = saveRoute;
 $('#bShare').onclick = shareRoute;
 $('#bGpx').onclick = exportGPX;
+$('#bImport').onclick = () => $('#gpxFile').click();
+$('#gpxFile').onchange = e => {
+  const f = e.target.files && e.target.files[0];
+  if (f) importGPX(f);
+  e.target.value = '';           // zelfde bestand opnieuw kunnen kiezen
+};
 $('#bRide').onclick = startNav;
 $('#bStop').onclick = stopNav;
 $('#bRecenter').onclick = () => {
@@ -1740,26 +2564,74 @@ $('#bMute').onclick = () => {
   if (!Voice.on) { try { speechSynthesis.cancel(); } catch (e) {} }
   toast(Voice.on ? 'Stem aan' : 'Stem uit');
 };
-$('#bSaveMode').onclick = () => {
-  document.body.classList.add('saving');
-  paintBanner();
+$('#bData').onclick = () => setRideScreen(1);
+$('#bSaveMode').onclick = () => setRideScreen(2);
+$('#power').onclick = () => setRideScreen(0);
+$('#dstrip').onclick = () => setRideScreen(0);
+$('#ridebar').onclick = () => {
+  if (Date.now() - (window.__geveegd || 0) < 400) return;   // dit was een veeg
+  setRideScreen(1);
 };
-$('#power').onclick = () => {
-  document.body.classList.remove('saving');
-  if (S.nav && S.nav.lastPos) paintMe(S.nav.lastPos);
-};
+
+/* Vegen tussen de schermen. Alleen op de schermen zonder kaart, want daar zou
+   een veeg met het slepen van de kaart vechten. Vanaf de kaart ga je met de
+   knop of door op de balk onderin te tikken. */
+(function swipes() {
+  let x0 = null, y0 = null;
+  const start = e => {
+    const t = e.changedTouches[0];
+    x0 = t.clientX; y0 = t.clientY;
+  };
+  const end = e => {
+    if (x0 === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    // een veeg mag niet ook nog als tik doorgaan
+    window.__geveegd = Date.now();
+    setRideScreen(S.rideScreen + (dx < 0 ? 1 : -1));
+  };
+  // De balk onderin hoort niet bij de kaart, dus daar kan een veeg beginnen
+  // zonder met het slepen van de kaart te vechten.
+  for (const id of ['#data', '#power', '#ridebar']) {
+    const el = $(id);
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchend', end, { passive: true });
+  }
+})();
 // zodra je de kaart zelf pakt, stopt het meedraaien tot je op centreren tikt
 map.on('dragstart', () => { if (S.nav) S.follow = false; });
 
 /* ---------------- start ---------------- */
 Voice.init();
 loadSaved();
+renderRides();
+try { if (localStorage.getItem('fietsnav.paved') === '0') S.prof.ab = 0.3; } catch (e) {}
 syncProfileUI();
 $('#loopKmL').textContent = $('#loopKm').value + ' km';
 updateStats();
 window.addEventListener('hashchange', loadFromHash);
 loadFromHash();          // losgekoppeld van de kaart: een gedeelde link moet
                          // ook openen als de tegels niet komen
+
+/* Meteen je eigen locatie pakken en het startpunt daar neerzetten, zodat je
+   alleen nog een eindpunt hoeft te prikken of op rondje-maken tikt. Slaat over
+   als er al een route uit een gedeelde link geladen is, en doet niets bijzonders
+   als je de locatie weigert - de Hier-knop blijft gewoon werken. */
+function autoLocate() {
+  if (!navigator.geolocation || S.wps.length) return;
+  navigator.geolocation.getCurrentPosition(p => {
+    if (S.wps.length) return;                 // intussen toch iets geladen
+    const w = { lat: p.coords.latitude, lon: p.coords.longitude };
+    S.wps.push(w);
+    renderMarkers();
+    const ga = () => map.easeTo({ center: [w.lon, w.lat], zoom: 13, duration: 900 });
+    if (mapReady) ga(); else map.once('load', ga);
+    toast('Startpunt op je locatie');
+  }, () => {}, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
+}
+autoLocate();
 
 // Zonder https geeft iOS geen GPS. Beter dat meteen zeggen dan de gebruiker
 // laten raden waarom de Hier-knop en het navigeren niets doen.
