@@ -349,9 +349,11 @@
     rijd(S.route, 0, 10000, 30);
     stilstaan(300, punt(S.route, 10000));             // vijf minuten pauze
     rijd(S.route, 10000, 20000, 30);
+    // hoogte en weer ophalen hoort hier niet bij: geen netwerk in deze test
+    window.fetch = async () => { throw new Error('geen netwerk in de test'); };
     echt.stopNav();                                   // de echte, niet de stille vervanger
     const open = $('#rit').classList.contains('on');
-    const st = ritStats(loadRides()[0]);
+    const st = analyseRit(loadRides()[0]);
     sluitRit();
     // en later terug te vinden door op de rit in de lijst te tikken
     const regel = document.querySelector('#rideList .saved');
@@ -388,6 +390,130 @@
     const ok = lopend && !!rit && weg && aantal === 1 && km > 7.5 && km < 8.1;
     return { ok: ok, detail: (rit ? 'teruggezet: ' + km.toFixed(1) + ' km van 8,0' : 'niet teruggezet') +
              (weg ? '' : ', tussenstand niet opgeruimd') };
+  });
+
+  /* ---------------- ritanalyse ----------------
+     Nep-ritten rechtstreeks als spoor, zonder navigatie: een punt per 2 s, in
+     rechte stukken noord, oost, zuid of west, met Doppler-snelheid. Hoogte en
+     weer gaan er meteen in, zodat er geen netwerk nodig is. */
+  function nepRit(delen, opt) {
+    opt = opt || {};
+    const tr = [];
+    let lat = 52.0, lon = 5.0, t = 1790000000000, af = 0, rij = 0;
+    const dLat = 1 / 111320;
+    tr.push({ lat, lon, t, e: null, s: opt.zonderDoppler ? null : 0 });
+    for (const d of delen) {
+      if (d.stil) {
+        for (let k = 0; k < d.stil / 2; k++) {
+          t += 2000;
+          tr.push({ lat, lon, t, e: null, s: opt.zonderDoppler ? null : 0 });
+        }
+        continue;
+      }
+      const v = d.kmh / 3.6, stap = v * 2;
+      const dLon = 1 / (111320 * Math.cos(lat * Math.PI / 180));
+      const richting = { N: [1, 0], Z: [-1, 0], O: [0, 1], W: [0, -1] }[d.richting];
+      for (let k = 0; k < d.km * 1000 / stap; k++) {
+        lat += richting[0] * stap * dLat; lon += richting[1] * stap * dLon;
+        t += 2000; af += stap; rij += 2;
+        tr.push({ lat, lon, t, e: null, s: opt.zonderDoppler ? null : v });
+      }
+    }
+    const rit = { ts: tr[0].t, km: af / 1000, sec: (t - tr[0].t) / 1000, rij, p: packTrack(tr) };
+    if (opt.dem) {
+      // hoogte om de 50 m, op dezelfde afstandsmaat als analyseRit
+      let cum = 0;
+      const tr2 = unpackTrack(rit.p), c = [0];
+      for (let i = 1; i < tr2.length; i++) { cum += hav([tr2[i-1].lat, tr2[i-1].lon], [tr2[i].lat, tr2[i].lon]); c.push(cum); }
+      const h = [];
+      for (let x = 0; x <= cum; x += 50) h.push(Math.round(opt.dem(x)));
+      rit.dem = { stap: 50, h };
+    }
+    if (opt.weer) {
+      rit.weer = [];
+      for (let u = Math.floor(tr[0].t / 3600000) - 1; u <= Math.ceil(t / 3600000) + 1; u++) {
+        rit.weer.push(Object.assign({ t: u * 3600 }, opt.weer));
+      }
+    }
+    return rit;
+  }
+  const PROF = { kg: 75, fiets: 8, ftp: null, gezet: true };
+  const WINDSTIL = { kmh: 0, from: 0, vlaag: 0, temp: 15, hpa: 1013 };
+  const gemP = (a, van, tot) => {
+    let s = 0, k = 0;
+    for (let i = van; i < tot; i++) if (a.punten.beweegt[i]) { s += a.punten.P[i]; k++; }
+    return k ? s / k : 0;
+  };
+
+  await test('Geschat vermogen op het vlak klopt met de natuurkunde', async () => {
+    const a = analyseRit(nepRit([{ richting: 'O', km: 10, kmh: 30 }], { dem: () => 0, weer: WINDSTIL }), PROF);
+    const w = a.vermogen ? a.vermogen.gem : 0;
+    return { ok: w > 140 && w < 155, detail: Math.round(w) + ' W bij 30 km/u windstil, 75 + 8 kg (met de hand: 148 W)' };
+  });
+
+  await test('Klimdetectie vindt de heuvel en slaat viaducten over', async () => {
+    const brug = (d, b) => d < b || d > b + 250 ? 0 : d < b + 100 ? (d - b) / 100 * 6
+                          : d < b + 150 ? 6 : (b + 250 - d) / 100 * 6;
+    const heuvel = d => {
+      if (d >= 6000 && d < 8000) return (d - 6000) * 0.05;
+      if (d >= 8000 && d < 8500) return 100;
+      if (d >= 8500 && d < 10500) return 100 - (d - 8500) * 0.05;
+      return brug(d, 4000) + brug(d, 11000);
+    };
+    const a = analyseRit(nepRit([{ richting: 'N', km: 12, kmh: 25 }], { dem: heuvel, weer: WINDSTIL }), PROF);
+    const k = a.klimmen[0];
+    const ok = a.klimmen.length === 1 && k.lengte >= 1900 && k.lengte <= 2100 &&
+               k.gem >= 0.045 && k.gem <= 0.055 && k.stijg >= 95 && k.stijg <= 105;
+    return { ok, detail: a.klimmen.length + ' klim(men)' + (k ? ': ' + (k.lengte / 1000).toFixed(2) + ' km, ' +
+             (k.gem * 100).toFixed(1) + '% gemiddeld, ' + Math.round(k.stijg) + ' m, bij km ' + k.vanKm.toFixed(1) : '') };
+  });
+
+  await test('Tegenwind heen, meewind terug', async () => {
+    const a = analyseRit(nepRit([{ richting: 'W', km: 10, kmh: 30 }, { richting: 'O', km: 10, kmh: 30 }],
+                                { dem: () => 0, weer: { kmh: 20, from: 270, vlaag: 30, temp: 15, hpa: 1013 } }), PROF);
+    const half = a.n >> 1, heen = gemP(a, 0, half), terug = gemP(a, half, a.n);
+    const w = a.wind;
+    const ok = !!w && w.deel.tegen > 0.45 && w.deel.mee > 0.45 && heen > terug + 50;
+    return { ok, detail: w ? 'tegen ' + Math.round(w.deel.tegen * 100) + '%, mee ' + Math.round(w.deel.mee * 100) +
+             '%; heen ' + Math.round(heen) + ' W, terug ' + Math.round(terug) + ' W bij dezelfde 30 km/u' : 'geen windinfo' };
+  });
+
+  await test('Beste 5 km en beste 20 minuten vallen op het snelle stuk', async () => {
+    const a = analyseRit(nepRit([{ richting: 'N', km: 10, kmh: 27 }, { richting: 'N', km: 15, kmh: 36 },
+                                 { richting: 'N', km: 10, kmh: 27 }], { dem: () => 0, weer: WINDSTIL }), PROF);
+    const b5 = a.besteAfstand.find(b => b.m === 5000);
+    const b20 = a.vermogen && a.vermogen.beste.find(b => b.sec === 1200);
+    const ok = !!b5 && b5.vanKm >= 9.9 && b5.vanKm <= 20.1 && b5.m / b5.sec * 3.6 > 35 &&
+               !!b20 && b20.vanKm >= 9.9 && b20.totKm <= 25.1;
+    return { ok, detail: (b5 ? '5 km vanaf km ' + b5.vanKm.toFixed(1) + ' op ' + (b5.m / b5.sec * 3.6).toFixed(1) + ' km/u' : 'geen 5 km') +
+             (b20 ? ', 20 min van km ' + b20.vanKm.toFixed(1) + ' tot ' + b20.totKm.toFixed(1) + ' (' + Math.round(b20.w) + ' W)' : ', geen 20 min') };
+  });
+
+  await test('Een stop van 3 minuten wordt gevonden', async () => {
+    const a = analyseRit(nepRit([{ richting: 'N', km: 10, kmh: 30 }, { stil: 180 }, { richting: 'N', km: 10, kmh: 30 }],
+                                { dem: () => 0, weer: WINDSTIL }), PROF);
+    const s = a.stops[0];
+    return { ok: a.stops.length === 1 && s.sec >= 170 && s.sec <= 190 && Math.abs(s.km - 10) < 0.2,
+             detail: a.stops.length + ' stop(s)' + (s ? ', ' + Math.round(s.sec) + ' s bij km ' + s.km.toFixed(1) : '') };
+  });
+
+  await test('Oude rit zonder GPS-snelheid, hoogte en weer geeft toch een overzicht', async () => {
+    const a = analyseRit(nepRit([{ richting: 'N', km: 8, kmh: 28 }], { zonderDoppler: true }), PROF);
+    const ok = !a.doppler && !!a.vermogen && a.vermogen.gem > 50 && a.klim == null && a.wind == null &&
+               a.stukken.length === 2 && Math.abs(a.gem * 3.6 - 28) < 1.5 && a.reeks.length > 10;
+    return { ok, detail: 'gemiddeld ' + (a.gem * 3.6).toFixed(1) + ' km/u, vermogen ' +
+             (a.vermogen ? Math.round(a.vermogen.gem) + ' W' : 'geen') + ', klim ' + a.klim + ', wind ' + a.wind };
+  });
+
+  await test('GPS-snelheid overleeft in- en uitpakken, oude ritten blijven leesbaar', async () => {
+    const tr = [{ lat: 52, lon: 5, t: 1790000000000, e: 3, s: 8.33 },
+                { lat: 52.0001, lon: 5.0001, t: 1790000002000, e: null, s: null },
+                { lat: 52.0002, lon: 5.0002, t: 1790000004000, e: 4, s: 0 }];
+    const terug = unpackTrack(packTrack(tr));
+    const oud = unpackTrack([[5200000, 500000, 1790000000, 3], [10, 10, 2, '']]);
+    const ok = Math.abs(terug[0].s - 8.3) < 0.051 && terug[1].s === null && terug[2].s === 0 &&
+               terug[0].e === 3 && oud[0].s === null && oud[1].e === null && oud[1].s === null;
+    return { ok, detail: 'snelheden terug: ' + terug.map(p => p.s).join(', ') + '; oud formaat: ' + oud.map(p => p.s).join(', ') };
   });
 
   /* ---------------- opruimen en tonen ---------------- */

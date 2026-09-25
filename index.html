@@ -173,10 +173,58 @@ body.mode-ride.rs2 #power{display:flex}
 #pstreet{font-size:22px;font-weight:600;color:#cfd7e6;max-width:92%}
 #pfoot{position:absolute;bottom:calc(var(--safe-b) + 20px);color:#4a5568;font-size:13px}
 /* Ritoverzicht: na het stoppen, of door op een gereden rit te tikken */
-#rit{position:fixed;inset:0;z-index:22;background:var(--bg);display:none;overflow-y:auto;
-  padding:calc(var(--safe-t) + 12px) 14px calc(var(--safe-b) + 18px)}
+/* Het paneel laat bovenin 42% van het scherm vrij voor de echte kaart. Laadt de
+   kaart niet, dan wordt het een volledig scherm met de vorm als lijntje. */
+#rit{position:fixed;left:0;right:0;bottom:0;top:42vh;z-index:22;background:var(--bg);
+  display:none;overflow-y:auto;border-radius:18px 18px 0 0;box-shadow:0 -10px 40px #0009;
+  padding:0 14px calc(var(--safe-b) + 18px)}
+#rit.vol{top:0;border-radius:0;padding-top:var(--safe-t)}
 #rit.on{display:block}
-#ritkop{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+body.mode-rit #planbar,body.mode-rit #sheet,body.mode-rit .wp{display:none}
+#ritkop{display:flex;align-items:flex-start;gap:10px;position:sticky;top:0;z-index:3;
+  background:var(--bg);padding:12px 0 8px}
+#ritStatus:empty{display:none}
+#ritStatus{margin:-2px 0 8px}
+#ritKleur{margin-bottom:8px}
+#ritKleur .chip:disabled{opacity:.35}
+#rit.vol #ritKleur,#rit.vol #ritLegenda{display:none}
+#ritLegenda{display:grid;grid-template-columns:1fr auto 1fr;gap:4px 8px;font-size:11px;
+  color:var(--dim);margin-bottom:12px}
+#ritLegenda i{grid-column:1 / -1;height:8px;border-radius:4px}
+#ritLegenda span:nth-of-type(2){text-align:center}
+#ritLegenda span:nth-of-type(3){text-align:right}
+#ritgrid u em{font-style:normal;color:var(--warn);letter-spacing:.3px;text-transform:none}
+#ritLees{font-size:12.5px;color:var(--tx);min-height:36px;margin-bottom:6px;
+  font-variant-numeric:tabular-nums}
+#ritAnalyse{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+#ritAnalyse svg{display:block;width:100%;height:64px;background:var(--panel);border-radius:8px}
+#ritAnalyse .gr{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 3px}
+#ritAnalyse .gr u{font-size:10.5px;letter-spacing:.7px;color:var(--dim);text-transform:uppercase;
+  text-decoration:none}
+#ritAnalyse .gr small{font-size:11px;color:var(--dim)}
+#ritAnalyse .gr.as{margin:3px 0 0}
+#ritLijn{position:absolute;top:0;bottom:16px;width:2px;margin-left:-1px;background:#fff;
+  opacity:.8;pointer-events:none;display:none}
+.ritpunt{width:18px;height:18px;border-radius:50%;background:#fff;border:4px solid #e6007e;
+  box-shadow:0 0 0 2px #0b0e14,0 2px 8px #000a}
+.tabel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  margin-bottom:8px}
+.tabel .rij{display:grid;grid-template-columns:1.2fr 1fr 1fr;padding:8px 12px;font-size:13.5px;
+  font-variant-numeric:tabular-nums;border-top:1px solid var(--line)}
+.tabel .rij span:not(:first-child){text-align:right}
+.tabel .rij.kop{border-top:0;font-size:10.5px;letter-spacing:.6px;color:var(--dim);
+  text-transform:uppercase;padding:7px 12px}
+.klim{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+  margin-bottom:7px;font-size:13px;color:var(--dim);cursor:pointer;font-variant-numeric:tabular-nums}
+.klim b{display:block;color:var(--tx);font-size:15px;margin-bottom:3px}
+.klim b small{font-weight:500;color:var(--dim);font-size:12px}
+.windkop{font-size:13.5px;color:var(--dim);margin-bottom:8px}
+.windkop b{color:var(--tx)}
+.windbalk{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-bottom:8px;
+  background:var(--panel2)}
+.stuk.zone{grid-template-columns:112px 1fr 64px}
+.velden{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.velden label.fld{margin-bottom:6px}
 #ritkop div{flex:1;min-width:0}
 #ritkop b{display:block;font-size:20px;font-weight:800;letter-spacing:-.3px}
 #ritkop small{color:var(--dim);font-size:13px}
@@ -281,6 +329,16 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     <div class="hint" style="margin-top:8px">Zet dit aan en er zit geen grind of
       zandpad meer in je route. Gemeten op een rit bij Uden: onverhard van 4,9%
       naar 0%, glad asfalt van 77% naar 84%.</div>
+    <div class="velden">
+      <label class="fld"><span>Jouw gewicht</span>
+        <input type="text" id="rKg" inputmode="decimal" placeholder="75 kg" autocomplete="off"></label>
+      <label class="fld"><span>Fiets</span>
+        <input type="text" id="rFiets" inputmode="decimal" placeholder="8,5 kg" autocomplete="off"></label>
+      <label class="fld"><span>FTP</span>
+        <input type="text" id="rFtp" inputmode="numeric" placeholder="weet niet" autocomplete="off"></label>
+    </div>
+    <div class="hint">Voor het geschatte vermogen in je ritoverzicht, in kilo's en
+      watt. Je FTP mag leeg blijven: dan schat de app hem uit je beste 20 minuten.</div>
   </div>
 
   <h3>Opslaan en delen</h3>
@@ -324,7 +382,7 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     spaarstand aan: zwart scherm met alleen de volgende afslag, scheelt flink accu.
   </div>
   <div class="hint" id="versie" style="padding:14px 0 4px;text-align:center;opacity:.55">
-    versie 8</div>
+    versie 9</div>
 </div>
 
 <div id="banner">
@@ -385,7 +443,14 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     <div><b id="ritDatum">Rit</b><small id="ritTijd"></small></div>
     <button class="btn sm" id="ritSluit">Sluit</button>
   </div>
+  <div class="hint" id="ritStatus"></div>
   <svg id="ritVorm" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid meet"></svg>
+  <div class="chips" id="ritKleur">
+    <button class="chip on" data-k="v">Snelheid</button>
+    <button class="chip" data-k="g">Helling</button>
+    <button class="chip" data-k="w">Wind</button>
+  </div>
+  <div id="ritLegenda"><i></i><span id="ritLegLo"></span><span id="ritLegMid"></span><span id="ritLegHi"></span></div>
   <div id="ritgrid">
     <div class="hero"><u>Afstand</u><b id="ritKm">0</b></div>
     <div class="hero"><u>Rijtijd</u><b id="ritRij">0</b></div>
@@ -393,9 +458,38 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     <div><u>Topsnelheid</u><b id="ritMax">0</b></div>
     <div><u>Klim</u><b id="ritKlim">0</b></div>
     <div><u>Onderweg</u><b id="ritTotaal">0</b></div>
+    <div><u>Vermogen <em>geschat</em></u><b id="ritWatt">0</b></div>
+    <div><u>NP <em>geschat</em></u><b id="ritNP">0</b></div>
+    <div><u>Per kilo <em>geschat</em></u><b id="ritWkg">0</b></div>
+    <div><u>Energie <em>&asymp; kcal</em></u><b id="ritKJ">0</b></div>
   </div>
+
+  <h3 id="ritAnalyseKop">Analyse</h3>
+  <div id="ritLees"></div>
+  <div id="ritAnalyse">
+    <div class="gr"><u>Hoogte</u><small id="grHoogteSch"></small></div>
+    <svg id="grHoogte" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
+    <div class="gr"><u>Snelheid</u><small id="grSnelSch"></small></div>
+    <svg id="grSnel" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
+    <div class="gr"><u>Vermogen</u><small id="grWattSch"></small></div>
+    <svg id="grWatt" viewBox="0 0 300 64" preserveAspectRatio="none"></svg>
+    <div class="gr as"><small id="grAs0"></small><small id="grAs1"></small></div>
+    <div id="ritLijn"></div>
+  </div>
+
+  <h3>Beste prestaties</h3>
+  <div id="ritBeste"></div>
+  <h3>Klimmen</h3>
+  <div id="ritKlimmen"></div>
+  <h3>Wind</h3>
+  <div id="ritWind"></div>
+  <h3>Vermogenszones</h3>
+  <div id="ritZones"></div>
   <h3>Per 5 km</h3>
   <div id="ritStukken"></div>
+  <h3>Stops</h3>
+  <div id="ritStops"></div>
+  <div class="hint" id="ritNoot" style="margin-top:14px"></div>
   <div class="row">
     <button class="btn pri" id="ritGpx">GPX voor Strava</button>
   </div>
@@ -1069,6 +1163,18 @@ map.on('load', () => {
   map.addLayer({ id: 'done-line', type: 'line', source: 'done',
     layout: { 'line-join': 'round', 'line-cap': 'round' },
     paint: { 'line-color': '#5b6478', 'line-width': 5 } });
+  // gereden rit in het ritoverzicht, gekleurd naar snelheid, helling of wind
+  map.addSource('rit', { type: 'geojson', data: emptyFC() });
+  map.addSource('ritgrens', { type: 'geojson', data: emptyFC() });
+  map.addLayer({ id: 'rit-case', type: 'line', source: 'rit',
+    layout: { 'line-join': 'round', 'line-cap': 'round', visibility: 'none' },
+    paint: { 'line-color': '#0b0e14', 'line-width': 9, 'line-opacity': .8 } });
+  map.addLayer({ id: 'rit-line', type: 'line', source: 'rit',
+    layout: { 'line-join': 'round', 'line-cap': 'round', visibility: 'none' },
+    paint: { 'line-color': '#e6007e', 'line-width': 5 } });
+  map.addLayer({ id: 'rit-grens', type: 'circle', source: 'ritgrens', layout: { visibility: 'none' },
+    paint: { 'circle-radius': 7, 'circle-stroke-width': 2.5, 'circle-stroke-color': '#0b0e14',
+             'circle-color': ['match', ['get', 'soort'], 'start', '#00e08a', '#ffffff'] } });
   mapReady = true;
   if (S.route) drawRoute();      // route die al berekend was alsnog tekenen
 });
@@ -1077,7 +1183,7 @@ map.on('error', e => {
   if (!mapReady) toast('Kaart laadt niet (' + m + '). Plannen werkt wel.', 5000);
 });
 map.on('click', e => {
-  if (S.nav) return;
+  if (S.nav || ritOpen) return;
   addWaypoint({ lat: e.lngLat.lat, lon: e.lngLat.lng });
 });
 
@@ -2271,7 +2377,7 @@ function onFix(p) {
   // Spoor en split altijd bijwerken, ook tijdens herberekenen: je positie hangt
   // niet van de route af, en anders zat er in Strava een rechte lijn precies
   // waar je een omweg reed.
-  trackPush(pos, now, p.coords.altitude);
+  trackPush(pos, now, p.coords.altitude, p.coords.speed);
   const sb = S.nav.splitBuf;
   if (!sb.length || S.nav.ridden - sb[sb.length-1].a > 25)
     sb.push({ a: S.nav.ridden, r: S.nav.rijtijd });
@@ -2460,12 +2566,16 @@ function paintDone() {
    Elke fix wegschrijven is te veel; een punt per 3 seconden of per 10 meter is
    ruim genoeg voor Strava en houdt het bestand klein. Tussentijds opslaan zodat
    een crash of een per ongeluk gesloten tab de rit niet wist. */
-function trackPush(pos, t, ele) {
+function trackPush(pos, t, ele, gpsSpd) {
   const n = S.nav;
   if (!n.track) n.track = [];
   const l = n.track[n.track.length - 1];
   if (l && t - l.t < 3000 && hav([l.lat, l.lon], pos) < 10) return;
-  n.track.push({ lat: pos[0], lon: pos[1], t, e: (ele == null ? null : Math.round(ele)) });
+  // De snelheid die de iPhone zelf meet (Doppler) is veel nauwkeuriger dan wat
+  // je uit twee posities afleidt. De ritanalyse en het geschatte vermogen
+  // hangen ervan af, dus die gaat mee in het spoor.
+  const s = (gpsSpd == null || isNaN(gpsSpd) || gpsSpd < 0) ? null : gpsSpd;
+  n.track.push({ lat: pos[0], lon: pos[1], t, e: (ele == null ? null : Math.round(ele)), s });
   if (t - (n.trackSaved || 0) > 15000) {
     n.trackSaved = t;
     try { localStorage.setItem('fietsnav.ritLopend', JSON.stringify(
@@ -2494,7 +2604,10 @@ function packTrack(track) {
   for (const p of track) {
     const nla = Math.round(p.lat * 1e5), nlo = Math.round(p.lon * 1e5);
     const nt = Math.round(p.t / 1000);
-    out.push([nla - la, nlo - lo, nt - t, p.e == null ? '' : p.e]);
+    const rij = [nla - la, nlo - lo, nt - t, p.e == null ? '' : p.e];
+    // vijfde veld: de snelheid van de GPS zelf in dm/s, alleen als die er is
+    if (p.s != null) rij.push(Math.round(p.s * 10));
+    out.push(rij);
     la = nla; lo = nlo; t = nt;
   }
   return out;
@@ -2505,7 +2618,8 @@ function unpackTrack(packed) {
   for (const d of packed) {
     la += d[0]; lo += d[1]; t += d[2];
     out.push({ lat: la / 1e5, lon: lo / 1e5, t: t * 1000,
-               e: (d[3] === '' || d[3] == null) ? null : d[3] });
+               e: (d[3] === '' || d[3] == null) ? null : d[3],
+               s: (d.length > 4 && d[4] != null && d[4] !== '') ? d[4] / 10 : null });
   }
   return out;
 }
@@ -2636,59 +2750,520 @@ function ritNaarStrava(r) {
   toast('GPX gedownload, klaar voor Strava');
 }
 
-/* ---------------- ritoverzicht ----------------
-   Rekent alles uit het bewaarde spoor, zodat ook oudere ritten een overzicht
-   krijgen. Afstand, rijtijd en klim komen liefst uit wat de app onderweg
-   bijhield (zie ritCijfers); het spoor is de terugval. */
-function ritStats(rit) {
+/* ---------------- ritanalyse ----------------
+   Alles wat het ritoverzicht laat zien komt uit analyseRit(): een pure functie
+   van de bewaarde rit en je profiel (gewicht, FTP). Daardoor is hij los te
+   testen en krijgen ook oude ritten een overzicht. Wat ontbreekt valt terug op
+   wat er wel is: zonder Doppler de snelheid uit posities, zonder hoogtemodel de
+   GPS-hoogte, zonder weer windstil. */
+
+const RENNER_STD = { kg: 75, fiets: 8.5, ftp: null };
+function rennerProfiel() {
+  let r = null;
+  try { r = JSON.parse(localStorage.getItem('fietsnav.renner') || 'null'); } catch (e) {}
+  r = r || {};
+  return { kg: r.kg > 0 ? r.kg : RENNER_STD.kg, fiets: r.fiets > 0 ? r.fiets : RENNER_STD.fiets,
+           ftp: r.ftp > 0 ? r.ftp : null, gezet: r.kg > 0 };
+}
+function bewaarRenner(p) {
+  try { localStorage.setItem('fietsnav.renner', JSON.stringify(p)); } catch (e) {}
+}
+
+/* Geschat vermogen. De natuurkunde is eenvoudig: rolweerstand, zwaartekracht op
+   de helling, luchtweerstand en versnellen. De constanten horen bij een
+   racefiets met de handen op de remgrepen op Nederlands asfalt. Het blijft een
+   schatting: solo zit hij er zo'n 10 tot 15% naast, en in een groep schat hij
+   te hoog, want uit de wind rijden ziet de app niet.
+   De wind van Open-Meteo geldt op 10 m hoogte; op fietshoogte waait het zo'n
+   derde minder hard. */
+const FYS = { g: 9.81, crr: 0.0045, cda: 0.32, eta: 0.976, extra: 1, windHoogte: 0.65 };
+function luchtDichtheid(temp, hpa) {
+  if (temp == null || hpa == null) return 1.225;
+  return hpa * 100 / (287.05 * (temp + 273.15));
+}
+// v en w in m/s (w is tegenwind; mee is negatief), helling als fractie, a in m/s2
+function vermogen(v, helling, w, a, m, rho) {
+  if (v < 1) return 0;
+  const hoek = Math.atan(helling);
+  const lucht = v + w;
+  const kracht = m * FYS.g * FYS.crr * Math.cos(hoek) + m * FYS.g * Math.sin(hoek) +
+                 0.5 * rho * FYS.cda * lucht * Math.abs(lucht) + m * a;
+  return Math.max(0, kracht * v / FYS.eta);
+}
+
+// Het weer op tijdstip t (ms), lineair tussen de uren. De windrichting gaat via
+// vectoren, anders draait 350 naar 10 graden de verkeerde kant om via het zuiden.
+function weerOp(weer, t) {
+  if (!weer || !weer.length) return null;
+  const s = t / 1000;
+  if (s <= weer[0].t) return weer[0];
+  for (let i = 1; i < weer.length; i++) {
+    if (s > weer[i].t) continue;
+    const a = weer[i - 1], b = weer[i], f = (s - a.t) / ((b.t - a.t) || 1);
+    const ax = Math.sin(toRad(a.from)), ay = Math.cos(toRad(a.from));
+    const bx = Math.sin(toRad(b.from)), by = Math.cos(toRad(b.from));
+    const from = (toDeg(Math.atan2(ax + (bx - ax) * f, ay + (by - ay) * f)) + 360) % 360;
+    const mix = k => (a[k] == null || b[k] == null) ? (a[k] != null ? a[k] : b[k])
+                                                    : a[k] + (b[k] - a[k]) * f;
+    return { kmh: mix('kmh'), from, vlaag: mix('vlaag'), temp: mix('temp'), hpa: mix('hpa') };
+  }
+  return weer[weer.length - 1];
+}
+function idxOpAfstand(cum, d) {
+  let lo = 0, hi = cum.length - 1;
+  if (d <= cum[0]) return 0;
+  if (d >= cum[hi]) return hi;
+  while (lo < hi - 1) { const m = (lo + hi) >> 1; if (cum[m] < d) lo = m; else hi = m; }
+  return hi;
+}
+function percentiel(arr, p) {
+  if (!arr.length) return 0;
+  const s = Array.from(arr).sort((x, y) => x - y);
+  return s[Math.min(s.length - 1, Math.max(0, Math.round(p * (s.length - 1))))];
+}
+
+const ZONES = [
+  { naam: 'Herstel', tot: 0.55 }, { naam: 'Duur', tot: 0.75 }, { naam: 'Tempo', tot: 0.90 },
+  { naam: 'Drempel', tot: 1.05 }, { naam: 'VO2max', tot: 1.20 }, { naam: 'Anaeroob', tot: 1.50 },
+  { naam: 'Sprint', tot: Infinity }
+];
+
+function analyseRit(rit, prof) {
+  prof = prof || rennerProfiel();
   const tr = ritTrack(rit), n = tr.length;
-  const cum = new Array(n).fill(0), rijc = new Array(n).fill(0);
+  const massa = prof.kg + prof.fiets + FYS.extra;
+
+  /* ---- afstand, rijtijd en wanneer je beweegt ---- */
+  let metDoppler = 0;
+  for (let i = 0; i < n; i++) if (tr[i].s != null) metDoppler++;
+  const doppler = n > 0 && metDoppler > n * 0.8;
+  const cum = new Float64Array(n), rijc = new Float64Array(n), beweegt = new Uint8Array(n);
   for (let i = 1; i < n; i++) {
     const d = hav([tr[i-1].lat, tr[i-1].lon], [tr[i].lat, tr[i].lon]);
     const dt = tr[i].t - tr[i-1].t;
     cum[i] = cum[i-1] + d;
-    // zelfde regel als de rijtijd onderweg: stilstaan en GPS-gaten tellen niet
-    rijc[i] = rijc[i-1] + (dt > 0 && dt < 15000 && d / (dt / 1000) > 1.5 ? dt : 0);
+    // dezelfde regel als de rijtijd onderweg: stilstaan en GPS-gaten tellen niet
+    const sv = (doppler && tr[i].s != null && tr[i-1].s != null) ? (tr[i].s + tr[i-1].s) / 2
+                                                                  : (dt > 0 ? d / (dt / 1000) : 0);
+    beweegt[i] = (dt > 0 && dt < 15000 && sv > 1.5) ? 1 : 0;
+    rijc[i] = rijc[i-1] + (beweegt[i] ? dt : 0);
   }
-  const afstand = rit.km * 1000;
-  const rij = rit.rij || (n ? rijc[n-1] / 1000 : 0) || rit.sec;
+  const beweegtPt = i => beweegt[i] === 1 || (i + 1 < n && beweegt[i + 1] === 1);
 
-  // Snelste: over minstens 10 seconden, zodat een enkele GPS-sprong geen
-  // 70 km/u oplevert. Boven de 90 km/u is het sowieso een meetfout.
-  let max = 0;
-  for (let i = 0, j = 0; i < n; i++) {
-    if (j < i) j = i;
-    while (j < n - 1 && tr[j].t - tr[i].t < 10000) j++;
-    const dt = (tr[j].t - tr[i].t) / 1000;
-    const v = dt > 0 ? (cum[j] - cum[i]) / dt : 0;
-    if (dt >= 10 && dt <= 30 && v < 25 && v > max) max = v;
+  /* ---- snelheid per punt: Doppler over 5 s, anders afgeleid over 10 s ---- */
+  const v = new Float64Array(n);
+  const half = doppler ? 2500 : 5000;
+  for (let i = 0, a = 0, b = 0; i < n; i++) {
+    const t = tr[i].t;
+    while (a < i && t - tr[a].t > half) a++;
+    if (b < i) b = i;
+    while (b < n - 1 && tr[b + 1].t - t <= half) b++;
+    if (doppler) {
+      let som = 0, k = 0;
+      for (let j = a; j <= b; j++) if (tr[j].s != null) { som += tr[j].s; k++; }
+      v[i] = k ? som / k : 0;
+    } else {
+      const dt = (tr[b].t - tr[a].t) / 1000;
+      v[i] = dt > 0 ? (cum[b] - cum[a]) / dt : 0;
+    }
+    if (v[i] > 25) v[i] = 25;               // boven 90 km/u is het een meetfout
   }
 
-  // Per 5 km op rijtijd, zodat een koffiestop een stuk niet traag maakt
+  /* ---- hoogte: het hoogtemodel langs je spoor, anders de GPS ---- */
+  const STAP = 50;
+  let bron = null, gh = null;
+  if (rit.dem && rit.dem.h && rit.dem.h.length > 1) {
+    gh = smoothProfile(rit.dem.h, 3);
+    bron = 'model';
+  } else if (n > 10) {
+    const met = tr.filter(p => p.e != null).length;
+    if (met > n * 0.5 && met > 10) {
+      const ruw = [];
+      let vorige = null;
+      for (const p of tr) { if (p.e != null) vorige = p.e; ruw.push(vorige); }
+      const eerste = ruw.find(x => x != null);
+      for (let i = 0; i < ruw.length && ruw[i] == null; i++) ruw[i] = eerste;
+      // de GPS-hoogte ruist meters per punt, dus flink gladstrijken
+      const glad = smoothProfile(ruw, 15);
+      gh = [];
+      for (let x = 0, i = 0; x <= cum[n - 1]; x += STAP) {
+        while (i < n - 2 && cum[i + 1] < x) i++;
+        const f = Math.max(0, Math.min(1, (x - cum[i]) / ((cum[i + 1] - cum[i]) || 1)));
+        gh.push(glad[i] + (glad[i + 1] - glad[i]) * f);
+      }
+      bron = 'gps';
+    }
+  }
+  const perPunt = rij => {
+    const uit = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = cum[i] / STAP, k = Math.max(0, Math.min(rij.length - 2, Math.floor(x)));
+      const f = Math.max(0, Math.min(1, x - k));
+      uit[i] = rij[k] + (rij[k + 1] - rij[k]) * f;
+    }
+    return uit;
+  };
+  /* De helling komt uit een gladder profiel dan de hoogtelijn. Het hoogtemodel
+     ruist een meter of twee, en 1% helling scheelt bij 30 km/u al 70 W. Op een
+     vlak rondje bij Uden, constant 30 km/u, gaf het fijne profiel NP 170 tegen
+     148 W gemiddeld en een "beste 5 s" van 418 W: pure ruis. Op de kaart en in
+     de grafiek gaf het gele streepjes op stukken die gewoon vlak zijn. */
+  let hs = null, hsG = null;
+  if (gh && gh.length > 1) {
+    hs = perPunt(gh);
+    hsG = bron === 'model' ? perPunt(smoothProfile(rit.dem.h, 9)) : hs;
+  }
+
+  /* ---- helling over 200 m en koers over 60 m ---- */
+  const helling = new Float64Array(n), koers = new Float64Array(n);
+  for (let i = 0, c = 0, d = 0, e = 0, f = 0; i < n; i++) {
+    while (e < i && cum[i] - cum[e] > 100) e++;
+    if (f < i) f = i;
+    while (f < n - 1 && cum[f] - cum[i] < 100) f++;
+    if (hsG && cum[f] - cum[e] > 40) helling[i] = clamp((hsG[f] - hsG[e]) / (cum[f] - cum[e]), -0.25, 0.25);
+    while (c < i && cum[i] - cum[c] > 30) c++;
+    if (d < i) d = i;
+    while (d < n - 1 && cum[d] - cum[i] < 30) d++;
+    koers[i] = (cum[d] - cum[c] > 5) ? bearingTo([tr[c].lat, tr[c].lon], [tr[d].lat, tr[d].lon])
+                                     : (i ? koers[i - 1] : 0);
+  }
+
+  /* ---- wind langs je koers en geschat vermogen ---- */
+  const heeftWeer = !!(rit.weer && rit.weer.length);
+  const wind = new Float64Array(n), P = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const w = heeftWeer ? weerOp(rit.weer, tr[i].t) : null;
+    const rho = w ? luchtDichtheid(w.temp, w.hpa) : 1.225;
+    // wind_direction is waar hij VANDAAN komt: rijd je die kant op, dan is het tegenwind
+    if (w) wind[i] = w.kmh / 3.6 * FYS.windHoogte * Math.cos(toRad(w.from - koers[i]));
+    if (!beweegtPt(i)) continue;
+    let acc = 0;
+    if (i > 0 && i < n - 1) {
+      const dt = (tr[i + 1].t - tr[i - 1].t) / 1000;
+      if (dt > 0 && dt < 10) acc = (v[i + 1] - v[i - 1]) / dt;
+    }
+    P[i] = vermogen(v[i], helling[i], wind[i], acc, massa, rho);
+  }
+
+  // Per seconde rijtijd, voor NP, beste vermogens en zones. Stilstand telt niet
+  // mee, net als bij een fietscomputer met auto-pauze.
+  const ps = [], psIdx = [];
+  for (let i = 1; i < n; i++) {
+    if (!beweegt[i]) continue;
+    const k = Math.round((tr[i].t - tr[i - 1].t) / 1000);
+    for (let j = 0; j < k; j++) { ps.push((P[i - 1] + P[i]) / 2); psIdx.push(i); }
+  }
+  let verm = null;
+  if (ps.length >= 30) {
+    let som = 0;
+    for (const x of ps) som += x;
+    let rol = 0, s4 = 0, k4 = 0;
+    for (let i = 0; i < ps.length; i++) {
+      rol += ps[i];
+      if (i >= 30) rol -= ps[i - 30];
+      if (i >= 29) { const r = rol / 30; s4 += r * r * r * r; k4++; }
+    }
+    const np = Math.pow(s4 / k4, 0.25);
+    const pre = new Float64Array(ps.length + 1);
+    for (let i = 0; i < ps.length; i++) pre[i + 1] = pre[i] + ps[i];
+    const beste = [];
+    for (const D of [5, 60, 300, 1200, 3600]) {
+      if (ps.length < D) continue;
+      let bs = -1, bi = 0;
+      for (let i = 0; i + D <= ps.length; i++) {
+        const w = pre[i + D] - pre[i];
+        if (w > bs) { bs = w; bi = i; }
+      }
+      beste.push({ sec: D, w: bs / D, vanKm: cum[psIdx[bi]] / 1000, totKm: cum[psIdx[bi + D - 1]] / 1000,
+                   i0: psIdx[bi], i1: psIdx[bi + D - 1] });
+    }
+    /* FTP: wat je invulde, anders 95% van je beste 20 minuten. Niet alleen uit
+       deze rit, want een gewone duurrit is geen tijdrit: dan kwam de intensiteit
+       altijd rond de 1 uit. Daarom het beste van al je ritten (prof.besteB20). */
+    const b20 = beste.find(b => b.sec === 1200);
+    const b20w = Math.max(b20 ? b20.w : 0, prof.besteB20 || 0);
+    const ftp = prof.ftp || (b20w ? b20w * 0.95 : null);
+    let zones = null, intens = null, tss = null;
+    if (ftp) {
+      zones = ZONES.map(z => ({ naam: z.naam, tot: z.tot, sec: 0 }));
+      for (const x of ps) {
+        const f = x / ftp;
+        let z = 0;
+        while (z < zones.length - 1 && f >= zones[z].tot) z++;
+        zones[z].sec++;
+      }
+      intens = np / ftp;
+      tss = ps.length / 3600 * intens * intens * 100;
+    }
+    verm = { gem: som / ps.length, np, energie: som / 1000, wkg: som / ps.length / prof.kg,
+             beste, b20: b20 ? b20.w : null, ftp, zones, intens, tss,
+             ftpBron: prof.ftp ? 'ingevuld' : !b20w ? null
+                    : (prof.besteB20 || 0) > (b20 ? b20.w : 0) ? 'ritten' : 'rit' };
+  }
+
+  /* ---- snelste afstanden, op rijtijd ---- */
+  const besteAfstand = [];
+  for (const D of [1000, 5000, 10000, 20000, 40000]) {
+    if (!n || cum[n - 1] < D) continue;
+    let best = null;
+    for (let i = 0, j = 0; i < n; i++) {
+      if (j < i) j = i;
+      while (j < n - 1 && cum[j] - cum[i] < D) j++;
+      if (cum[j] - cum[i] < D) break;
+      const f = (cum[i] + D - cum[j - 1]) / ((cum[j] - cum[j - 1]) || 1);
+      const tEind = rijc[j - 1] + (rijc[j] - rijc[j - 1]) * f;
+      const sec = (tEind - rijc[i]) / 1000;
+      if (sec > D / 25 && (!best || sec < best.sec)) best = { m: D, sec, vanKm: cum[i] / 1000, i0: i, i1: j };
+    }
+    if (best) besteAfstand.push(best);
+  }
+
+  /* ---- klimmen ----
+     Stukken van minstens 2% stijging (gemeten over 200 m), met gaatjes tot
+     300 m ertussen overbrugd. Een klim telt pas vanaf 10 m stijgen, gemiddeld
+     2,5%, over minstens 250 m. Een viaduct of dijk van 6 m valt er zo buiten;
+     de Posbank en de Limburgse hellingen niet. */
+  const klimmen = [];
+  if (gh && gh.length > 6) {
+    const G = gh.length;
+    const grad = k => {
+      const a = Math.max(0, k - 2), b = Math.min(G - 1, k + 2);
+      return (gh[b] - gh[a]) / ((b - a) * STAP);
+    };
+    const runs = [];
+    let a0 = -1, laatst = -1;
+    for (let k = 0; k < G; k++) {
+      if (grad(k) < 0.02) continue;
+      if (a0 < 0) a0 = k;
+      else if ((k - laatst) * STAP > 300) { runs.push([a0, laatst]); a0 = k; }
+      laatst = k;
+    }
+    if (a0 >= 0) runs.push([a0, laatst]);
+    for (const r of runs) {
+      // begin op het laagste punt vlak ervoor, eind op het hoogste punt vlak erna
+      let s = r[0];
+      for (let k = Math.max(0, r[0] - 4); k <= r[0]; k++) if (gh[k] <= gh[s]) s = k;
+      let e = r[0];
+      for (let k = r[0]; k <= Math.min(G - 1, r[1] + 4); k++) if (gh[k] > gh[e]) e = k;
+      // de laatste meter aanloop en top er afknippen: het hoogtemodel is op
+      // hele meters en het gladstrijken smeert de randen uit
+      const bodem = gh[s], top = gh[e];
+      while (s < e && gh[s + 1] < bodem + 1) s++;
+      while (e > s && gh[e - 1] > top - 1) e--;
+      const lengte = (e - s) * STAP, stijg = gh[e] - gh[s];
+      if (lengte < 250 || stijg < 10 || stijg / lengte < 0.025) continue;
+      let maxG = 0;
+      for (let k = s; k + 2 <= e; k++) maxG = Math.max(maxG, (gh[k + 2] - gh[k]) / (2 * STAP));
+      const i0 = idxOpAfstand(cum, s * STAP), i1 = idxOpAfstand(cum, e * STAP);
+      const sec = (rijc[i1] - rijc[i0]) / 1000;
+      let pSom = 0, tSom = 0;
+      for (let i = i0 + 1; i <= i1; i++) {
+        if (!beweegt[i]) continue;
+        const dt = (tr[i].t - tr[i - 1].t) / 1000;
+        pSom += (P[i - 1] + P[i]) / 2 * dt; tSom += dt;
+      }
+      klimmen.push({ vanKm: s * STAP / 1000, lengte, stijg, gem: stijg / lengte, max: Math.max(maxG, stijg / lengte),
+                     sec, vam: sec > 0 ? stijg / (sec / 3600) : 0, watt: tSom > 0 ? pSom / tSom : 0, i0, i1 });
+    }
+  }
+
+  /* ---- wind tijdens de rit ---- */
+  let windInfo = null;
+  if (heeftWeer && n > 1) {
+    const tijd = { tegen: 0, zij: 0, mee: 0 }, af = { tegen: 0, zij: 0, mee: 0 };
+    for (let i = 1; i < n; i++) {
+      if (!beweegt[i]) continue;
+      const kmh = wind[i] * 3.6;
+      const soort = kmh > 5 ? 'tegen' : (kmh < -5 ? 'mee' : 'zij');
+      tijd[soort] += (tr[i].t - tr[i - 1].t) / 1000;
+      af[soort] += cum[i] - cum[i - 1];
+    }
+    const tot = (tijd.tegen + tijd.zij + tijd.mee) || 1;
+    let x = 0, y = 0, kmh = 0, vlaag = 0, temp = null, k = 0;
+    for (let i = 0; i < n; i += Math.max(1, Math.floor(n / 60))) {
+      const w = weerOp(rit.weer, tr[i].t);
+      x += Math.sin(toRad(w.from)); y += Math.cos(toRad(w.from));
+      kmh += w.kmh; if (w.vlaag > vlaag) vlaag = w.vlaag;
+      if (w.temp != null) temp = (temp || 0) + w.temp;
+      k++;
+    }
+    windInfo = { kmh: kmh / k, from: (toDeg(Math.atan2(x, y)) + 360) % 360, vlaag,
+                 temp: temp == null ? null : temp / k,
+                 deel: { tegen: tijd.tegen / tot, zij: tijd.zij / tot, mee: tijd.mee / tot },
+                 snelheid: { tegen: tijd.tegen > 60 ? af.tegen / tijd.tegen : null,
+                             zij: tijd.zij > 60 ? af.zij / tijd.zij : null,
+                             mee: tijd.mee > 60 ? af.mee / tijd.mee : null } };
+  }
+
+  /* ---- stops van een halve minuut of langer ---- */
+  const stops = [];
+  let stilVan = -1, stilSec = 0;
+  for (let i = 1; i < n; i++) {
+    if (!beweegt[i]) {
+      if (stilVan < 0) { stilVan = i - 1; stilSec = 0; }
+      stilSec += (tr[i].t - tr[i - 1].t) / 1000;
+    } else if (stilVan >= 0) {
+      if (stilSec >= 30) stops.push({ t: tr[stilVan].t, km: cum[stilVan] / 1000, sec: stilSec, i: stilVan });
+      stilVan = -1;
+    }
+  }
+
+  /* ---- per 5 km, op rijtijd zodat een koffiestop een stuk niet traag maakt ---- */
   const STUK = 5000, stukken = [];
   let grens = STUK, vorigeR = 0;
   for (let i = 1; i < n; i++) {
     while (cum[i] >= grens) {
-      const f = (grens - cum[i-1]) / ((cum[i] - cum[i-1]) || 1);
-      const r = rijc[i-1] + (rijc[i] - rijc[i-1]) * f;
+      const f = (grens - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1);
+      const r = rijc[i - 1] + (rijc[i] - rijc[i - 1]) * f;
       stukken.push({ van: grens - STUK, tot: grens, sec: (r - vorigeR) / 1000 });
       vorigeR = r; grens += STUK;
     }
   }
-  const rest = n ? cum[n-1] - (grens - STUK) : 0;
-  if (rest >= 1000) stukken.push({ van: grens - STUK, tot: cum[n-1], sec: (rijc[n-1] - vorigeR) / 1000 });
+  const rest = n ? cum[n - 1] - (grens - STUK) : 0;
+  if (rest >= 1000) stukken.push({ van: grens - STUK, tot: cum[n - 1], sec: (rijc[n - 1] - vorigeR) / 1000 });
   for (const s of stukken) s.v = s.sec > 0 ? (s.tot - s.van) / s.sec : 0;
 
-  // Klim: het hoogtemodel als we dat hadden, anders de GPS-hoogte gladgestreken
-  let klim = rit.klim;
-  if (klim == null) {
-    const hs = tr.map(p => p.e).filter(e => e != null);
-    klim = hs.length > n / 2 && hs.length > 10
-      ? Math.round(ascentSeries(smoothProfile(hs, 9), 4)[hs.length - 1]) : null;
+  /* ---- kerncijfers ---- */
+  const afstand = rit.km * 1000;
+  const rij = rit.rij || (n ? rijc[n - 1] / 1000 : 0) || rit.sec;
+  let max = 0;
+  for (let i = 0; i < n; i++) if (beweegtPt(i) && v[i] > max) max = v[i];
+  /* Totale klim: flink gladgestreken (15 punten = 750 m), en een klimmetje telt
+     pas vanaf 6 m. Vergeleken met de gekalibreerde routeklim op drie echte
+     routes: Uden 29 tegen 25 m, Valkenburg 226 tegen 221 m, Delft 7 tegen 13 m.
+     Minder gladstrijken telde in Uden ruis mee (49 m). */
+  let klim = null;
+  if (bron === 'model') klim = Math.round(ascentSeries(smoothProfile(rit.dem.h, 15), 6)[rit.dem.h.length - 1]);
+  else if (rit.klim != null) klim = rit.klim;
+  else if (gh) klim = Math.round(ascentSeries(gh, 6)[gh.length - 1]);
+
+  /* ---- voor de kaart: stukjes van ~50 m met snelheid, helling en wind ---- */
+  const segmenten = [];
+  for (let i = 0; i < n - 1; ) {
+    let j = i + 1;
+    while (j < n - 1 && cum[j] - cum[i] < 50) j++;
+    const coords = [];
+    let vs = 0, gs = 0, ws = 0, k = 0;
+    for (let q = i; q <= j; q++) coords.push([tr[q].lon, tr[q].lat]);
+    for (let q = i + 1; q <= j; q++) { vs += v[q]; gs += helling[q]; ws += wind[q]; k++; }
+    segmenten.push({ type: 'Feature', properties: { v: vs / k * 3.6, g: gs / k * 100, w: ws / k * 3.6 },
+                     geometry: { type: 'LineString', coordinates: coords } });
+    i = j;
   }
-  return { tr, afstand, rij, sec: rit.sec, gem: rij > 0 ? afstand / rij : 0, max, klim, stukken,
-           start: n ? tr[0].t : rit.ts, eind: n ? tr[n-1].t : rit.ts };
+
+  /* ---- voor de grafiek: hooguit 600 vakjes van gelijke afstand ---- */
+  const reeks = [];
+  if (n > 1) {
+    const B = Math.min(600, Math.max(2, Math.floor(n / 2)));
+    const totaal = cum[n - 1] || 1;
+    for (let b = 0, i = 0; b < B; b++) {
+      const tot = (b + 1) / B * totaal, van = i;
+      while (i < n - 1 && cum[i] < tot) i++;
+      let vs = 0, pw = 0, kb = 0, gs = 0, ws = 0, kg = 0;
+      for (let q = van; q <= i; q++) {
+        gs += helling[q]; ws += wind[q]; kg++;
+        if (beweegtPt(q)) { vs += v[q]; pw += P[q]; kb++; }
+      }
+      const mid = (van + i) >> 1;
+      reeks.push({ i: mid, km: cum[mid] / 1000, t: tr[mid].t, h: hs ? hs[mid] : null,
+                   v: kb ? vs / kb * 3.6 : 0, p: kb ? pw / kb : 0, g: gs / kg * 100, w: ws / kg * 3.6 });
+    }
+  }
+
+  return { tr, n, cum, doppler, bron, massa, prof,
+           afstand, rij, sec: rit.sec, gem: rij > 0 ? afstand / rij : 0, max, klim, stukken,
+           start: n ? tr[0].t : rit.ts, eind: n ? tr[n - 1].t : rit.ts,
+           vermogen: verm, besteAfstand, klimmen, wind: windInfo, stops, segmenten, reeks,
+           punten: { v, hs, helling, wind, P, beweegt } };
 }
+
+/* ---------------- ritdata aanvullen ----------------
+   Twee dingen komen pas na de rit, en alleen met bereik: de hoogte uit het
+   hoogtemodel langs je hele spoor (de GPS-hoogte van een iPhone ruist te veel
+   voor hellingen) en het weer per uur tijdens de rit. Beide gaan de rit in,
+   zodat het overzicht daarna ook zonder bereik compleet is. */
+async function haalMetTijd(url, opt, ms) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms || 10000);
+  try { return await fetch(url, Object.assign({ signal: ctl.signal }, opt || {})); }
+  finally { clearTimeout(timer); }
+}
+async function haalRitHoogte(rit) {
+  const tr = ritTrack(rit);
+  if (tr.length < 2) return null;
+  const STAP = 50, cum = [0];
+  for (let i = 1; i < tr.length; i++) cum.push(cum[i - 1] + hav([tr[i-1].lat, tr[i-1].lon], [tr[i].lat, tr[i].lon]));
+  const shape = [];
+  for (let x = 0, i = 0; x <= cum[cum.length - 1]; x += STAP) {
+    while (i < tr.length - 2 && cum[i + 1] < x) i++;
+    const f = Math.max(0, Math.min(1, (x - cum[i]) / ((cum[i + 1] - cum[i]) || 1)));
+    shape.push({ lat: +(tr[i].lat + (tr[i + 1].lat - tr[i].lat) * f).toFixed(6),
+                 lon: +(tr[i].lon + (tr[i + 1].lon - tr[i].lon) * f).toFixed(6) });
+  }
+  const h = [];
+  // 1500 punten in een keer werkt (getest); 1000 per aanvraag laat marge
+  for (let k = 0; k < shape.length; k += 1000) {
+    const r = await haalMetTijd(VALHALLA + '/height', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shape: shape.slice(k, k + 1000), range: false })
+    }, 15000);
+    if (!r.ok) throw new Error('height ' + r.status);
+    const j = await r.json();
+    const hh = j.height || (j.range_height || []).map(x => x[1]);
+    for (const x of hh) h.push(x);
+  }
+  let laatste = null;
+  for (let i = 0; i < h.length; i++) { if (h[i] == null) h[i] = laatste; else laatste = h[i]; }
+  const eerste = h.find(x => x != null);
+  if (eerste == null) return null;
+  for (let i = 0; i < h.length && h[i] == null; i++) h[i] = eerste;
+  return { stap: STAP, h: h.map(x => Math.round(x)) };
+}
+async function haalRitWeer(rit) {
+  const tr = ritTrack(rit);
+  if (tr.length < 2) return null;
+  const mid = tr[Math.floor(tr.length / 2)];
+  const t0 = tr[0].t - 3600000, t1 = tr[tr.length - 1].t + 3600000;
+  const q = '?latitude=' + mid.lat.toFixed(3) + '&longitude=' + mid.lon.toFixed(3) +
+    '&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,surface_pressure' +
+    '&wind_speed_unit=kmh&timeformat=unixtime' +
+    '&start_date=' + new Date(t0).toISOString().slice(0, 10) +
+    '&end_date=' + new Date(t1).toISOString().slice(0, 10);
+  // De gewone voorspelling gaat zo'n drie maanden terug; oudere ritten via het archief
+  let r = await haalMetTijd('https://api.open-meteo.com/v1/forecast' + q, null, 10000);
+  if (!r.ok) r = await haalMetTijd('https://archive-api.open-meteo.com/v1/archive' + q, null, 10000);
+  if (!r.ok) throw new Error('weer ' + r.status);
+  const H = (await r.json()).hourly;
+  if (!H || !H.time) return null;
+  const uit = [];
+  for (let i = 0; i < H.time.length; i++) {
+    const t = H.time[i];
+    if (t * 1000 < t0 || t * 1000 > t1 || H.wind_speed_10m[i] == null) continue;
+    uit.push({ t, kmh: H.wind_speed_10m[i], from: H.wind_direction_10m[i],
+               vlaag: H.wind_gusts_10m ? H.wind_gusts_10m[i] : null,
+               temp: H.temperature_2m ? H.temperature_2m[i] : null,
+               hpa: H.surface_pressure ? H.surface_pressure[i] : null });
+  }
+  return uit.length ? uit : null;
+}
+// geeft true als er iets nieuws binnenkwam; bewaart het meteen bij de rit
+async function verrijkRit(rit) {
+  let nieuw = false;
+  if (!rit.dem) { try { const d = await haalRitHoogte(rit); if (d) { rit.dem = d; nieuw = true; } } catch (e) {} }
+  if (!rit.weer) { try { const w = await haalRitWeer(rit); if (w) { rit.weer = w; nieuw = true; } } catch (e) {} }
+  if (nieuw) {
+    const all = loadRides();
+    const i = all.findIndex(r => r.ts === rit.ts);
+    if (i >= 0) { all[i] = rit; saveRitten(all); }
+  }
+  return nieuw;
+}
+
+/* ---------------- ritoverzicht ----------------
+   Ingedeeld als een activiteit in Strava: bovenin de echte kaart met je rit
+   gekleurd naar snelheid, helling of wind, daaronder een paneel met cijfers,
+   een grafiek waar je met je vinger overheen schuift, beste prestaties,
+   klimmen, wind, vermogenszones, stukken van 5 km en stops. */
 
 // tijdsduur als [getal, eenheid]: "47 min" of "2:14 u"
 function duur(sec) {
@@ -2696,37 +3271,355 @@ function duur(sec) {
   if (m < 60) return [String(m), 'min'];
   return [Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'), 'u'];
 }
+// kort, voor tabellen: "4:32" (m:ss) of "1:02:10"
+function mmss(sec) {
+  sec = Math.round(sec);
+  const u = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return (u ? u + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0');
+}
 function klokTijd(t) {
   const d = new Date(t);
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 const komma = (v, d) => v.toFixed(d).replace('.', ',');
+const duizend = v => Math.round(v).toLocaleString('nl-NL');
 
-function toonRit(rit, net) {
-  const st = ritStats(rit);
+let ritOpen = null;       // { rit, a, net } van het overzicht dat nu open is
+let ritKleur = 'v';       // v = snelheid, g = helling, w = wind
+let ritPunt = null;       // meelopend punt op de kaart
+
+function toonRit(rit, net, stil) {
+  const prof = rennerProfiel();
+  const alle = loadRides();
+  prof.besteB20 = alle.reduce((m, r) => (r.ts !== rit.ts && r.b20 > m) ? r.b20 : m, 0);
+  const a = analyseRit(rit, prof);
+  // de beste 20 minuten bij de rit bewaren, voor de FTP-schatting bij volgende ritten
+  const b20 = a.vermogen && a.vermogen.b20;
+  if (b20 && Math.round(b20) !== Math.round(rit.b20 || 0)) {
+    rit.b20 = b20;
+    const i = alle.findIndex(r => r.ts === rit.ts);
+    if (i >= 0) { alle[i].b20 = b20; saveRitten(alle); }
+  }
+  ritOpen = { rit, a, net };
   const zet = (id, v, u) => { $(id).innerHTML = v + (u ? '<s>' + u + '</s>' : ''); };
-  const dag = new Date(st.start).toLocaleDateString('nl-NL',
+
+  const dag = new Date(a.start).toLocaleDateString('nl-NL',
     { weekday: 'long', day: 'numeric', month: 'long' });
   $('#ritDatum').textContent = dag.charAt(0).toUpperCase() + dag.slice(1);
-  $('#ritTijd').textContent = klokTijd(st.start) + ' tot ' + klokTijd(st.eind) +
+  $('#ritTijd').textContent = klokTijd(a.start) + ' tot ' + klokTijd(a.eind) +
     (net ? ', bewaard bij Gereden ritten' : '') +
     (rit.onderbroken ? ', onderbroken rit (teruggezet)' : '');
-  tekenVorm($('#ritVorm'), st.tr);
-  zet('#ritKm', komma(st.afstand / 1000, 1), 'km');
-  const r = duur(st.rij), t = duur(st.sec);
-  zet('#ritRij', r[0], r[1]);
-  zet('#ritGem', komma(st.gem * 3.6, 1), 'km/u');
-  zet('#ritMax', st.max > 0 ? komma(st.max * 3.6, 1) : '&ndash;', st.max > 0 ? 'km/u' : '');
-  zet('#ritKlim', st.klim == null ? '&ndash;' : String(st.klim), st.klim == null ? '' : 'm');
-  zet('#ritTotaal', t[0], t[1]);
 
+  // kerncijfers
+  zet('#ritKm', komma(a.afstand / 1000, 1), 'km');
+  const r = duur(a.rij), t = duur(a.sec);
+  zet('#ritRij', r[0], r[1]);
+  zet('#ritGem', komma(a.gem * 3.6, 1), 'km/u');
+  zet('#ritMax', a.max > 0 ? komma(a.max * 3.6, 1) : '&ndash;', a.max > 0 ? 'km/u' : '');
+  zet('#ritKlim', a.klim == null ? '&ndash;' : String(a.klim), a.klim == null ? '' : 'm');
+  zet('#ritTotaal', t[0], t[1]);
+  const vm = a.vermogen;
+  zet('#ritWatt', vm ? String(Math.round(vm.gem)) : '&ndash;', vm ? 'W' : '');
+  zet('#ritNP', vm ? String(Math.round(vm.np)) : '&ndash;', vm ? 'W' : '');
+  zet('#ritWkg', vm ? komma(vm.wkg, 1) : '&ndash;', vm ? 'W/kg' : '');
+  zet('#ritKJ', vm ? duizend(vm.energie) : '&ndash;', vm ? 'kJ' : '');
+
+  // kaart, of de vorm als lijntje als de kaart er niet is
+  const metKaart = mapReady;
+  $('#rit').classList.toggle('vol', !metKaart);
+  $('#ritVorm').style.display = metKaart ? 'none' : 'block';
+  if (!metKaart) tekenVorm($('#ritVorm'), a.tr);
+  $('#ritKleur').querySelector('[data-k="g"]').disabled = !a.bron;
+  $('#ritKleur').querySelector('[data-k="w"]').disabled = !a.wind;
+  if ((ritKleur === 'g' && !a.bron) || (ritKleur === 'w' && !a.wind)) ritKleur = 'v';
+
+  document.body.classList.add('mode-rit');
+  $('#rit').classList.add('on');
+  if (!stil) $('#rit').scrollTop = 0;
+  if (metKaart) tekenRitKaart(a, !stil);
+  zetRitKleur(ritKleur);
+
+  tekenAnalyse(a);
+  tekenBeste(a);
+  tekenKlimmen(a);
+  tekenWind(a);
+  tekenZones(a);
+  tekenStukken(a);
+  tekenStops(a);
+  $('#ritNoot').textContent = 'Vermogen is geschat uit snelheid, helling, wind en gewicht (' +
+    komma(prof.kg, prof.kg % 1 ? 1 : 0) + ' kg + fiets ' + komma(prof.fiets, prof.fiets % 1 ? 1 : 0) +
+    " kg). Solo zit het er zo'n 10 tot 15% naast; in een groep schat het te hoog, want uit de wind " +
+    'rijden ziet de app niet.' + (prof.gezet ? '' : ' Vul je gewicht in bij Fietsprofiel, nu is 75 kg aangenomen.') +
+    (a.doppler ? '' : ' Deze rit is opgenomen zonder GPS-snelheid, dus alles is iets grover.');
+  $('#ritGpx').onclick = () => ritNaarStrava(rit);
+
+  // hoogte en weer ophalen als die er nog niet zijn
+  const status = $('#ritStatus');
+  const mist = () => [!rit.dem && 'hoogte', !rit.weer && 'wind'].filter(Boolean);
+  if (stil) {
+    status.textContent = mist().length ? 'Geen ' + mist().join(' en ') +
+      ' kunnen ophalen. Komt vanzelf als je dit met bereik opnieuw opent.' : '';
+  } else if (mist().length) {
+    status.textContent = mist().join(' en ').replace(/^./, c => c.toUpperCase()) + ' ophalen...';
+    verrijkRit(rit).then(() => {
+      if (ritOpen && ritOpen.rit === rit) toonRit(rit, net, true);
+    });
+  } else status.textContent = '';
+}
+
+function sluitRit() {
+  $('#rit').classList.remove('on');
+  document.body.classList.remove('mode-rit');
+  ritOpen = null;
+  if (ritPunt) { ritPunt.remove(); ritPunt = null; }
+  if (mapReady) {
+    for (const id of ['rit-case', 'rit-line', 'rit-grens']) map.setLayoutProperty(id, 'visibility', 'none');
+    for (const id of ['route-case', 'route-line', 'done-line']) map.setLayoutProperty(id, 'visibility', 'visible');
+    if (S.route) fitRoute();
+  }
+}
+
+/* ---- kaart ---- */
+function ritPadding() {
+  const h = window.innerHeight;
+  return { top: 24 + (parseInt(getComputedStyle(document.documentElement)
+             .getPropertyValue('--safe-t')) || 0), bottom: h * 0.58 + 16, left: 30, right: 30 };
+}
+function kaartOpPunten(tr, i0, i1, snel) {
+  let n = -90, s = 90, w = 180, e = -180;
+  for (let i = i0; i <= i1; i++) {
+    const p = tr[i];
+    if (p.lat > n) n = p.lat; if (p.lat < s) s = p.lat;
+    if (p.lon < w) w = p.lon; if (p.lon > e) e = p.lon;
+  }
+  map.fitBounds([[w, s], [e, n]], { padding: ritPadding(), duration: snel ? 0 : 600, maxZoom: 16 });
+}
+function tekenRitKaart(a, passen) {
+  map.getSource('rit').setData({ type: 'FeatureCollection', features: a.segmenten });
+  const p0 = a.tr[0], p1 = a.tr[a.n - 1];
+  map.getSource('ritgrens').setData({ type: 'FeatureCollection', features: [
+    { type: 'Feature', properties: { soort: 'eind' }, geometry: { type: 'Point', coordinates: [p1.lon, p1.lat] } },
+    { type: 'Feature', properties: { soort: 'start' }, geometry: { type: 'Point', coordinates: [p0.lon, p0.lat] } }] });
+  for (const id of ['route-case', 'route-line', 'done-line']) map.setLayoutProperty(id, 'visibility', 'none');
+  for (const id of ['rit-case', 'rit-line', 'rit-grens']) map.setLayoutProperty(id, 'visibility', 'visible');
+  if (passen && a.n > 1) kaartOpPunten(a.tr, 0, a.n - 1, true);
+}
+
+/* Kleurschalen. Snelheid is relatief aan de rit zelf: anders is een rustige
+   duurrit helemaal blauw en een koers helemaal rood, en zie je niet meer waar
+   je harder ging. */
+const RIT_SCHALEN = {
+  g: { stops: [[-6, '#4f7cff'], [-2, '#3fc1ff'], [0, '#00e08a'], [3, '#ffd000'], [6, '#ff8a00'],
+               [10, '#ff3b30'], [15, '#b0005a']], lo: 'afdalen', mid: 'vlak', hi: '10%+' },
+  w: { stops: [[-12, '#00e08a'], [-4, '#7fe0b8'], [0, '#8b97ad'], [4, '#ffb020'], [12, '#ff3b30']],
+       lo: 'meewind', mid: 'zijwind', hi: 'tegenwind' }
+};
+function snelheidSchaal(a) {
+  const vs = a.segmenten.map(f => f.properties.v).filter(x => x > 5);
+  let lo = Math.floor(percentiel(vs, 0.05)), hi = Math.ceil(percentiel(vs, 0.95));
+  if (hi - lo < 4) { hi = lo + 4; }
+  return { stops: [[lo, '#4f7cff'], [lo + (hi - lo) * 0.35, '#00e08a'], [lo + (hi - lo) * 0.65, '#ffd000'],
+                   [hi, '#ff3b30']], lo: lo + ' km/u', mid: '', hi: hi + ' km/u' };
+}
+function zetRitKleur(k) {
+  ritKleur = k;
+  for (const b of document.querySelectorAll('#ritKleur .chip')) b.classList.toggle('on', b.dataset.k === k);
+  const a = ritOpen && ritOpen.a;
+  if (!a) return;
+  const sch = k === 'v' ? snelheidSchaal(a) : RIT_SCHALEN[k];
+  if (mapReady) {
+    const expr = ['interpolate', ['linear'], ['get', k]];
+    for (const s of sch.stops) expr.push(s[0], s[1]);
+    map.setPaintProperty('rit-line', 'line-color', expr);
+  }
+  $('#ritLegenda i').style.background = 'linear-gradient(90deg,' + sch.stops.map(s => s[1]).join(',') + ')';
+  $('#ritLegLo').textContent = sch.lo; $('#ritLegMid').textContent = sch.mid; $('#ritLegHi').textContent = sch.hi;
+}
+
+/* ---- grafiek: hoogte, snelheid en vermogen op een afstandsas ---- */
+function hellingKleur(g) {
+  return g >= 10 ? '#b0005a' : g >= 7 ? '#ff3b30' : g >= 4 ? '#ff8a00' : g >= 2 ? '#ffd000' : '#3a4458';
+}
+function tekenAnalyse(a) {
+  const R = a.reeks, box = $('#ritAnalyse');
+  $('#ritAnalyseKop').style.display = R.length > 1 ? '' : 'none';
+  box.style.display = R.length > 1 ? '' : 'none';
+  if (R.length < 2) return;
+  const W = 300, H = 64, N = R.length;
+  const x = i => (i / (N - 1) * W).toFixed(1);
+  const lijn = (vals, lo, hi) => {
+    let d = '';
+    for (let i = 0; i < N; i++) {
+      const y = H - 3 - ((vals[i] - lo) / ((hi - lo) || 1)) * (H - 8);
+      d += (i ? 'L' : 'M') + x(i) + ',' + y.toFixed(1);
+    }
+    return d;
+  };
+  const vlak = (d, kleur) => '<path d="' + d + 'L' + W + ',' + H + 'L0,' + H + 'Z" fill="' + kleur + '"/>';
+  const streep = (y, kleur) => '<line x1="0" x2="' + W + '" y1="' + y + '" y2="' + y + '" stroke="' + kleur +
+    '" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>';
+
+  // hoogte, het vlak gekleurd naar helling
+  const gh = $('#grHoogte');
+  if (a.bron) {
+    const hs = R.map(r => r.h);
+    let lo = Math.min.apply(null, hs), hi = Math.max.apply(null, hs);
+    if (hi - lo < 20) { const m = (hi + lo) / 2; lo = m - 10; hi = m + 10; }
+    const y = v => (H - 3 - ((v - lo) / (hi - lo)) * (H - 8)).toFixed(1);
+    let svg = '', van = 0;
+    for (let i = 1; i <= N; i++) {
+      if (i < N && hellingKleur(R[i].g) === hellingKleur(R[van].g)) continue;
+      let d = 'M' + x(van) + ',' + H;
+      for (let k = van; k <= Math.min(i, N - 1); k++) d += 'L' + x(k) + ',' + y(R[k].h);
+      d += 'L' + x(Math.min(i, N - 1)) + ',' + H + 'Z';
+      svg += '<path d="' + d + '" fill="' + hellingKleur(R[van].g) + '"/>';
+      van = i;
+    }
+    svg += '<path d="' + lijn(hs, lo, hi) + '" fill="none" stroke="#e8edf7" stroke-width="1.2" vector-effect="non-scaling-stroke"/>';
+    gh.innerHTML = svg;
+    $('#grHoogteSch').textContent = Math.round(Math.min.apply(null, hs)) + ' tot ' +
+      Math.round(Math.max.apply(null, hs)) + ' m' + (a.bron === 'gps' ? ' (GPS)' : '');
+  } else {
+    gh.innerHTML = '';
+    $('#grHoogteSch').textContent = 'nog geen hoogtedata';
+  }
+
+  // snelheid
+  const vs = R.map(r => r.v);
+  const vhi = Math.max(10, Math.max.apply(null, vs));
+  const gemY = (H - 3 - (a.gem * 3.6 / vhi) * (H - 8)).toFixed(1);
+  $('#grSnel').innerHTML = vlak(lijn(vs, 0, vhi), 'rgba(79,156,255,.16)') +
+    '<path d="' + lijn(vs, 0, vhi) + '" fill="none" stroke="#4f9cff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>' +
+    streep(gemY, '#8b97ad');
+  $('#grSnelSch').textContent = 'gemiddeld ' + komma(a.gem * 3.6, 1) + ', top ' + komma(a.max * 3.6, 1) + ' km/u';
+
+  // vermogen
+  const pw = R.map(r => r.p);
+  const phi = Math.max(100, Math.max.apply(null, pw));
+  if (a.vermogen) {
+    const pgY = (H - 3 - (a.vermogen.gem / phi) * (H - 8)).toFixed(1);
+    $('#grWatt').innerHTML = vlak(lijn(pw, 0, phi), 'rgba(255,176,32,.16)') +
+      '<path d="' + lijn(pw, 0, phi) + '" fill="none" stroke="#ffb020" stroke-width="1.5" vector-effect="non-scaling-stroke"/>' +
+      streep(pgY, '#8b97ad');
+    $('#grWattSch').textContent = 'gemiddeld ' + Math.round(a.vermogen.gem) + ' W, geschat';
+  } else { $('#grWatt').innerHTML = ''; $('#grWattSch').textContent = ''; }
+
+  $('#grAs0').textContent = '0 km';
+  $('#grAs1').textContent = komma(a.cum[a.n - 1] / 1000, 1) + ' km';
+  $('#ritLijn').style.display = 'none';
+  $('#ritLees').textContent = 'Schuif met je vinger over de grafiek';
+}
+function scrubRit(frac) {
+  if (!ritOpen) return;
+  const a = ritOpen.a, R = a.reeks;
+  if (R.length < 2) return;
+  const k = Math.max(0, Math.min(R.length - 1, Math.round(frac * (R.length - 1))));
+  const r = R[k];
+  const lijn = $('#ritLijn');
+  lijn.style.display = 'block';
+  lijn.style.left = (k / (R.length - 1) * 100) + '%';
+  const delen = ['km ' + komma(r.km, 1), klokTijd(r.t), komma(r.v, 1) + ' km/u'];
+  if (r.h != null) delen.push(Math.round(r.h) + ' m', (r.g >= 0 ? '+' : '') + komma(r.g, 1) + '%');
+  if (a.vermogen) delen.push(Math.round(r.p) + ' W');
+  if (a.wind) delen.push(Math.abs(r.w) < 5 ? 'zijwind' : (r.w > 0 ? 'tegenwind ' : 'meewind ') + Math.round(Math.abs(r.w)) + ' km/u');
+  $('#ritLees').textContent = delen.join('  ·  ');
+  if (!mapReady) return;
+  const p = a.tr[r.i];
+  if (!ritPunt) {
+    const el = document.createElement('div');
+    el.className = 'ritpunt';
+    ritPunt = new maplibregl.Marker({ element: el });
+  }
+  ritPunt.setLngLat([p.lon, p.lat]).addTo(map);
+}
+
+/* ---- secties ---- */
+function tekenBeste(a) {
+  let h = '';
+  if (a.besteAfstand.length) {
+    h += '<div class="tabel"><div class="rij kop"><span>Snelste</span><span>Tijd</span><span>Snelheid</span></div>';
+    for (const b of a.besteAfstand) {
+      h += '<div class="rij"><span>' + (b.m / 1000) + ' km</span><span>' + mmss(b.sec) + '</span><span>' +
+           komma(b.m / b.sec * 3.6, 1) + ' km/u</span></div>';
+    }
+    h += '</div>';
+  }
+  if (a.vermogen && a.vermogen.beste.length) {
+    const naam = s => s < 60 ? s + ' s' : (s / 60) + ' min';
+    h += '<div class="tabel"><div class="rij kop"><span>Beste vermogen</span><span>Watt</span><span>W/kg</span></div>';
+    for (const b of a.vermogen.beste) {
+      h += '<div class="rij"><span>' + naam(b.sec) + '</span><span>' + Math.round(b.w) + ' W</span><span>' +
+           komma(b.w / a.prof.kg, 1) + '</span></div>';
+    }
+    h += '</div>';
+  }
+  $('#ritBeste').innerHTML = h || '<div class="hint">Te kort voor beste prestaties.</div>';
+}
+function tekenKlimmen(a) {
+  const box = $('#ritKlimmen');
+  box.innerHTML = '';
+  if (!a.bron) { box.innerHTML = '<div class="hint">Klimmen volgen zodra de hoogtedata binnen is.</div>'; return; }
+  if (!a.klimmen.length) { box.innerHTML = '<div class="hint">Geen klimmen van 10 m of meer in deze rit.</div>'; return; }
+  a.klimmen.forEach((k, nr) => {
+    const d = document.createElement('div');
+    d.className = 'klim';
+    d.innerHTML = '<b>Klim ' + (nr + 1) + ' <small>bij km ' + komma(k.vanKm, 1) + '</small></b>' +
+      '<div>' + komma(k.lengte / 1000, 1) + ' km  ·  ' + komma(k.gem * 100, 1) + '% gemiddeld  ·  ' +
+      Math.round(k.max * 100) + '% max  ·  ' + Math.round(k.stijg) + ' m</div>' +
+      '<div>' + mmss(k.sec) + '  ·  VAM ' + Math.round(k.vam) + ' m/u' +
+      (a.vermogen ? '  ·  ' + Math.round(k.watt) + ' W  ·  ' + komma(k.watt / a.prof.kg, 1) + ' W/kg' : '') + '</div>';
+    d.onclick = () => { if (mapReady) kaartOpPunten(a.tr, k.i0, k.i1, false); };
+    box.appendChild(d);
+  });
+}
+function tekenWind(a) {
+  const w = a.wind, box = $('#ritWind');
+  if (!w) { box.innerHTML = '<div class="hint">Het weer tijdens je rit komt zodra er bereik is.</div>'; return; }
+  const pct = x => Math.round(x * 100);
+  const snel = x => x == null ? '&ndash;' : komma(x * 3.6, 1) + ' km/u';
+  box.innerHTML =
+    '<div class="windkop"><b>' + Math.round(w.kmh) + ' km/u uit het ' + kompas(w.from) + '</b>' +
+    (w.vlaag ? ', vlagen tot ' + Math.round(w.vlaag) : '') +
+    (w.temp != null ? ', ' + Math.round(w.temp) + ' &deg;C' : '') + '</div>' +
+    '<div class="windbalk"><i style="width:' + pct(w.deel.tegen) + '%;background:#ff3b30"></i>' +
+    '<i style="width:' + pct(w.deel.zij) + '%;background:#8b97ad"></i>' +
+    '<i style="width:' + pct(w.deel.mee) + '%;background:#00e08a"></i></div>' +
+    '<div class="tabel"><div class="rij kop"><span></span><span>Rijtijd</span><span>Snelheid</span></div>' +
+    '<div class="rij"><span>Tegenwind</span><span>' + pct(w.deel.tegen) + '%</span><span>' + snel(w.snelheid.tegen) + '</span></div>' +
+    '<div class="rij"><span>Zijwind</span><span>' + pct(w.deel.zij) + '%</span><span>' + snel(w.snelheid.zij) + '</span></div>' +
+    '<div class="rij"><span>Meewind</span><span>' + pct(w.deel.mee) + '%</span><span>' + snel(w.snelheid.mee) + '</span></div></div>';
+}
+function tekenZones(a) {
+  const box = $('#ritZones'), vm = a.vermogen;
+  if (!vm) { box.innerHTML = '<div class="hint">Te kort voor vermogenszones.</div>'; return; }
+  if (!vm.ftp) {
+    box.innerHTML = '<div class="hint">Vul je FTP in bij Fietsprofiel voor zones. Rijd je 20 minuten ' +
+      'of langer door, dan schat de app hem zelf uit je beste 20 minuten.</div>';
+    return;
+  }
+  const tot = vm.zones.reduce((s, z) => s + z.sec, 0) || 1;
+  const kleuren = ['#5b6478', '#4f7cff', '#00e08a', '#ffd000', '#ff8a00', '#ff3b30', '#b0005a'];
+  const bron = vm.ftpBron === 'ingevuld' ? 'ingevuld'
+             : vm.ftpBron === 'ritten' ? 'geschat uit je beste 20 min over al je ritten'
+             : 'geschat uit deze rit, dus aan de lage kant; vul je FTP in voor betere zones';
+  let h = '<div class="hint" style="margin-bottom:8px">FTP ' + Math.round(vm.ftp) + ' W (' + bron + ')  ·  IF ' +
+    komma(vm.intens, 2) + '  ·  TSS ' + Math.round(vm.tss) + '</div>';
+  vm.zones.forEach((z, i) => {
+    const f = z.sec / tot;
+    h += '<div class="stuk zone"><span>Z' + (i + 1) + ' ' + z.naam + '</span><em><i style="width:' +
+      Math.max(f > 0 ? 3 : 0, f * 100) + '%;background:' + kleuren[i] + '"></i></em><b>' +
+      duur(z.sec).join(' ') + '</b></div>';
+  });
+  box.innerHTML = h;
+}
+function tekenStukken(a) {
   const box = $('#ritStukken');
   box.innerHTML = '';
-  const snelste = Math.max.apply(null, st.stukken.map(s => s.v).concat([0]));
+  const snelste = Math.max.apply(null, a.stukken.map(s => s.v).concat([0]));
   const kmTekst = m => komma(m / 1000, m % 1000 === 0 ? 0 : 1);
-  for (const s of st.stukken) {
+  for (const s of a.stukken) {
     const rij = document.createElement('div');
-    rij.className = 'stuk' + (s.v === snelste && st.stukken.length > 1 ? ' top' : '');
+    rij.className = 'stuk' + (s.v === snelste && a.stukken.length > 1 ? ' top' : '');
     const lab = document.createElement('span');
     lab.textContent = kmTekst(s.van) + '-' + kmTekst(Math.round(s.tot / 100) * 100);
     const balk = document.createElement('em');
@@ -2738,16 +3631,22 @@ function toonRit(rit, net) {
     rij.appendChild(lab); rij.appendChild(balk); rij.appendChild(w);
     box.appendChild(rij);
   }
-  if (!st.stukken.length) {
-    box.innerHTML = '<div class="hint">Korter dan 5 km, dus nog geen stukken.</div>';
-  }
-  $('#ritGpx').onclick = () => ritNaarStrava(rit);
-  $('#rit').scrollTop = 0;
-  $('#rit').classList.add('on');
+  if (!a.stukken.length) box.innerHTML = '<div class="hint">Korter dan 5 km, dus nog geen stukken.</div>';
 }
-function sluitRit() { $('#rit').classList.remove('on'); }
+function tekenStops(a) {
+  const box = $('#ritStops');
+  if (!a.stops.length) { box.innerHTML = '<div class="hint">Geen stops van een halve minuut of langer.</div>'; return; }
+  const tot = a.stops.reduce((s, x) => s + x.sec, 0);
+  let h = '<div class="tabel"><div class="rij kop"><span>Tijd</span><span>Bij km</span><span>Duur</span></div>';
+  for (const s of a.stops) {
+    h += '<div class="rij"><span>' + klokTijd(s.t) + '</span><span>' + komma(s.km, 1) + '</span><span>' +
+         duur(s.sec).join(' ') + '</span></div>';
+  }
+  h += '</div><div class="hint" style="margin-top:6px">Samen ' + duur(tot).join(' ') + ' stilgestaan.</div>';
+  box.innerHTML = h;
+}
 
-// De vorm van de rit als lijntje, zonder kaart: werkt ook zonder bereik
+// De vorm van de rit als lijntje, voor als de kaart niet laadt
 function tekenVorm(svg, tr) {
   if (tr.length < 2) { svg.innerHTML = ''; return; }
   const W = 320, H = 180, pad = 14;
@@ -3105,6 +4004,33 @@ $('#bSaveMode').onclick = () => setRideScreen(2);
 $('#power').onclick = () => setRideScreen(0);
 $('#dstrip').onclick = () => setRideScreen(0);
 $('#ritSluit').onclick = sluitRit;
+for (const b of document.querySelectorAll('#ritKleur .chip')) b.onclick = () => zetRitKleur(b.dataset.k);
+// met je vinger over de grafiek schuiven; verticaal vegen scrolt het paneel nog gewoon
+(function () {
+  const box = $('#ritAnalyse');
+  const naar = e => {
+    const r = box.getBoundingClientRect();
+    scrubRit(clamp((e.clientX - r.left) / r.width, 0, 1));
+  };
+  box.addEventListener('pointerdown', naar);
+  box.addEventListener('pointermove', naar);
+})();
+function syncRennerUI() {
+  const p = rennerProfiel();
+  $('#rKg').value = p.gezet ? komma(p.kg, p.kg % 1 ? 1 : 0) : '';
+  $('#rFiets').value = komma(p.fiets, p.fiets % 1 ? 1 : 0);
+  $('#rFtp').value = p.ftp ? String(p.ftp) : '';
+}
+for (const id of ['#rKg', '#rFiets', '#rFtp']) {
+  $(id).addEventListener('change', () => {
+    const getal = s => { const v = parseFloat(String(s).replace(',', '.')); return isFinite(v) && v > 0 ? v : null; };
+    const kg = getal($('#rKg').value), fiets = getal($('#rFiets').value), ftp = getal($('#rFtp').value);
+    bewaarRenner({ kg: kg ? clamp(kg, 30, 200) : null, fiets: fiets ? clamp(fiets, 3, 30) : null,
+                   ftp: ftp ? Math.round(clamp(ftp, 50, 600)) : null });
+    syncRennerUI();
+    toast('Profiel bewaard');
+  });
+}
 $('#ridebar').onclick = () => {
   if (Date.now() - (window.__geveegd || 0) < 400) return;   // dit was een veeg
   setRideScreen(1);
@@ -3150,6 +4076,7 @@ if (teruggezet) {
 }
 try { if (localStorage.getItem('fietsnav.paved') === '0') S.prof.ab = 0.3; } catch (e) {}
 syncProfileUI();
+syncRennerUI();
 $('#loopKmL').textContent = $('#loopKm').value + ' km';
 updateStats();
 window.addEventListener('hashchange', loadFromHash);
