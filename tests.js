@@ -341,13 +341,62 @@
     return { ok: med > 6 && med < 8, detail: 'mediaan ' + med.toFixed(1) + ' s over ' + sec.length + ' bochten' };
   });
 
+  await test('Na het stoppen zie je het ritoverzicht met de juiste cijfers', async () => {
+    const t = trap([52.0, 5.0], 30, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    localStorage.removeItem('fietsnav.ritten');
+    start();
+    rijd(S.route, 0, 10000, 30);
+    stilstaan(300, punt(S.route, 10000));             // vijf minuten pauze
+    rijd(S.route, 10000, 20000, 30);
+    echt.stopNav();                                   // de echte, niet de stille vervanger
+    const open = $('#rit').classList.contains('on');
+    const st = ritStats(loadRides()[0]);
+    sluitRit();
+    // en later terug te vinden door op de rit in de lijst te tikken
+    const regel = document.querySelector('#rideList .saved');
+    if (regel) regel.click();
+    const viaLijst = $('#rit').classList.contains('on');
+    sluitRit();
+    const km = st.afstand / 1000, gem = st.gem * 3.6, max = st.max * 3.6;
+    const rijMin = st.rij / 60, totMin = st.sec / 60;
+    const stukOk = st.stukken.length === 4 &&
+                   st.stukken.every(s => s.v * 3.6 > 28 && s.v * 3.6 < 32);
+    const ok = open && viaLijst && km > 19.5 && km < 20.5 && gem > 28.5 && gem < 31.5 &&
+               max > 28.5 && max < 31.5 && rijMin > 38 && rijMin < 42 &&
+               totMin > 43 && totMin < 47 && stukOk;
+    return { ok: ok, detail: (open ? 'opent' : 'opent NIET') + ', ' +
+             (viaLijst ? 'ook via de lijst' : 'NIET via de lijst') + ': ' + km.toFixed(1) +
+             ' km, rijtijd ' + rijMin.toFixed(0) + ' min van ' + totMin.toFixed(0) +
+             ', gemiddeld ' + gem.toFixed(1) + ', snelste ' + max.toFixed(1) + ' km/u, ' +
+             st.stukken.length + ' stukken van 5 km' };
+  });
+
+  await test('Een onderbroken rit komt terug bij het openen', async () => {
+    const t = trap([52.0, 5.0], 30, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    localStorage.removeItem('fietsnav.ritten');
+    start();
+    rijd(S.route, 0, 8000, 30);
+    // hier sluit iOS de pagina: geen stopNav, alleen de tussentijdse opslag
+    const lopend = !!localStorage.getItem('fietsnav.ritLopend');
+    stop();
+    const rit = herstelLopendeRit();
+    const weg = !localStorage.getItem('fietsnav.ritLopend');
+    const aantal = loadRides().length;
+    const km = rit ? rit.km : 0;
+    const ok = lopend && !!rit && weg && aantal === 1 && km > 7.5 && km < 8.1;
+    return { ok: ok, detail: (rit ? 'teruggezet: ' + km.toFixed(1) + ' km van 8,0' : 'niet teruggezet') +
+             (weg ? '' : ', tussenstand niet opgeruimd') };
+  });
+
   /* ---------------- opruimen en tonen ---------------- */
   Voice.say = echt.say; Voice.prime = echt.prime; Wake.on = echt.wakeOn;
   window.stopNav = echt.stopNav; Date.now = echt.now;
   try { navigator.geolocation.watchPosition = echt.watch; } catch (e) {}
   herstelOpslag();
   S.route = null; S.wps = []; S.line = null;
-  drawRoute(); updateStats();
+  drawRoute(); updateStats(); renderRides(); sluitRit();
 
   const goed = uitslagen.filter(u => u.ok).length;
   const vak = document.createElement('div');

@@ -172,6 +172,34 @@ body.mode-ride.rs2 #power{display:flex}
 #pdist s{font-size:28px;color:#555;text-decoration:none}
 #pstreet{font-size:22px;font-weight:600;color:#cfd7e6;max-width:92%}
 #pfoot{position:absolute;bottom:calc(var(--safe-b) + 20px);color:#4a5568;font-size:13px}
+/* Ritoverzicht: na het stoppen, of door op een gereden rit te tikken */
+#rit{position:fixed;inset:0;z-index:22;background:var(--bg);display:none;overflow-y:auto;
+  padding:calc(var(--safe-t) + 12px) 14px calc(var(--safe-b) + 18px)}
+#rit.on{display:block}
+#ritkop{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+#ritkop div{flex:1;min-width:0}
+#ritkop b{display:block;font-size:20px;font-weight:800;letter-spacing:-.3px}
+#ritkop small{color:var(--dim);font-size:13px}
+#ritVorm{width:100%;aspect-ratio:16/9;display:block;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;margin-bottom:10px}
+#ritgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#ritgrid>div{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:10px 12px}
+#ritgrid u{display:block;font-size:10.5px;letter-spacing:.7px;color:var(--dim);
+  text-transform:uppercase;text-decoration:none;margin-bottom:2px}
+#ritgrid b{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.8px}
+#ritgrid .hero b{font-size:40px;letter-spacing:-1.5px}
+#ritgrid b s{font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;
+  margin-left:3px;letter-spacing:0}
+.stuk{display:grid;grid-template-columns:58px 1fr 78px;align-items:center;gap:8px;
+  font-size:13px;margin-bottom:6px}
+.stuk span{color:var(--dim);font-variant-numeric:tabular-nums}
+.stuk em{display:block;height:10px;border-radius:5px;background:var(--panel2);overflow:hidden}
+.stuk em i{display:block;height:100%;border-radius:5px;background:var(--line)}
+.stuk.top em i{background:var(--accent)}
+.stuk b{text-align:right;font-variant-numeric:tabular-nums}
+#rit .row{margin:14px 0 0}
+.saved.klik{cursor:pointer}
 #toast{position:absolute;left:50%;transform:translateX(-50%);z-index:30;
   bottom:calc(var(--safe-b) + 96px);background:#0b0e14f0;border:1px solid var(--line);
   padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:600;
@@ -269,6 +297,11 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
       Strava of een vriend in, en maakt er Nederlandse afslaginstructies bij.</div>
   </div>
 
+  <h3>Gereden ritten</h3>
+  <div id="rideList"></div>
+  <div class="hint" id="noRides">Nog geen ritten opgenomen. Zodra je een rit
+    stopt komt hij hier te staan, met een GPX die je in Strava kunt laden.</div>
+
   <h3>Bewaarde routes</h3>
   <div id="savedList"></div>
   <div class="hint" id="noSaved">Nog niets bewaard.</div>
@@ -284,11 +317,6 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     </div>
   </div>
 
-  <h3>Gereden ritten</h3>
-  <div id="rideList"></div>
-  <div class="hint" id="noRides">Nog geen ritten opgenomen. Zodra je een rit
-    stopt komt hij hier te staan, met een GPX die je in Strava kunt laden.</div>
-
   <h3 style="margin-top:20px">Onderweg</h3>
   <div class="hint" style="padding-bottom:6px">
     Zet de telefoon in een stuurhouder met het scherm aan. De app houdt hem wakker.
@@ -296,7 +324,7 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     spaarstand aan: zwart scherm met alleen de volgende afslag, scheelt flink accu.
   </div>
   <div class="hint" id="versie" style="padding:14px 0 4px;text-align:center;opacity:.55">
-    versie 7</div>
+    versie 8</div>
 </div>
 
 <div id="banner">
@@ -350,6 +378,27 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
   <div id="pdist">--<s>m</s></div>
   <div id="pstreet"></div>
   <div id="pfoot">Tik om de kaart terug te halen</div>
+</div>
+
+<div id="rit">
+  <div id="ritkop">
+    <div><b id="ritDatum">Rit</b><small id="ritTijd"></small></div>
+    <button class="btn sm" id="ritSluit">Sluit</button>
+  </div>
+  <svg id="ritVorm" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid meet"></svg>
+  <div id="ritgrid">
+    <div class="hero"><u>Afstand</u><b id="ritKm">0</b></div>
+    <div class="hero"><u>Rijtijd</u><b id="ritRij">0</b></div>
+    <div><u>Gemiddeld</u><b id="ritGem">0</b></div>
+    <div><u>Topsnelheid</u><b id="ritMax">0</b></div>
+    <div><u>Klim</u><b id="ritKlim">0</b></div>
+    <div><u>Onderweg</u><b id="ritTotaal">0</b></div>
+  </div>
+  <h3>Per 5 km</h3>
+  <div id="ritStukken"></div>
+  <div class="row">
+    <button class="btn pri" id="ritGpx">GPX voor Strava</button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -2176,7 +2225,7 @@ function stopNav() {
   if (mapReady) map.getSource('done').setData(emptyFC());
   renderMarkers();
   fitRoute();
-  if (rit) toast('Rit bewaard: ' + rit.km.toFixed(1).replace('.', ',') + ' km', 4200);
+  if (rit) toonRit(rit, true);
 }
 
 function onGeoErr(e) {
@@ -2419,9 +2468,18 @@ function trackPush(pos, t, ele) {
   n.track.push({ lat: pos[0], lon: pos[1], t, e: (ele == null ? null : Math.round(ele)) });
   if (t - (n.trackSaved || 0) > 15000) {
     n.trackSaved = t;
-    try { localStorage.setItem('fietsnav.ritLopend',
-      JSON.stringify({ startT: n.startT, p: packTrack(n.track) })); } catch (e) {}
+    try { localStorage.setItem('fietsnav.ritLopend', JSON.stringify(
+      Object.assign({ startT: n.startT, p: packTrack(n.track) }, ritCijfers(n)))); } catch (e) {}
   }
+}
+/* De cijfers die alleen tijdens de rit bekend zijn: gereden en rijtijd tellen
+   met de snelheid van de GPS zelf, en de klim komt uit het hoogtemodel van de
+   route. Uit het spoor achteraf zijn ze alleen grover te schatten. */
+function ritCijfers(n) {
+  const klim = n.klimBasis + climbSoFar(n.along);
+  return { km: n.ridden / 1000, rij: Math.round(n.rijtijd / 1000),
+           // zonder hoogteprofiel weten we het niet; dan schat ritStats het uit de GPS
+           klim: (S.elev || n.klimBasis > 0) ? Math.round(klim) : null };
 }
 /* Een spoor als losse objecten wegschrijven kost 4,7 KB per kilometer. Tien
    ritten van 100 km is dan 4,6 MB, tegen zo'n 5,9 MB die localStorage biedt -
@@ -2474,14 +2532,35 @@ function finishRide() {
   for (let i = 1; i < n.track.length; i++)
     d += hav([n.track[i-1].lat, n.track[i-1].lon], [n.track[i].lat, n.track[i].lon]);
   const dur = (n.track[n.track.length-1].t - n.track[0].t) / 1000;
-  const rit = { ts: n.track[0].t, km: d / 1000, sec: dur,
-                rij: Math.round(n.rijtijd / 1000), p: packTrack(n.track) };
-  let all = [];
-  try { all = JSON.parse(localStorage.getItem('fietsnav.ritten') || '[]'); } catch (e) {}
-  all.unshift(rit);
-  if (!saveRitten(all.slice(0, 10))) toast('Geen ruimte meer voor ritten', 4200);
+  const c = ritCijfers(n);
+  // wat je onderweg als "gereden" zag; het spoor alleen als die teller leeg is
+  const rit = { ts: n.track[0].t, km: c.km > 0 ? c.km : d / 1000, sec: dur,
+                rij: c.rij, klim: c.klim, p: packTrack(n.track) };
+  bewaarRit(rit);
   clearLopend();
   renderRides();
+  return rit;
+}
+function bewaarRit(rit) {
+  const all = loadRides();
+  all.unshift(rit);
+  if (!saveRitten(all.slice(0, 10))) toast('Geen ruimte meer voor ritten', 4200);
+}
+/* De rit wordt elke 15 s tussentijds weggeschreven, maar werd nooit teruggelezen.
+   Sluit iOS de pagina halverwege (andere app open, telefoon op slot), dan was
+   je rit dus toch kwijt. Nu zet de app hem bij het openen alsnog bij je ritten. */
+function herstelLopendeRit() {
+  let l = null;
+  try { l = JSON.parse(localStorage.getItem('fietsnav.ritLopend') || 'null'); } catch (e) {}
+  if (!l || !l.p || l.p.length < 10) { clearLopend(); return null; }
+  const tr = unpackTrack(l.p);
+  let d = 0;
+  for (let i = 1; i < tr.length; i++) d += hav([tr[i-1].lat, tr[i-1].lon], [tr[i].lat, tr[i].lon]);
+  const rit = { ts: tr[0].t, km: l.km > 0 ? l.km : d / 1000,
+                sec: (tr[tr.length-1].t - tr[0].t) / 1000,
+                rij: l.rij || 0, klim: l.klim == null ? null : l.klim, p: l.p, onderbroken: true };
+  bewaarRit(rit);
+  clearLopend();
   return rit;
 }
 function clearLopend() {
@@ -2524,26 +2603,26 @@ function renderRides() {
   $('#noRides').style.display = all.length ? 'none' : 'block';
   all.forEach((r, i) => {
     const d = document.createElement('div');
-    d.className = 'saved';
+    d.className = 'saved klik';
+    d.onclick = () => toonRit(r);
     const info = document.createElement('div');
     const b = document.createElement('b');
     b.textContent = new Date(r.ts).toLocaleDateString('nl-NL',
-      { weekday: 'short', day: 'numeric', month: 'short' });
+      { weekday: 'short', day: 'numeric', month: 'short' }) +
+      (r.onderbroken ? ' (onderbroken)' : '') + '  ›';
     const sm = document.createElement('small');
     // gemiddelde op rijtijd als we die hebben; oudere ritten hebben alleen de klok
     const basis = r.rij || r.sec;
     const gem = basis > 60 ? (r.km / (basis / 3600)).toFixed(1).replace('.', ',') : '0';
-    sm.textContent = r.km.toFixed(1).replace('.', ',') + ' km, ' + hhmm(basis) + ', ' + gem + ' km/u';
+    sm.textContent = r.km.toFixed(1).replace('.', ',') + ' km, ' + duur(basis).join(' ') + ', ' + gem + ' km/u';
     info.appendChild(b); info.appendChild(sm);
     const g = document.createElement('button');
     g.className = 'btn sm'; g.textContent = 'GPX';
-    g.onclick = () => {
-      downloadText(rideGPX(r), 'rit-' + new Date(r.ts).toISOString().slice(0,10) + '.gpx');
-      toast('GPX gedownload, klaar voor Strava');
-    };
+    g.onclick = e => { e.stopPropagation(); ritNaarStrava(r); };
     const del = document.createElement('button');
     del.className = 'btn sm dan'; del.textContent = 'Wis';
-    del.onclick = () => {
+    del.onclick = e => {
+      e.stopPropagation();
       const all2 = loadRides(); all2.splice(i, 1);
       saveRitten(all2);
       renderRides();
@@ -2551,6 +2630,146 @@ function renderRides() {
     d.appendChild(info); d.appendChild(g); d.appendChild(del);
     box.appendChild(d);
   });
+}
+function ritNaarStrava(r) {
+  downloadText(rideGPX(r), 'rit-' + new Date(r.ts).toISOString().slice(0,10) + '.gpx');
+  toast('GPX gedownload, klaar voor Strava');
+}
+
+/* ---------------- ritoverzicht ----------------
+   Rekent alles uit het bewaarde spoor, zodat ook oudere ritten een overzicht
+   krijgen. Afstand, rijtijd en klim komen liefst uit wat de app onderweg
+   bijhield (zie ritCijfers); het spoor is de terugval. */
+function ritStats(rit) {
+  const tr = ritTrack(rit), n = tr.length;
+  const cum = new Array(n).fill(0), rijc = new Array(n).fill(0);
+  for (let i = 1; i < n; i++) {
+    const d = hav([tr[i-1].lat, tr[i-1].lon], [tr[i].lat, tr[i].lon]);
+    const dt = tr[i].t - tr[i-1].t;
+    cum[i] = cum[i-1] + d;
+    // zelfde regel als de rijtijd onderweg: stilstaan en GPS-gaten tellen niet
+    rijc[i] = rijc[i-1] + (dt > 0 && dt < 15000 && d / (dt / 1000) > 1.5 ? dt : 0);
+  }
+  const afstand = rit.km * 1000;
+  const rij = rit.rij || (n ? rijc[n-1] / 1000 : 0) || rit.sec;
+
+  // Snelste: over minstens 10 seconden, zodat een enkele GPS-sprong geen
+  // 70 km/u oplevert. Boven de 90 km/u is het sowieso een meetfout.
+  let max = 0;
+  for (let i = 0, j = 0; i < n; i++) {
+    if (j < i) j = i;
+    while (j < n - 1 && tr[j].t - tr[i].t < 10000) j++;
+    const dt = (tr[j].t - tr[i].t) / 1000;
+    const v = dt > 0 ? (cum[j] - cum[i]) / dt : 0;
+    if (dt >= 10 && dt <= 30 && v < 25 && v > max) max = v;
+  }
+
+  // Per 5 km op rijtijd, zodat een koffiestop een stuk niet traag maakt
+  const STUK = 5000, stukken = [];
+  let grens = STUK, vorigeR = 0;
+  for (let i = 1; i < n; i++) {
+    while (cum[i] >= grens) {
+      const f = (grens - cum[i-1]) / ((cum[i] - cum[i-1]) || 1);
+      const r = rijc[i-1] + (rijc[i] - rijc[i-1]) * f;
+      stukken.push({ van: grens - STUK, tot: grens, sec: (r - vorigeR) / 1000 });
+      vorigeR = r; grens += STUK;
+    }
+  }
+  const rest = n ? cum[n-1] - (grens - STUK) : 0;
+  if (rest >= 1000) stukken.push({ van: grens - STUK, tot: cum[n-1], sec: (rijc[n-1] - vorigeR) / 1000 });
+  for (const s of stukken) s.v = s.sec > 0 ? (s.tot - s.van) / s.sec : 0;
+
+  // Klim: het hoogtemodel als we dat hadden, anders de GPS-hoogte gladgestreken
+  let klim = rit.klim;
+  if (klim == null) {
+    const hs = tr.map(p => p.e).filter(e => e != null);
+    klim = hs.length > n / 2 && hs.length > 10
+      ? Math.round(ascentSeries(smoothProfile(hs, 9), 4)[hs.length - 1]) : null;
+  }
+  return { tr, afstand, rij, sec: rit.sec, gem: rij > 0 ? afstand / rij : 0, max, klim, stukken,
+           start: n ? tr[0].t : rit.ts, eind: n ? tr[n-1].t : rit.ts };
+}
+
+// tijdsduur als [getal, eenheid]: "47 min" of "2:14 u"
+function duur(sec) {
+  const m = Math.round(sec / 60);
+  if (m < 60) return [String(m), 'min'];
+  return [Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'), 'u'];
+}
+function klokTijd(t) {
+  const d = new Date(t);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+const komma = (v, d) => v.toFixed(d).replace('.', ',');
+
+function toonRit(rit, net) {
+  const st = ritStats(rit);
+  const zet = (id, v, u) => { $(id).innerHTML = v + (u ? '<s>' + u + '</s>' : ''); };
+  const dag = new Date(st.start).toLocaleDateString('nl-NL',
+    { weekday: 'long', day: 'numeric', month: 'long' });
+  $('#ritDatum').textContent = dag.charAt(0).toUpperCase() + dag.slice(1);
+  $('#ritTijd').textContent = klokTijd(st.start) + ' tot ' + klokTijd(st.eind) +
+    (net ? ', bewaard bij Gereden ritten' : '') +
+    (rit.onderbroken ? ', onderbroken rit (teruggezet)' : '');
+  tekenVorm($('#ritVorm'), st.tr);
+  zet('#ritKm', komma(st.afstand / 1000, 1), 'km');
+  const r = duur(st.rij), t = duur(st.sec);
+  zet('#ritRij', r[0], r[1]);
+  zet('#ritGem', komma(st.gem * 3.6, 1), 'km/u');
+  zet('#ritMax', st.max > 0 ? komma(st.max * 3.6, 1) : '&ndash;', st.max > 0 ? 'km/u' : '');
+  zet('#ritKlim', st.klim == null ? '&ndash;' : String(st.klim), st.klim == null ? '' : 'm');
+  zet('#ritTotaal', t[0], t[1]);
+
+  const box = $('#ritStukken');
+  box.innerHTML = '';
+  const snelste = Math.max.apply(null, st.stukken.map(s => s.v).concat([0]));
+  const kmTekst = m => komma(m / 1000, m % 1000 === 0 ? 0 : 1);
+  for (const s of st.stukken) {
+    const rij = document.createElement('div');
+    rij.className = 'stuk' + (s.v === snelste && st.stukken.length > 1 ? ' top' : '');
+    const lab = document.createElement('span');
+    lab.textContent = kmTekst(s.van) + '-' + kmTekst(Math.round(s.tot / 100) * 100);
+    const balk = document.createElement('em');
+    const vul = document.createElement('i');
+    vul.style.width = (snelste > 0 ? Math.max(4, s.v / snelste * 100) : 0) + '%';
+    balk.appendChild(vul);
+    const w = document.createElement('b');
+    w.textContent = komma(s.v * 3.6, 1) + ' km/u';
+    rij.appendChild(lab); rij.appendChild(balk); rij.appendChild(w);
+    box.appendChild(rij);
+  }
+  if (!st.stukken.length) {
+    box.innerHTML = '<div class="hint">Korter dan 5 km, dus nog geen stukken.</div>';
+  }
+  $('#ritGpx').onclick = () => ritNaarStrava(rit);
+  $('#rit').scrollTop = 0;
+  $('#rit').classList.add('on');
+}
+function sluitRit() { $('#rit').classList.remove('on'); }
+
+// De vorm van de rit als lijntje, zonder kaart: werkt ook zonder bereik
+function tekenVorm(svg, tr) {
+  if (tr.length < 2) { svg.innerHTML = ''; return; }
+  const W = 320, H = 180, pad = 14;
+  const k = Math.cos(toRad(tr[0].lat));
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of tr) {
+    const x = p.lon * k, y = p.lat;
+    if (x < x0) x0 = x; if (x > x1) x1 = x;
+    if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  const sc = Math.min((W - 2 * pad) / ((x1 - x0) || 1e-6), (H - 2 * pad) / ((y1 - y0) || 1e-6));
+  const ox = (W - (x1 - x0) * sc) / 2, oy = (H - (y1 - y0) * sc) / 2;
+  const px = p => [(ox + (p.lon * k - x0) * sc).toFixed(1), (oy + (y1 - p.lat) * sc).toFixed(1)];
+  const stap = Math.max(1, Math.floor(tr.length / 700));
+  let d = '';
+  for (let i = 0; i < tr.length; i += stap) { const q = px(tr[i]); d += (i ? 'L' : 'M') + q[0] + ',' + q[1]; }
+  const a = px(tr[0]), b = px(tr[tr.length - 1]);
+  d += 'L' + b[0] + ',' + b[1];
+  svg.innerHTML =
+    '<path d="' + d + '" fill="none" stroke="#e6007e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<circle cx="' + b[0] + '" cy="' + b[1] + '" r="5.5" fill="#fff" stroke="#0b0e14" stroke-width="2"/>' +
+    '<circle cx="' + a[0] + '" cy="' + a[1] + '" r="5.5" fill="#00e08a" stroke="#0b0e14" stroke-width="2"/>';
 }
 
 /* ---------------- ritschermen ----------------
@@ -2885,6 +3104,7 @@ $('#bData').onclick = () => setRideScreen(1);
 $('#bSaveMode').onclick = () => setRideScreen(2);
 $('#power').onclick = () => setRideScreen(0);
 $('#dstrip').onclick = () => setRideScreen(0);
+$('#ritSluit').onclick = sluitRit;
 $('#ridebar').onclick = () => {
   if (Date.now() - (window.__geveegd || 0) < 400) return;   // dit was een veeg
   setRideScreen(1);
@@ -2923,7 +3143,11 @@ map.on('dragstart', () => { if (S.nav) S.follow = false; });
 /* ---------------- start ---------------- */
 Voice.init();
 loadSaved();
+const teruggezet = herstelLopendeRit();
 renderRides();
+if (teruggezet) {
+  toast('Je vorige rit werd onderbroken. Hij staat bij Gereden ritten.', 6000);
+}
 try { if (localStorage.getItem('fietsnav.paved') === '0') S.prof.ab = 0.3; } catch (e) {}
 syncProfileUI();
 $('#loopKmL').textContent = $('#loopKm').value + ' km';
