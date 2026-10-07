@@ -80,7 +80,8 @@ Navigeren werkte al zonder bereik, want de route en de instructies staan in je
 telefoon. Nu haalt de knop **Deze route offline opslaan** ook de kaart binnen.
 
 Reken op ongeveer 12 MB voor een lus van 60 km; door de stad meer, in de polder
-minder. Het ophalen duurt een seconde of vier op wifi. Onder de knop staat
+minder. Wat je gewoon bekijkt wordt apart bewaard en boven zo'n 1500 kaartdelen
+automatisch opgeruimd; wat je bewust offline opslaat blijft staan. Het ophalen duurt een seconde of vier op wifi. Onder de knop staat
 hoeveel er opgeslagen is, met een knop om het te wissen.
 
 Getest met het netwerk naar de tegelserver volledig geblokkeerd: de kaart tekent
@@ -96,14 +97,93 @@ Je **rijtijd** wordt apart bijgehouden van de totale tijd: stilstaan telt niet
 mee. Je gemiddelde gaat op de rijtijd, want anders drukt elke koffiestop je
 cijfers. Op het cijferscherm zie je beide naast elkaar staan.
 
-Zodra je op Start rit tikt legt de app je spoor vast, met tijdstip en hoogte per
-punt. Stop je, dan komt de rit onder **Gereden ritten** te staan met een
-GPX-knop. Die GPX kun je zo in Strava laden: de tijdstippen per punt zijn precies
-wat Strava nodig heeft om er een activiteit van te maken. De laatste tien ritten
-blijven bewaard.
+Zodra je op Start rit tikt legt de app je spoor vast, met tijdstip, hoogte en de
+snelheid die de GPS zelf meet. Stop je (of kom je aan), dan opent het
+**ritoverzicht**, ingedeeld zoals een activiteit in Strava:
 
-Tussentijds wordt elke 15 seconden opgeslagen, dus een crash of een per ongeluk
-gesloten tab kost je de rit niet.
+- **Bovenin de kaart** met je rit gekleurd naar snelheid, helling of wind.
+- **Kerncijfers**: afstand, rijtijd, gemiddelde, topsnelheid, klim, tijd
+  onderweg, en geschat vermogen (gemiddeld, NP, W/kg, energie).
+- **Analyse**: hoogte, snelheid en vermogen in één grafiek. Schuif met je vinger
+  eroverheen: je ziet de waarden op dat punt en een stip op de kaart.
+- **Beste prestaties**: snelste 1, 5, 10, 20 en 40 km, beste vermogen over
+  5 s, 1, 5, 20 en 60 minuten.
+- **Klimmen**: automatisch gevonden, met lengte, percentage, hoogtemeters, tijd,
+  VAM en vermogen. Tik op een klim en de kaart zoomt erop in.
+- **Wind**: kracht en richting, en hoeveel van je rit tegen-, zij- of meewind was.
+- **Vermogenszones**, IF en TSS; **per 5 km**; **stops**; de knop **GPX voor Strava**.
+
+Hoogte en weer haalt de app na de rit op: het hoogtemodel langs je hele spoor
+(de GPS-hoogte van een iPhone ruist te veel) en het weer per uur via Open-Meteo.
+Zonder bereik komt dat de volgende keer dat je het overzicht opent.
+
+**Vul onder Fietsprofiel je gewicht in**, en je FTP als je die weet. Zonder FTP
+schat de app hem uit je beste 20 minuten over al je ritten.
+
+**Eerlijk over het vermogen:** een iPhone-webapp kan geen vermogensmeter of
+hartslagband uitlezen (Safari op iOS kent geen Bluetooth voor websites). Het
+vermogen is dus geschat uit snelheid, helling, wind en gewicht, zoals Strava doet
+zonder meter. Solo zit het er zo'n 10 tot 15% naast. In een groep schat het te
+hoog, want uit de wind rijden ziet de app niet.
+
+Later vind je de rit terug onder **Gereden ritten** in het planpaneel. Tik op
+een rit en het overzicht opent weer. De laatste tien ritten blijven bewaard;
+tien ritten van 100 km kosten samen zo'n 1 MB.
+
+Tussentijds wordt elke 15 seconden opgeslagen. Sluit iOS de app halverwege
+(andere app open, telefoon op slot), dan zet de app die rit bij het volgende
+openen alsnog bij je ritten, gemarkeerd als onderbroken.
+
+## Telefoon in je zak: het slot
+
+Tik onderweg op het **slotje** (ook te vinden op het cijferscherm en in de
+spaarstand). Het scherm reageert dan nergens meer op, zodat zweet of je lichaam
+niets per ongeluk kan aantikken. Spraak, GPS en de opname lopen gewoon door.
+Ontgrendelen: schuif het groene slotje helemaal naar rechts.
+
+**Stop** vraagt nu altijd eerst of je de rit echt wilt stoppen.
+
+Nog strenger kan met iOS zelf: **Begeleide toegang** (Instellingen →
+Toegankelijkheid). Drie keer op de zijknop en het hele scherm is dood, ook de
+randen voor Bedieningspaneel en meldingen. Dat kan de app zelf niet afschermen.
+
+## Weg dicht
+
+Sta je voor een afsluiting, tik dan op het **wegafzetting-knopje** (🚧). De app
+zet het stuk weg voor je dicht (of de weg waar je zou inslaan, als die afslag
+binnen 60 m is) en rekent een omweg. Die afsluiting onthoudt hij een week, ook
+bij het plannen. Je ziet hem als 🚧 op de kaart; tik erop om hem weg te halen.
+Een weg die al dicht staat telt niet nog eens mee. Meld je vlak na een melding
+(binnen een minuut en 100 m) nog een afsluiting, dan vraagt de app eerst of ook
+die weg echt dicht is. Er worden er hooguit 20 bewaard.
+
+## Route naar je Garmin (Edge 520)
+
+Tik onder "Opslaan en delen" op **Naar Garmin, met afslagen**. De app maakt een
+FIT-koers met elke afslag als koerspunt, met straatnaam en richting; bij een
+rotonde staat erbij welke afslag het is. Je Edge piept dan bij elke afslag en
+toont pijl, naam en de afstand ernaartoe. Een kale GPX kan dat niet: daar leidt
+de Edge 520, die geen routekaart heeft, de bochten zelf af uit de vorm van de lijn.
+
+1. Op de iPhone opent meteen het deelmenu. Kies **Connect** (Garmin Connect).
+   Zie je dat deelmenu niet, dan komt het bestand in Bestanden; deel het van daaruit.
+2. Kies het type fietsen en **Bewaar**. Tik in de koers op **Stuur naar apparaat**.
+3. Zet de Edge aan in de buurt van je telefoon; hij synchroniseert via Bluetooth.
+4. Op de Edge: **Navigatie → Koersen**, kies de route en start.
+
+Met een kabel kan het ook: zet het .fit-bestand in de map `Garmin/NewFiles` van
+de Edge en herstart hem.
+
+## Testen
+
+Zet `?test` achter het adres, bijvoorbeeld `https://JOUWNAAM.github.io/fietsnav/?test`.
+De app draait dan vijfentwintig tests die elk een fout nalopen die ooit echt in de app
+zat, en toont groen of rood per test. Duurt een paar seconden en gebruikt
+nep-routes, dus het werkt ook zonder bereik. Je bewaarde routes en ritten worden
+na afloop teruggezet. Haal `?test` weg om de app weer gewoon te gebruiken.
+
+Upload daarvoor ook `tests.js` naar je repo. Zonder `?test` wordt dat bestand
+niet eens opgehaald, dus het maakt de gewone app niet trager.
 
 ## Sleutelen
 
@@ -114,7 +194,7 @@ Alles zit in `index.html`. De stukken die er echt toe doen:
 - `snap()` legt je GPS-positie op de route. Het zoekvenster is met opzet smal
   naar achteren en ruim naar voren.
 - `makeLoop()` bouwt vier kandidaat-rondjes in vier windstreken en laat de score
-  kiezen. Daarna gaat de winnaar nog hoogstens twee keer terug de router in om de
+  kiezen. Daarna gaat de winnaar nog hoogstens drie keer terug de router in om de
   afstand kloppend te krijgen.
 - **De vorm is waar het misging.** De eerste versie zette drie keerpunten op een
   cirkel, 120 graden uit elkaar. Dat lijkt logisch maar geeft een ster in plaats
@@ -125,6 +205,16 @@ Alles zit in `index.html`. De stukken die er echt toe doen:
   plaats van op 50%), en dat zakte naar 3%. `shapeOffsetRing` gaat nog een stap
   verder: die legt de cirkel *naast* je startpunt in plaats van eromheen, zodat
   je een kant op rijdt, daar een lus maakt en anders terugkomt. Dat geeft 0,1%.
+- **Heen en weer naar een keerpunt** was het volgende probleem, en de oude maat
+  zag het niet. Een keerpunt viel soms in een weiland of op een doodlopend
+  weggetje; de route reed ernaartoe en via dezelfde weg terug. Vergeleken met
+  negen Komoot-rondjes rond Delft (zelfde start, zelfde afstand, 27 rondjes per
+  versie): oud 6,5% van de rit heen en weer (mediaan, slechtste 30,5%, 16 van
+  de 27 boven 5%), Komoot 3,3%, nu 0,8% en 2 van de 27 boven 5%.
+  `keerFractie()` meet het (dezelfde weg in tegengestelde richting terug, op een
+  route die om de 20 m wordt bemonsterd), `zonderUitstapjes()` zet zo'n keerpunt
+  terug naar de kruising waar het uitstapje begint, en de score trekt het
+  dubbel zo zwaar af als gewone overlap.
 - `overlapFraction()` meet hoeveel van de route over zichzelf heen loopt, met een
   rasterindeling zodat het lineair blijft. Twee punten tellen als dubbel bij
   minder dan 35 m afstand maar meer dan 2 km verschil in route-afstand. Dit
@@ -164,6 +254,17 @@ Alles zit in `index.html`. De stukken die er echt toe doen:
 - `splitSpeed()` houdt een buffer van (afstand, tijd) bij en kijkt terug naar het
   monster van 5 km geleden. Dat getal reageert veel sneller op een versnelling
   dan het gemiddelde over de hele rit.
+- `ridden` in de ritstatus is wat je werkelijk fietst; `along` is alleen waar
+  je op de route zit. Die twee lijken hetzelfde maar zijn het niet: bij een
+  herberekening springt `along` terug naar nul. Gereden, gemiddelde, split,
+  klim en voortgang horen op `ridden` te rekenen.
+- `valhalla()` knipt routes van meer dan 10 punten op, want de openbare server
+  weigert daarboven (`Exceeded max locations: 10`). `buildRoute()` laat daarna
+  alleen de laatste "aangekomen"-melding staan: Valhalla zet er een aan het eind
+  van elke leg, en een gegenereerd rondje heeft er zeven.
+- `traceLine()` legt een ingeladen GPX op de weg. Breekt Valhalla de match af,
+  dan vraagt hij het ontbrekende deel opnieuw op vanaf waar het ophield. Niet de
+  "alternates" aan elkaar plakken: die overlappen en geven een teruglopend stuk.
 - `fetchKnooppunten()` haalt het Nederlandse fietsknooppuntennetwerk op uit
   OpenStreetMap via Overpass. Dat zijn de routes die provincies hebben uitgezet
   en bewegwijzerd. Eerlijk over wat het oplevert: gemeten over drie richtingen

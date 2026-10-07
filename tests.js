@@ -516,13 +516,229 @@
     return { ok, detail: 'snelheden terug: ' + terug.map(p => p.s).join(', ') + '; oud formaat: ' + oud.map(p => p.s).join(', ') };
   });
 
+  /* ---------------- naar Garmin ----------------
+     Leest een FIT-bestand terug zoals een Garmin dat doet: kop, controlesom,
+     definities en data. Telt de berichten per soort en haalt de koerspunten eruit. */
+  function leesFit(b) {
+    const uit = { fout: null, aantal: {}, punten: [] };
+    if (String.fromCharCode(b[8], b[9], b[10], b[11]) !== '.FIT') { uit.fout = 'geen .FIT in de kop'; return uit; }
+    let c = 0;
+    for (let i = 0; i < b.length; i++) c = fitCrc(c, b[i]);
+    if (c !== 0) { uit.fout = 'controlesom klopt niet'; return uit; }
+    const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    const lengte = dv.getUint32(4, true);
+    if (lengte !== b.length - 16) { uit.fout = 'datalengte klopt niet'; return uit; }
+    const defs = {};
+    let p = 14;
+    while (p < 14 + lengte) {
+      const kop = b[p++], lok = kop & 0x0F;
+      if (kop & 0x40) {
+        const nv = b[p + 4], velden = [];
+        for (let i = 0; i < nv; i++) velden.push({ nr: b[p + 5 + i * 3], n: b[p + 6 + i * 3] });
+        defs[lok] = { glob: dv.getUint16(p + 2, true), velden };
+        p += 5 + nv * 3;
+      } else {
+        const d = defs[lok];
+        if (!d) { uit.fout = 'data zonder definitie'; return uit; }
+        uit.aantal[d.glob] = (uit.aantal[d.glob] || 0) + 1;
+        const plek = {};
+        for (const v of d.velden) { plek[v.nr] = { p, n: v.n }; p += v.n; }
+        if (d.glob === 32) {
+          let naam = '';
+          for (let i = 0; i < plek[6].n && b[plek[6].p + i]; i++) naam += String.fromCharCode(b[plek[6].p + i]);
+          uit.punten.push({ type: b[plek[5].p], afstand: dv.getUint32(plek[4].p, true) / 100, naam });
+        }
+      }
+    }
+    return uit;
+  }
+
+  await test('Naar Garmin: geldige FIT-koers met een koerspunt per afslag', async () => {
+    const t = trap([52.0, 5.0], 20, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    const fit = maakFitKoers(S.route, 'Testkoers', 28, null);
+    const r = leesFit(fit.bytes);
+    const bochten = S.route.man.filter(m => m.type === 10 || m.type === 15).length;
+    const eerste = r.punten[0], rechts = S.route.man.find(m => m.type === 10);
+    const ok = !r.fout && r.aantal[32] === bochten && r.aantal[20] > 100 && r.aantal[31] === 1 &&
+               r.aantal[19] === 1 && r.aantal[21] === 2 && !!eerste && eerste.type === 7 &&
+               eerste.naam === 'Rechts' && Math.abs(eerste.afstand - rechts.at) < 1;
+    return { ok, detail: r.fout || (r.aantal[32] + ' koerspunten voor ' + bochten + ' bochten, ' + r.aantal[20] +
+             ' routepunten, eerste: ' + (eerste ? eerste.naam + ' (type ' + eerste.type + ') op ' + eerste.afstand.toFixed(0) + ' m' : 'geen')) };
+  });
+
+  await test('Naar Garmin: rotonde krijgt de richting van de uitrit', async () => {
+    // 500 m naar het noorden, rotonde, dan 500 m naar het oosten: dat is rechtsaf
+    const pts = [];
+    for (let i = 0; i <= 20; i++) pts.push([52.0 + i * 25 / 111320, 5.0]);
+    const hoek = pts.length - 1;
+    for (let i = 1; i <= 20; i++) pts.push([pts[hoek][0], 5.0 + i * 25 / (111320 * Math.cos(52 * Math.PI / 180))]);
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hav(pts[i - 1], pts[i]));
+    const route = { pts, cum, len: cum[cum.length - 1], man: [
+      { type: 26, bi: hoek, at: cum[hoek], roundabout_exit_count: 2 },
+      { type: 27, bi: hoek + 1, at: cum[hoek + 1] }] };
+    const p = garminPunten(route);
+    const ok = p.length === 1 && p[0].type === 7 && p[0].naam === 'Rotonde 2e afsl';
+    return { ok, detail: p.length + ' punt(en)' + (p[0] ? ': ' + p[0].naam + ', type ' + p[0].type + ' (7 = rechts)' : '') };
+  });
+
+  /* ---------------- slot, stoppen en weg dicht ---------------- */
+  const midden = el => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const schuif = frac => {
+    const duim = $('#slotduim'), spoor = $('#slotspoor');
+    const [x, y] = midden(duim), weg = (spoor.clientWidth - duim.offsetWidth - 10) * frac;
+    duim.dispatchEvent(new PointerEvent('pointerdown', { clientX: x, clientY: y, pointerId: 7, bubbles: true }));
+    duim.dispatchEvent(new PointerEvent('pointermove', { clientX: x + weg, clientY: y, pointerId: 7, bubbles: true }));
+    duim.dispatchEvent(new PointerEvent('pointerup', { clientX: x + weg, clientY: y, pointerId: 7, bubbles: true }));
+  };
+
+  await test('Slot vangt elke aanraking op en gaat alleen open met een volle schuif', async () => {
+    const t = trap([52.0, 5.0], 10, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    start();
+    zetSlot(true);
+    // wat ligt er bovenop de stopknop en midden op de kaart?
+    const opStop = document.elementFromPoint.apply(document, midden($('#bStop')));
+    const opKaart = document.elementFromPoint(innerWidth / 2, innerHeight / 3);
+    const gevangen = !!opStop && !!opKaart && $('#slot').contains(opStop) && $('#slot').contains(opKaart);
+    schuif(0.5);
+    const halfDicht = document.body.classList.contains('op-slot');
+    schuif(1);
+    const open = !document.body.classList.contains('op-slot');
+    const ok = gevangen && halfDicht && open && !!S.nav;
+    return { ok, detail: (gevangen ? 'aanrakingen gevangen' : 'aanraking komt erdoor') + ', halve schuif ' +
+             (halfDicht ? 'blijft dicht' : 'opent al') + ', volle schuif ' + (open ? 'opent' : 'opent niet') };
+  });
+
+  await test('Stop vraagt eerst om bevestiging', async () => {
+    const t = trap([52.0, 5.0], 10, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    start();
+    let gestopt = 0;
+    window.stopNav = () => { gestopt++; };
+    $('#bStop').click();
+    const vraag = document.body.classList.contains('stopvraag') && gestopt === 0;
+    $('#stopNee').click();
+    const door = !document.body.classList.contains('stopvraag') && gestopt === 0;
+    $('#bStop').click(); $('#stopJa').click();
+    window.stopNav = function () {};
+    const ok = vraag && door && gestopt === 1;
+    return { ok, detail: (vraag ? 'vraagt eerst' : 'stopt meteen') + ', doorgaan ' + (door ? 'werkt' : 'werkt niet') +
+             ', bevestigen stopt ' + gestopt + 'x' };
+  });
+
+  await test('Weg dicht: omweg om de weg voor je, en ook bij het plannen', async () => {
+    localStorage.removeItem('fietsnav.dicht');
+    const t = trap([52.0, 5.0], 10, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    start();
+    rijd(S.route, 0, 3000, 28);                       // 600 m voor de derde bocht op 3600 m
+    let verzoek = null;
+    window.fetch = async (url, opt) => {
+      if (String(url).indexOf('/route') >= 0) { verzoek = JSON.parse(opt.body); return nepRouteServer(opt); }
+      if (String(url).indexOf('/height') >= 0) return json({ range_height: [[0, 5], [10, 5]] });
+      return echt.fetch(url, opt);
+    };
+    const oud = S.route, along = S.nav.along;
+    wegDicht();
+    for (let i = 0; i < 6; i++) await tik();
+    const uit = verzoek && verzoek.exclude_locations || [];
+    // de punten moeten 35 en 70 m voor je op de oude route liggen
+    const afst = uit.map(p => { let best = 1e9, k = 0;
+      for (let i = 0; i < oud.pts.length; i++) { const d = hav(oud.pts[i], [p.lat, p.lon]); if (d < best) { best = d; k = i; } }
+      return Math.round(oud.cum[k] - along); });
+    const omweg = S.route !== oud && gezegd.some(x => x.t.indexOf('Afsluiting genoteerd') === 0) &&
+                  !gezegd.some(x => x.t.indexOf('van de route') >= 0);
+    const bewaard = afsluitingen().length === 1;
+    const plan = profileBody([{ lat: 52.0, lon: 5.0 }, { lat: 52.05, lon: 5.0 }], S.prof).exclude_locations || [];
+    const ver = profileBody([{ lat: 53.0, lon: 6.0 }, { lat: 53.05, lon: 6.0 }], S.prof).exclude_locations;
+    localStorage.removeItem('fietsnav.dicht'); renderAfsluitingen();
+    const ok = uit.length === 2 && afst[0] >= 25 && afst[0] <= 45 && afst[1] >= 60 && afst[1] <= 80 &&
+               omweg && bewaard && plan.length === 2 && !ver;
+    return { ok, detail: uit.length + ' punten uitgesloten op ' + afst.join(' en ') + ' m voor je, ' +
+             (omweg ? 'omweg berekend' : 'geen omweg') + ', ' + (bewaard ? 'bewaard' : 'niet bewaard') +
+             ', bij plannen ' + plan.length + ' punten, ver weg ' + (ver ? ver.length : 0) };
+  });
+
+  await test('Weg dicht: niet eindeloos vaak, en vraagt bij een tweede melding', async () => {
+    localStorage.removeItem('fietsnav.dicht');
+    const t = trap([52.0, 5.0], 10, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    start();
+    rijd(S.route, 0, 3000, 28);
+    const echtReroute = window.reroute, echtConfirm = window.confirm;
+    let omwegen = 0, vragen = 0, antwoord = false;
+    window.reroute = () => { omwegen++; };
+    window.confirm = () => { vragen++; return antwoord; };
+    try {
+      wegDicht();                                     // eerste melding: telt
+      wegDicht();                                     // zelfde plek: staat al dicht
+      const naDubbel = afsluitingen().length;
+      S.nav.along += 400;                             // een andere weg, maar je hebt niet gereden
+      wegDicht();                                     // vraagt, antwoord nee
+      const naNee = afsluitingen().length;
+      antwoord = true;
+      wegDicht();                                     // vraagt, antwoord ja
+      const naJa = afsluitingen().length;
+      // nooit meer dan 20 bewaren
+      const veel = [];
+      for (let i = 0; i < 25; i++) veel.push({ punten: [[52.1 + i * 0.01, 5.1]], ts: Date.now() });
+      bewaarAfsluitingen(veel.slice(-20));
+      const ok = naDubbel === 1 && naNee === 1 && naJa === 2 && vragen === 2 && omwegen === 2 &&
+                 afsluitingen().length === 20;
+      return { ok, detail: 'na dubbele tik ' + naDubbel + ', na nee ' + naNee + ', na ja ' + naJa +
+               ', ' + vragen + 'x gevraagd, ' + omwegen + ' omwegen' };
+    } finally {
+      window.reroute = echtReroute; window.confirm = echtConfirm;
+      localStorage.removeItem('fietsnav.dicht'); renderAfsluitingen();
+    }
+  });
+
+  /* ---------------- rondjes zonder heen en weer ---------------- */
+  // Rechte lijn noord met optioneel een uitstapje oost en terug halverwege
+  function lijnRoute(metUitstapje) {
+    const dLat = 25 / 111320, dLon = 25 / (111320 * Math.cos(52 * Math.PI / 180));
+    const pts = [[52.0, 5.0]];
+    const zet = (dy, dx, k) => { for (let i = 0; i < k; i++) { const p = pts[pts.length - 1]; pts.push([p[0] + dy * dLat, p[1] + dx * dLon]); } };
+    zet(1, 0, 80);                                    // 2 km noord
+    const voet = pts.length - 1;
+    let top = voet;
+    if (metUitstapje) { zet(0, 1, 12); top = pts.length - 1; zet(0, -1, 12); }   // 300 m oost en terug
+    zet(1, 0, 80);                                    // 2 km noord
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hav(pts[i - 1], pts[i]));
+    return { pts, cum, len: cum[cum.length - 1], man: [], voet, top,
+             wpAlong: [0, cum[top], cum[cum.length - 1]] };
+  }
+
+  await test('Heen en weer naar een keerpunt wordt gezien', async () => {
+    const zonder = keerFractie(lijnRoute(false)), met = lijnRoute(true), k = keerFractie(met);
+    const verwacht = 600 / met.len;
+    const ok = zonder < 0.005 && Math.abs(k - verwacht) < 0.03 && overlapFraction(met) < 0.01;
+    return { ok, detail: 'zonder uitstapje ' + (zonder * 100).toFixed(1) + '%, met ' + (k * 100).toFixed(1) +
+             '% (verwacht ' + (verwacht * 100).toFixed(1) + '%); de oude maat zag ' + (overlapFraction(met) * 100).toFixed(1) + '%' };
+  });
+
+  await test('Keerpunt op een doodlopend stuk gaat terug naar de kruising', async () => {
+    const r = lijnRoute(true);
+    const wps = [{ lat: r.pts[0][0], lon: r.pts[0][1] }, { lat: r.pts[r.top][0], lon: r.pts[r.top][1] },
+                 { lat: r.pts[r.pts.length - 1][0], lon: r.pts[r.pts.length - 1][1] }];
+    const nieuw = zonderUitstapjes(r, wps);
+    const afstand = nieuw ? hav([nieuw[1].lat, nieuw[1].lon], r.pts[r.voet]) : -1;
+    const geenWerk = zonderUitstapjes(lijnRoute(false), [wps[0], { lat: r.pts[40][0], lon: r.pts[40][1] }, wps[2]]);
+    const ok = !!nieuw && afstand >= 0 && afstand < 45 && nieuw[0] === wps[0] && nieuw[2] === wps[2] && geenWerk === null;
+    return { ok, detail: nieuw ? 'keerpunt verplaatst naar ' + Math.round(afstand) + ' m van de kruising' +
+             (geenWerk === null ? ', doorgaande weg ongemoeid' : ', ook doorgaande weg verplaatst') : 'niet verplaatst' };
+  });
+
   /* ---------------- opruimen en tonen ---------------- */
   Voice.say = echt.say; Voice.prime = echt.prime; Wake.on = echt.wakeOn;
   window.stopNav = echt.stopNav; Date.now = echt.now;
   try { navigator.geolocation.watchPosition = echt.watch; } catch (e) {}
   herstelOpslag();
   S.route = null; S.wps = []; S.line = null;
-  drawRoute(); updateStats(); renderRides(); sluitRit();
+  drawRoute(); updateStats(); renderRides(); sluitRit(); zetSlot(false); renderAfsluitingen();
 
   const goed = uitslagen.filter(u => u.ok).length;
   const vak = document.createElement('div');
