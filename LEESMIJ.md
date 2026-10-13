@@ -177,7 +177,7 @@ de Edge en herstart hem.
 ## Testen
 
 Zet `?test` achter het adres, bijvoorbeeld `https://JOUWNAAM.github.io/fietsnav/?test`.
-De app draait dan vijfentwintig tests die elk een fout nalopen die ooit echt in de app
+De app draait dan zevenentwintig tests die elk een fout nalopen die ooit echt in de app
 zat, en toont groen of rood per test. Duurt een paar seconden en gebruikt
 nep-routes, dus het werkt ook zonder bereik. Je bewaarde routes en ritten worden
 na afloop teruggezet. Haal `?test` weg om de app weer gewoon te gebruiken.
@@ -215,6 +215,18 @@ Alles zit in `index.html`. De stukken die er echt toe doen:
   route die om de 20 m wordt bemonsterd), `zonderUitstapjes()` zet zo'n keerpunt
   terug naar de kruising waar het uitstapje begint, en de score trekt het
   dubbel zo zwaar af als gewone overlap.
+- **Buiten de stad blijven.** De wegdata geeft per wegvak een dichtheid; vanaf 8
+  is het bebouwd (centrum Delft en Den Haag 11-14, Nootdorp, Voorschoten en
+  Pijnacker 7-10, polder 1-5). De score trekt het aandeel bebouwing en het
+  aandeel over de rijbaan van provinciale en hoofdwegen apart af. De generator
+  probeert zes richtingen in plaats van vier, haalt wegdata voor de beste vijf,
+  en gaat de winnaar midden in de rit meer dan 1 km door een dorp, dan duwt
+  `omBebouwingHeen()` de keerpunten rond dat stuk 1,5 tot 4 km opzij (buitenom
+  en binnendoor) en houdt de beste. Het stuk de stad uit en weer in rond je
+  start telt daarbij niet: dat is onvermijdelijk. Rond Delft ging de rit van
+  33% door bebouwing naar 27% (Komoot 21%); het slechtste rondje reed midden
+  in de rit 32% door bebouwing, nu 17%. Een rondje maken duurt daardoor 25 tot
+  40 seconden.
 - `overlapFraction()` meet hoeveel van de route over zichzelf heen loopt, met een
   rasterindeling zodat het lineair blijft. Twee punten tellen als dubbel bij
   minder dan 35 m afstand maar meer dan 2 km verschil in route-afstand. Dit

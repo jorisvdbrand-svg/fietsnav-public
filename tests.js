@@ -732,6 +732,49 @@
              (geenWerk === null ? ', doorgaande weg ongemoeid' : ', ook doorgaande weg verplaatst') : 'niet verplaatst' };
   });
 
+  /* ---------------- rondjes buiten de stad ---------------- */
+  await test('Bebouwing midden in de rit telt, de stad uit bij de start niet', async () => {
+    // 2 km stad uit, 3 km polder, 1,5 km dorp, 4 km polder, 2 km stad in
+    const vakken = [[12, 1], [11, 1], [4, 1.5], [3, 1.5], [10, 0.75], [9, 0.75], [3, 2], [4, 2], [11, 1], [12, 1]];
+    const km = vakken.reduce((s, v) => s + v[1], 0);
+    const route = { len: km * 1000 };
+    const st = stadsStukken(route, { vakken, km });
+    const ok = st.length === 1 && Math.abs(st[0].van - 5000) < 1 && Math.abs(st[0].tot - 6500) < 1;
+    // en een rondje met evenveel van alles maar meer stad scoort lager
+    const r = lijnRoute(false); r.man = [];
+    const basis = { dichtheid: 5, kruisPerKm: 10, glad: 0.8, onverhard: 0, obstakels: 0, druk: 0 };
+    const weinig = rateRoute(r, Object.assign({ stad: 0.1 }, basis)).score;
+    const veel = rateRoute(r, Object.assign({ stad: 0.4 }, basis)).score;
+    return { ok: ok && veel < weinig - 0.2, detail: st.length + ' stuk(ken)' +
+             (st[0] ? ' van ' + st[0].van + ' tot ' + st[0].tot + ' m' : '') +
+             '; score bij 10% stad ' + weinig.toFixed(2) + ', bij 40% ' + veel.toFixed(2) };
+  });
+
+  await test('Om een dorp heen: alleen de keerpunten rond het dorp gaan opzij', async () => {
+    // vierkant rondje van 3 x 3 km met een dorp halverwege de oostkant
+    const dLat = 1 / 111.32, dLon = 1 / (111.32 * Math.cos(52 * Math.PI / 180));
+    const hoek = [[52, 5], [52, 5 + 3 * dLon], [52 + 3 * dLat, 5 + 3 * dLon], [52 + 3 * dLat, 5], [52, 5]];
+    const pts = [], wpIdx = [0];
+    for (let h = 0; h < 4; h++) {
+      for (let k = (h ? 1 : 0); k <= 30; k++) {
+        pts.push([hoek[h][0] + (hoek[h + 1][0] - hoek[h][0]) * k / 30, hoek[h][1] + (hoek[h + 1][1] - hoek[h][1]) * k / 30]);
+      }
+      wpIdx.push(pts.length - 1);
+    }
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hav(pts[i - 1], pts[i]));
+    const route = { pts, cum, len: cum[cum.length - 1], wpAlong: wpIdx.map(i => cum[i]) };
+    const wps = wpIdx.map(i => ({ lat: pts[i][0], lon: pts[i][1] }));
+    const v = omBebouwingHeen(route, wps, { van: 3800, tot: 5200 });   // midden oostkant
+    const verplaatst = v.map(w => w.map((p, i) => Math.round(hav([p.lat, p.lon], [wps[i].lat, wps[i].lon]))));
+    // de twee hoekpunten aan de oostkant (1 en 2) gaan 1,7 km opzij, start en eind blijven staan
+    const ok = v.length === 2 && verplaatst.every(m => m[0] === 0 && m[4] === 0 && m[3] === 0 &&
+               Math.abs(m[1] - 1680) < 30 && Math.abs(m[2] - 1680) < 30) &&
+               v[0][1].lon > wps[1].lon && v[1][1].lon < wps[1].lon;
+    return { ok, detail: 'verplaatsing per punt: buitenom ' + verplaatst[0].join('/') + ' m, binnendoor ' +
+             verplaatst[1].join('/') + ' m' };
+  });
+
   /* ---------------- opruimen en tonen ---------------- */
   Voice.say = echt.say; Voice.prime = echt.prime; Wake.on = echt.wakeOn;
   window.stopNav = echt.stopNav; Date.now = echt.now;

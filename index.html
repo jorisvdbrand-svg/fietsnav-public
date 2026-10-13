@@ -410,7 +410,7 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     spaarstand aan: zwart scherm met alleen de volgende afslag, scheelt flink accu.
   </div>
   <div class="hint" id="versie" style="padding:14px 0 4px;text-align:center;opacity:.55">
-    versie 12</div>
+    versie 13</div>
 </div>
 
 <div id="banner">
@@ -1499,7 +1499,7 @@ async function fetchRoadAttrs(route) {
       method: 'POST', signal: ctl.signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ shape, costing: 'bicycle', shape_match: 'map_snap',
-        filters: { attributes: ['edge.use', 'edge.surface', 'edge.density',
+        filters: { attributes: ['edge.use', 'edge.surface', 'edge.density', 'edge.road_class',
           'edge.length', 'node.type'], action: 'include' } })
     });
     clearTimeout(timer);
@@ -1507,10 +1507,18 @@ async function fetchRoadAttrs(route) {
     const j = await r.json();
     const edges = j.edges || [];
     if (!edges.length) return null;
-    let L = 0, dens = 0, glad = 0, onverhard = 0, obstakels = 0, kruisingen = 0;
+    let L = 0, dens = 0, glad = 0, onverhard = 0, obstakels = 0, kruisingen = 0, stad = 0, druk = 0;
+    const vakken = [];                       // [dichtheid, lengte in km] in rijvolgorde
     for (const e of edges) {
       const ln = e.length || 0; L += ln;
+      vakken.push([e.density || 0, ln]);
       dens += (e.density || 0) * ln;
+      /* Bebouwd: dichtheid 8 of meer. Gemeten rond Delft: centrum Delft en Den
+         Haag 11-14, Nootdorp, Voorschoten en Pijnacker 7-10, polder 1-5. */
+      if ((e.density || 0) >= 8) stad += ln;
+      // op de rijbaan van een provinciale of hoofdweg zelf, niet op het fietspad ernaast
+      if (e.use === 'road' && (e.road_class === 'primary' || e.road_class === 'secondary' ||
+          e.road_class === 'trunk')) druk += ln;
       const su = e.surface;
       if (su === 'paved_smooth') glad += ln;
       if (su === 'gravel' || su === 'dirt' || su === 'compacted' || su === 'path') onverhard += ln;
@@ -1520,7 +1528,7 @@ async function fetchRoadAttrs(route) {
     }
     if (L < 0.5) return null;
     return { km: L, dichtheid: dens / L, glad: glad / L, onverhard: onverhard / L,
-             obstakels, kruisPerKm: kruisingen / L };
+             obstakels, kruisPerKm: kruisingen / L, stad: stad / L, druk: druk / L, vakken };
   } catch (e) { clearTimeout(timer); return null; }
 }
 
@@ -1724,6 +1732,78 @@ function zonderUitstapjes(route, wps) {
   return veranderd ? uit : null;
 }
 
+/* Route door de punten, met keerpunten op een doodlopend stuk teruggezet naar
+   de kruising waar het uitstapje begint. Twee rondes, want een verplaatst punt
+   kan nog op een kleiner uitstapje liggen. Gemeten bij Delft lag elk keerpunt
+   van het slechtste rondje op 70 m tot 1,1 km heen en terug. */
+async function routeZonderUitstapjes(wps, prof) {
+  let route = await valhalla(wps, prof);
+  for (let ronde = 0; ronde < 2; ronde++) {
+    const beter = zonderUitstapjes(route, wps);
+    if (!beter) break;
+    try {
+      const r2 = await valhalla(beter, prof);
+      if (keerFractie(r2) >= keerFractie(route)) break;
+      route = r2; wps = beter;
+    } catch (e) { break; }
+  }
+  return { route, wps };
+}
+
+/* Twee varianten die om een stuk bebouwing heen gaan: de keerpunten rond dat
+   stuk 1,5 tot 4 km opzij, een keer van het midden van de lus af (buitenom)
+   en een keer ernaartoe (binnendoor). Welke werkt hangt af van waar het dorp
+   ligt, dus beide proberen en de score laten kiezen. Start en eind blijven. */
+function omBebouwingHeen(route, wps, stuk) {
+  const wa = route.wpAlong;
+  if (!wa || wa.length !== wps.length || wps.length < 4) return [];
+  // het tussenpunt voor het stuk, het tussenpunt erna, en alles ertussen
+  let voor = 0, na = wps.length - 1;
+  for (let i = 1; i < wps.length - 1; i++) {
+    if (wa[i] <= stuk.van) voor = i;
+    if (wa[i] >= stuk.tot && na === wps.length - 1) na = i;
+  }
+  const raak = [];
+  for (let i = Math.max(1, voor); i <= Math.min(wps.length - 2, na); i++) raak.push(i);
+  if (!raak.length) return [];
+  const midden = wps.slice(1, -1);
+  const G = [midden.reduce((t, w) => t + w.lat, 0) / midden.length,
+             midden.reduce((t, w) => t + w.lon, 0) / midden.length];
+  const M = routePunt(route, (stuk.van + stuk.tot) / 2);
+  const buiten = bearingTo(G, M);
+  const D = clamp((stuk.tot - stuk.van) * 1.2, 1500, 4000) / 1000;
+  return [buiten, (buiten + 180) % 360].map(richting =>
+    wps.map((w, i) => raak.indexOf(i) >= 0 ? destPoint(w.lat, w.lon, richting, D) : w));
+}
+
+/* Stukken midden in de rit door bebouwing (dichtheid 8+), in meters langs de
+   route. Het stuk de stad uit en weer in rond je startpunt telt niet: dat is
+   onvermijdelijk als je in Delft woont. Alleen stukken van een kilometer of
+   meer, langste eerst; korte onderbrekingen (< 300 m) horen bij hetzelfde stuk. */
+function stadsStukken(route, a) {
+  if (!a || !a.vakken || !a.km) return [];
+  let km = 0, eerste = null, laatste = null;
+  for (const [d, ln] of a.vakken) {
+    if (d < 7) { if (eerste === null) eerste = km; laatste = km + ln; }
+    km += ln;
+  }
+  if (eerste === null) return [];
+  const stukken = [];
+  let open = null;
+  km = 0;
+  for (const [d, ln] of a.vakken) {
+    if (d >= 8 && km >= eerste && km + ln <= laatste) {
+      if (open && km - open.tot < 0.3) open.tot = km + ln;
+      else { open = { van: km, tot: km + ln }; stukken.push(open); }
+    }
+    km += ln;
+  }
+  const schaal = route.len / (a.km * 1000);   // wegdata en route meten net iets anders
+  return stukken.map(s => ({ van: s.van * 1000 * schaal, tot: s.tot * 1000 * schaal }))
+                .filter(s => s.tot - s.van >= 1000)
+                .sort((x, y) => (y.tot - y.van) - (x.tot - x.van));
+}
+
 /* Ononderbroken stukken: manoeuvres aan elkaar plakken tot er een echte bocht
    komt. Dat is wat doortrappen betekent, en het kost geen extra aanroep. */
 function routeRuns(route) {
@@ -1761,9 +1841,14 @@ function rateRoute(route, a) {
   const ws = windScore(route, S.wind);
   const windDeel = ws ? 0.14 * ws.kracht * ws.waarde : 0;
   return {
+    /* Door de stad of over een drukke weg trekt apart af, bovenop "landelijk".
+       Dat is een gemiddelde, en daarin verdween een stuk dwars door een
+       centrum tussen veel polder. Rond Delft reden onze rondjes 32% van de
+       afstand door bebouwd gebied, die van Komoot 21%. */
     score: 0.34*landelijk + 0.30*lang + 0.15*zeer + 0.11*rust + 0.10*wegdek
-           - straf - 1.2*dubbel - 2.0*keer + windDeel,
+           - straf - 1.2*dubbel - 2.0*keer - 0.9*(a.stad || 0) - 1.0*(a.druk || 0) + windDeel,
     landelijk, lang, zeer, rust, wegdek, bochten, dubbel: dubbel + keer, keer,
+    stad: a.stad, druk: a.druk,
     wind: ws ? ws.waarde : null,
     dichtheid: a.dichtheid, kruisPerKm: a.kruisPerKm, obstakels: a.obstakels
   };
@@ -1826,32 +1911,22 @@ async function makeLoop(targetKm, dirDeg) {
      De helft krijgt keerpunten op een fietsknooppunt. Dat is geen zekere winst:
      gemeten bij Uden geven knooppunten 15% minder bochten maar meer paaltjes,
      eindstand 0,68 tegen 0,67. Als variant nuttig, als vaste keuze niet. */
+  /* Zes richtingen in plaats van vier. Vanaf een start in de stad gaat een
+     deel van de richtingen onvermijdelijk door bebouwing (vanaf Delft: Den Haag,
+     Rijswijk, Pijnacker); met zes zit er bijna altijd een bij die de polder in
+     gaat, en de score kiest die. */
   const base = dirDeg === null ? Math.random() * 360 : dirDeg;
   const plan = dirDeg === null
-    ? [[shapeOffsetRing, base, false], [shapeOffsetRing, (base+90)%360, true],
-       [shapeOffsetRing, (base+180)%360, false], [shapeOffsetRing, (base+270)%360, true]]
+    ? [0, 60, 120, 180, 240, 300].map((d, k) => [shapeOffsetRing, (base + d) % 360, k % 2 === 1])
     : [[shapeOffsetRing, base, false], [shapeOffsetRing, (base+35)%360, true],
        [shapeOffsetRing, (base+325)%360, false], [shapeRing, base, true]];
 
   const build = async (mk, th, r, snap) => {
     const raw = mk(start, th, r);
-    let wps = [start].concat(snap ? raw.map(p => snapToKn(p, kn, r*1000*0.30)) : raw);
+    const wps = [start].concat(snap ? raw.map(p => snapToKn(p, kn, r*1000*0.30)) : raw);
     wps.push(start);
-    let route = await valhalla(wps, S.prof);
-    /* Een keerpunt in een weiland of op een doodlopend stuk terugzetten naar de
-       kruising waar het uitstapje begint. Twee rondes, want een verplaatst punt
-       kan nog op een kleiner uitstapje liggen. Gemeten bij Delft lag elk
-       keerpunt van het slechtste rondje op 70 m tot 1,1 km heen en terug. */
-    for (let ronde = 0; ronde < 2; ronde++) {
-      const beter = zonderUitstapjes(route, wps);
-      if (!beter) break;
-      try {
-        const r2 = await valhalla(beter, S.prof);
-        if (keerFractie(r2) >= keerFractie(route)) break;
-        route = r2; wps = beter;
-      } catch (e) { break; }
-    }
-    return { route, wps, mk, th, sn: snap, r };
+    const z = await routeZonderUitstapjes(wps, S.prof);
+    return { route: z.route, wps: z.wps, mk, th, sn: snap, r };
   };
 
   const cands = [];
@@ -1885,10 +1960,11 @@ async function makeLoop(targetKm, dirDeg) {
   let pool = (ok.length ? ok : cands);
 
   /* Voorselectie op wat gratis is: dubbel gereden weg en lange stukken komen
-     uit de route zelf. Alleen de beste drie krijgen een wegdata-aanroep, dat
-     scheelt tijd en belasting van de server. */
+     uit de route zelf. Hoe stedelijk een rondje is weet je pas met wegdata, en
+     dat bleek het belangrijkste verschil tussen de richtingen; daarom krijgen
+     nu de beste vijf een wegdata-aanroep in plaats van drie. */
   pool = pool.map(c => ({ c, voor: rateRoute(c.route, null).score }))
-             .sort((x, y) => y.voor - x.voor).slice(0, 3).map(x => x.c);
+             .sort((x, y) => y.voor - x.voor).slice(0, 5).map(x => x.c);
 
   const rated = [];
   for (let i = 0; i < pool.length; i++) {
@@ -1899,9 +1975,13 @@ async function makeLoop(targetKm, dirDeg) {
     // maar 7% te lang rondje het van een bijna even mooi rondje dat wel klopt.
     r.afwijking = Math.abs(pool[i].route.len/1000 - targetKm) / targetKm;
     r.score -= 0.6 * r.afwijking;
-    rated.push({ c: pool[i], r, mk: pool[i].mk, th: pool[i].th, sn: pool[i].sn, r0: pool[i].r });
+    rated.push({ c: pool[i], r, a, mk: pool[i].mk, th: pool[i].th, sn: pool[i].sn, r0: pool[i].r });
   }
   rated.sort((x, y) => y.r.score - x.r.score);
+  // alle kandidaten met hun cijfers, om de weging later te kunnen narekenen
+  S.kandidaten = rated.map(x => ({ th: Math.round(x.th || 0), km: x.c.route.len / 1000,
+    score: x.r.score, stad: x.r.stad, druk: x.r.druk, lang: x.r.lang, zeer: x.r.zeer, keer: x.r.keer,
+    dubbel: x.r.dubbel, landelijk: x.r.landelijk, rust: x.r.rust, afwijking: x.r.afwijking }));
   let win = rated[0];
 
   /* Zit de winnaar er qua afstand naast, dan die ene nog een keer met een
@@ -1919,14 +1999,45 @@ async function makeLoop(targetKm, dirDeg) {
         laatsteKm = c2.route.len / 1000;
         const afw = Math.abs(laatsteKm - targetKm) / targetKm;
         if (afw >= best.r.afwijking) continue;        // niet beter; verder schalen vanaf hier
-        const r2 = rateRoute(c2.route, await fetchRoadAttrs(c2.route));
+        const a2 = await fetchRoadAttrs(c2.route);
+        const r2 = rateRoute(c2.route, a2);
         // niet ruilen voor een rondje dat wel klopt maar weer heen en weer gaat
         if (r2.keer > best.r.keer + 0.02) continue;
+        // ...of door meer stad: groter maken kan de lus net een dorp in duwen
+        if ((r2.stad || 0) > (best.r.stad || 0) + 0.05) continue;
         r2.afwijking = afw; r2.score -= 0.6 * afw;
-        best = { c: c2, r: r2, mk: win.mk, th: win.th, sn: win.sn, r0: rr };
+        best = { c: c2, r: r2, a: a2, mk: win.mk, th: win.th, sn: win.sn, r0: rr };
       } catch (e) { break; }
     }
     win = best;
+  }
+
+  /* Gaat de winnaar midden in de rit door een dorp of stad, dan de keerpunten
+     rond dat stuk opzij duwen: een keer naar buiten, een keer naar binnen. De
+     beste van de drie blijft staan. Rond Delft reden de lange rondjes (65-71
+     km) nog 16 tot 19 km midden in de rit door bebouwing; de keuze tussen zes
+     richtingen helpt daar niet, want elke richting komt wel ergens een dorp
+     tegen. */
+  for (let ronde = 0; ronde < 2; ronde++) {
+    const stuk = stadsStukken(win.c.route, win.a)[0];
+    if (!stuk) break;
+    const varianten = omBebouwingHeen(win.c.route, win.c.wps, stuk);
+    let beter = null;
+    for (let v = 0; v < varianten.length; v++) {
+      spin(true, 'Om de bebouwing heen ' + (ronde * 2 + v + 1) + '/4');
+      try {
+        const z = await routeZonderUitstapjes(varianten[v], S.prof);
+        const a3 = await fetchRoadAttrs(z.route);
+        const r3 = rateRoute(z.route, a3);
+        r3.afwijking = Math.abs(z.route.len / 1000 - targetKm) / targetKm;
+        r3.score -= 0.6 * r3.afwijking;
+        // opzij duwen maakt de lus langer of korter; niet te ver van je doel af
+        if (r3.afwijking > Math.max(0.10, win.r.afwijking + 0.03)) continue;
+        if (r3.score > (beter || win).r.score) beter = { c: { route: z.route, wps: z.wps }, r: r3, a: a3 };
+      } catch (e) {}
+    }
+    if (!beter) break;
+    win = beter;
   }
   spin(false);
 
@@ -1950,10 +2061,14 @@ function paintQuality(r) {
   if (!r || r.ruw) { box.hidden = true; return; }
   const cel = (lab, val, klasse) =>
     '<span class="' + (klasse || '') + '">' + lab + ' <b>' + val + '</b></span>';
-  const land = r.dichtheid < 4.5 ? ['landelijk', 'good']
-             : (r.dichtheid < 7 ? ['half landelijk', ''] : ['bebouwd', 'meh']);
+  // Hoeveel van de rit door bebouwd gebied gaat, zegt meer dan een gemiddelde
+  const land = r.stad != null
+    ? (r.stad < 0.15 ? ['landelijk', 'good'] : (r.stad < 0.30 ? ['half landelijk', ''] : ['bebouwd', 'meh']))
+    : (r.dichtheid < 4.5 ? ['landelijk', 'good'] : (r.dichtheid < 7 ? ['half landelijk', ''] : ['bebouwd', 'meh']));
   box.innerHTML =
     cel('omgeving', land[0], land[1]) +
+    (r.stad != null ? cel('door bebouwing', Math.round(r.stad * 100) + '%',
+        r.stad < 0.15 ? 'good' : (r.stad > 0.30 ? 'meh' : '')) : '') +
     cel('lange stukken', Math.round(r.lang * 100) + '%', r.lang > 0.65 ? 'good' : (r.lang < 0.45 ? 'meh' : '')) +
     cel('kruisingen', r.kruisPerKm.toFixed(0) + '/km', r.kruisPerKm < 11 ? 'good' : (r.kruisPerKm > 16 ? 'meh' : '')) +
     cel('paaltjes', r.obstakels, r.obstakels <= 4 ? 'good' : (r.obstakels > 10 ? 'meh' : '')) +
