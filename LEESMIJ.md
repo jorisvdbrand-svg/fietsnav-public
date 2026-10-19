@@ -134,6 +134,48 @@ Tussentijds wordt elke 15 seconden opgeslagen. Sluit iOS de app halverwege
 (andere app open, telefoon op slot), dan zet de app die rit bij het volgende
 openen alsnog bij je ritten, gemarkeerd als onderbroken.
 
+## Vrije rit
+
+Geen route nodig: tik op **Vrije rit** en fiets. De app houdt je rit bij zoals
+altijd (snelheid, rijtijd, gemiddelde, klim, topsnelheid) en zegt elke 5 km hoe
+snel je dat stuk reed. Afslagen, "nog te gaan" en aankomst vallen weg. Op de
+kaart zie je je eigen spoor. Na afloop krijg je hetzelfde ritoverzicht als bij
+een route, en ook een vrije rit is te hervatten als iOS de app sloot.
+
+## Racefiets, gravel of mountainbike
+
+Kies je fiets onder Fietsprofiel. Dat bepaalt drie dingen:
+
+- **De route.** De routeplanner kent de fietstypes zelf. Racefiets mijdt grind
+  en zandpaden; gravel mag over landwegen en grind; mountainbike zoekt paden en
+  onverhard op.
+- **Wat de rondjesmaker mooi vindt.** Racefiets: lange stukken en glad asfalt.
+  Gravel: een mix, het liefst rond 40% onverhard. Mountainbike: hoe meer
+  onverhard hoe beter. In het planpaneel staat dan ook hoeveel onverhard erin zit.
+- **Het geschatte vermogen.** Bredere banden en een rechtere houding kosten meer
+  watt bij dezelfde snelheid: bij 25 km/u op het vlak ongeveer 93 W op de
+  racefiets, 116 W op gravel en 158 W op de mountainbike.
+
+Elk type onthoudt zijn eigen snelheid. Elke rit onthoudt met welke fiets hij
+gereden is, zodat oude ritten kloppen als je later wisselt.
+
+## Niet op slot met de zijknop
+
+Zet je de iPhone tijdens een rit op slot met de zijknop, dan zet iOS de app
+helemaal stil: geen GPS, geen spraak, je rit wordt niet bijgehouden. Dat kan
+geen enkele webapp voorkomen. Gebruik het slotje in de app (hieronder).
+
+Gebeurt het toch, dan vangt de app het zo goed mogelijk op:
+
+- Ontgrendel je en leeft de app nog, dan meldt hij hoe lang hij je niet kon
+  volgen, zet hij de GPS opnieuw aan en zoekt hij je plek op de route ruim
+  vooruit. De afstand die je in die tijd fietste telt hemelsbreed mee, met de
+  tijd erbij. Afslagen die je intussen gepasseerd bent zegt hij niet meer na.
+- Had iOS de app intussen gesloten, dan vraagt hij bij het openen of je de rit
+  wilt **hervatten**: zelfde route, en afstand, rijtijd en klim lopen door.
+  Kies je "Rit afsluiten", dan komt hij als onderbroken rit bij je ritten.
+- De drie ritten daarna herinnert hij je er bij de start hardop aan.
+
 ## Telefoon in je zak: het slot
 
 Tik onderweg op het **slotje** (ook te vinden op het cijferscherm en in de
@@ -177,7 +219,7 @@ de Edge en herstart hem.
 ## Testen
 
 Zet `?test` achter het adres, bijvoorbeeld `https://JOUWNAAM.github.io/fietsnav/?test`.
-De app draait dan zevenentwintig tests die elk een fout nalopen die ooit echt in de app
+De app draait dan drieëndertig tests die elk een fout nalopen die ooit echt in de app
 zat, en toont groen of rood per test. Duurt een paar seconden en gebruikt
 nep-routes, dus het werkt ook zonder bereik. Je bewaarde routes en ritten worden
 na afloop teruggezet. Haal `?test` weg om de app weer gewoon te gebruiken.

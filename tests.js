@@ -775,11 +775,142 @@
              verplaatst[1].join('/') + ' m' };
   });
 
+  /* ---------------- scherm op slot met de zijknop ---------------- */
+  await test('Scherm op slot: afstand, tijd en plek worden na het ontgrendelen opgepakt', async () => {
+    const t = trap([52.0, 5.0], 30, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    start();
+    rijd(S.route, 0, 5000, 30);
+    const voorR = S.nav.ridden, voorT = S.nav.rijtijd, voorZeg = gezegd.length;
+    naSlot(300000);                                   // vijf minuten op slot
+    klok += 300000;
+    rijd(S.route, 7500, 7600, 30);                    // 2,5 km verder weer fixes
+    const na = gezegd.slice(voorZeg).map(x => x.t);
+    const erbij = (S.nav.ridden - voorR) / 1000, tijd = (S.nav.rijtijd - voorT) / 1000;
+    const bochten = na.filter(x => x === 'Rechts afslaan.' || x === 'Links afslaan.').length;
+    const ok = Math.abs(S.nav.along - 7600) < 60 && erbij > 1.5 && erbij < 2.7 && tijd > 295 && tijd < 320 &&
+               !na.some(x => x.indexOf('van de route') >= 0) && na.indexOf('Navigatie loopt weer.') >= 0 && bochten === 0;
+    return { ok, detail: 'plek op de route ' + Math.round(S.nav.along) + ' m (moet ~7600), gereden +' + erbij.toFixed(2) +
+             ' km, rijtijd +' + Math.round(tijd) + ' s, gemiste bochten nagezegd: ' + bochten };
+  });
+
+  await test('Na een herstart verder met dezelfde route en doorlopende cijfers', async () => {
+    const t = trap([52.0, 5.0], 30, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    localStorage.removeItem('fietsnav.ritten');
+    start();
+    rijd(S.route, 0, 8000, 30);
+    const kmVoor = S.nav.ridden / 1000;
+    stop();                                           // de pagina gaat dood: geen stopNav
+    klok += 120000;                                   // twee minuten later weer open
+    const h = hervatbareRit();
+    if (!h) return { ok: false, detail: 'niets te hervatten gevonden' };
+    gezegd = [];
+    hervatRit(h);
+    rijd(S.route, 9000, 12000, 30);
+    const n = S.nav, km = n.ridden / 1000;
+    const kwart = gezegd.filter(x => x.t.indexOf('Een kwart') === 0).length;
+    const ok = Math.abs(n.along - 12000) < 60 && km > kmVoor + 3.5 && km < kmVoor + 4.2 &&
+               n.track.length > h.tr.length && gezegd.some(x => x.t.indexOf('Rit hervat') === 0) &&
+               !gezegd.some(x => x.t.indexOf('Route van') === 0) && kwart === 0 && loadRides().length === 0;
+    return { ok, detail: 'voor ' + kmVoor.toFixed(1) + ' km, na hervatten ' + km.toFixed(1) + ' km, plek ' +
+             Math.round(n.along) + ' m, spoor ' + h.tr.length + ' -> ' + n.track.length + ' punten, "een kwart" opnieuw: ' + kwart };
+  });
+
+  /* ---------------- vrije rit ---------------- */
+  // een baan om over te rijden, zonder dat de app een route heeft
+  function baan(km) {
+    const t = trap([52.0, 5.0], km, 1200), cum = [0];
+    for (let i = 1; i < t.pts.length; i++) cum.push(cum[i - 1] + hav(t.pts[i - 1], t.pts[i]));
+    return { pts: t.pts, cum };
+  }
+
+  await test('Vrije rit: zonder route bijhouden, elke 5 km een tempomelding', async () => {
+    localStorage.removeItem('fietsnav.ritten');
+    S.route = null; S.wps = []; S.line = null;
+    gezegd = [];
+    startVrij();
+    if (!S.nav || !S.nav.vrij) return { ok: false, detail: 'vrije rit start niet' };
+    const b = baan(12);
+    rijd(b, 0, 11000, 30);
+    const km = S.nav.ridden / 1000;
+    const vijf = gezegd.filter(x => x.t.indexOf('5 kilometer.') === 0);
+    const tien = gezegd.filter(x => x.t.indexOf('10 kilometer.') === 0);
+    const tempo = vijf[0] ? vijf[0].t : '';
+    const geenRoute = !gezegd.some(x => /van de route|Route van|afslaan/.test(x.t));
+    const banner = $('#banstreet').textContent === 'Vrije rit' && document.body.classList.contains('vrij');
+    // stoppen met de echte stopNav: het overzicht moet openen, zonder netwerk
+    window.fetch = async () => { throw new Error('geen netwerk in de test'); };
+    echt.stopNav();
+    const open = $('#rit').classList.contains('on');
+    const rit = loadRides()[0];
+    sluitRit();
+    const ok = km > 10.9 && km < 11.1 && vijf.length === 1 && tien.length === 1 && /2[89],|30,|31,/.test(tempo) &&
+               geenRoute && banner && open && !!rit && rit.vrij === true && rit.klim == null && rit.fiets === S.prof.type;
+    return { ok, detail: km.toFixed(2) + ' km bijgehouden; meldingen: "' + tempo + '", 10 km ' + tien.length + 'x; ' +
+             (geenRoute ? 'geen routemeldingen' : 'WEL routemeldingen') + '; overzicht ' + (open ? 'open' : 'NIET open') +
+             '; rit vrij=' + (rit && rit.vrij) + ', klim=' + (rit && rit.klim) };
+  });
+
+  await test('Vrije rit hervatten na een herstart', async () => {
+    S.route = null; S.wps = []; S.line = null;
+    startVrij();
+    const b = baan(8);
+    rijd(b, 0, 4000, 30);
+    stop();                                           // pagina dood
+    klok += 60000;
+    const h = hervatbareRit();
+    if (!h || !h.nav.vrij) return { ok: false, detail: 'geen vrije rit om te hervatten' };
+    const kmVoor = h.lopend.km;
+    hervatRit(h);
+    rijd(b, 4600, 7000, 30);
+    const ok = !!S.nav && S.nav.vrij && S.nav.ridden / 1000 > kmVoor + 2.6 && S.nav.ridden / 1000 < kmVoor + 3.2;
+    return { ok, detail: 'voor ' + kmVoor.toFixed(1) + ' km, na hervatten ' + (S.nav ? (S.nav.ridden / 1000).toFixed(1) : '-') + ' km' };
+  });
+
+  /* ---------------- racefiets, gravel, mountainbike ---------------- */
+  await test('Fietstype: routeverzoek, rondjesweging en vermogen per fiets', async () => {
+    const twee = [{ lat: 52, lon: 5 }, { lat: 52.01, lon: 5 }];
+    const fiets = t => profileBody(twee, Object.assign({}, S.prof, { type: t, ab: FIETSEN[t].ab, ur: FIETSEN[t].ur }))
+                         .costing_options.bicycle;
+    const verzoek = ['road', 'gravel', 'mtb'].map(t => fiets(t).bicycle_type + '/' + fiets(t).avoid_bad_surfaces).join(' ');
+    const r = lijnRoute(false);
+    const sc = (type, onv) => rateRoute(r, { dichtheid: 5, kruisPerKm: 10, glad: 0.6, onverhard: onv,
+                                            obstakels: 0, stad: 0, druk: 0 }, type).score;
+    const weging = sc('road', 0) > sc('road', 0.4) && sc('gravel', 0.4) > sc('gravel', 0) &&
+                   sc('gravel', 0.4) > sc('gravel', 0.9) && sc('mtb', 0.8) > sc('mtb', 0.2);
+    // 25 km/u windstil op het vlak, 75 + 8 kg: met de hand 94 W (racefiets) en 159 W (mountainbike)
+    const rit = nepRit([{ richting: 'O', km: 8, kmh: 25 }], { dem: () => 0, weer: WINDSTIL });
+    const w = t => analyseRit(Object.assign({}, rit, { fiets: t }), PROF).vermogen.gem;
+    const wr = w('road'), wg = w('gravel'), wm = w('mtb');
+    const ok = verzoek === 'Road/1 Cross/0 Mountain/0' && weging && wr > 88 && wr < 100 && wm > 150 && wm < 168 && wg > wr && wg < wm;
+    return { ok, detail: 'verzoek ' + verzoek + '; weging ' + (weging ? 'klopt' : 'KLOPT NIET') + '; vermogen ' +
+             Math.round(wr) + ' / ' + Math.round(wg) + ' / ' + Math.round(wm) + ' W (race/gravel/mtb)' };
+  });
+
+  await test('Fietskeuze en snelheid per type blijven bewaard', async () => {
+    localStorage.removeItem('fietsnav.fiets');
+    zetFiets('gravel', true);
+    const gravelStd = S.prof.spd;
+    S.prof.spd = 22; bewaarFiets();
+    zetFiets('road', true);
+    const road = S.prof.spd;
+    zetFiets('gravel', true);
+    const gravelTerug = S.prof.spd;
+    S.prof.type = 'road';                            // alsof de app opnieuw opent
+    laadFiets();
+    const ok = gravelStd === 24 && road === 28 && gravelTerug === 22 && S.prof.type === 'gravel' &&
+               S.prof.ab === 0 && document.querySelector('#fietsKeus .chip.on').dataset.f === 'gravel';
+    return { ok, detail: 'gravel standaard ' + gravelStd + ', racefiets ' + road + ', gravel terug ' + gravelTerug +
+             ', na herladen ' + S.prof.type };
+  });
+
   /* ---------------- opruimen en tonen ---------------- */
   Voice.say = echt.say; Voice.prime = echt.prime; Wake.on = echt.wakeOn;
   window.stopNav = echt.stopNav; Date.now = echt.now;
   try { navigator.geolocation.watchPosition = echt.watch; } catch (e) {}
   herstelOpslag();
+  laadFiets();                                        // je eigen fietskeuze terug
   S.route = null; S.wps = []; S.line = null;
   drawRoute(); updateStats(); renderRides(); sluitRit(); zetSlot(false); renderAfsluitingen();
 

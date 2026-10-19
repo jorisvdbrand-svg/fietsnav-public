@@ -266,13 +266,16 @@ body.op-slot #ridectl{opacity:.35}
 #slotduim.terug{transition:transform .25s ease}
 .slotknop{margin-left:8px;color:var(--tx)}
 #pfoot .slotknop{pointer-events:auto}
-#stopvraag{position:fixed;left:16px;right:16px;top:38%;z-index:26;display:none;
+#stopvraag,#hervat{position:fixed;left:16px;right:16px;top:38%;z-index:26;display:none;
   background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;
   box-shadow:0 10px 40px #000c;text-align:center}
-#stopvraag b{font-size:17px}
-body.stopvraag #stopvraag{display:block}
+#stopvraag b,#hervat b{font-size:17px}
+body.stopvraag #stopvraag,body.hervatvraag #hervat{display:block}
 .dichtpunt{font-size:20px;line-height:1;filter:drop-shadow(0 1px 3px #000a);cursor:pointer}
 body.mode-rit .dichtpunt{display:none}
+/* Vrije rit: geen route, dus geen "nog te gaan", aankomst of Weg dicht */
+body.vrij .alleenRoute,body:not(.vrij) .alleenVrij{display:none}
+body.vrij #bDicht,body.vrij .wp{display:none}
 #toast{position:absolute;left:50%;transform:translateX(-50%);z-index:30;
   bottom:calc(var(--safe-b) + 96px);background:#0b0e14f0;border:1px solid var(--line);
   padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:600;
@@ -329,6 +332,7 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
 
   <div class="row">
     <button class="btn pri" id="bRide">Start rit</button>
+    <button class="btn" id="bVrij" title="Rit bijhouden zonder route">Vrije rit</button>
     <button class="btn" id="bUndo">Stap terug</button>
   </div>
 
@@ -349,15 +353,16 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
   <div class="card">
     <label class="fld"><span>Jouw snelheid <b id="spdL">28 km/u</b></span>
       <input type="range" id="spd" min="12" max="45" step="1" value="28"></label>
-    <button class="chip on" id="bPaved" style="width:100%;justify-content:center">
-      Racefiets: mijd onverhard</button>
-    <div class="hint" style="margin-top:8px">Zet dit aan en er zit geen grind of
-      zandpad meer in je route. Gemeten op een rit bij Uden: onverhard van 4,9%
-      naar 0%, glad asfalt van 77% naar 84%.</div>
+    <div class="chips" id="fietsKeus">
+      <button class="chip" data-f="road">Racefiets</button>
+      <button class="chip" data-f="gravel">Gravel</button>
+      <button class="chip" data-f="mtb">Mountainbike</button>
+    </div>
+    <div class="hint" id="fietsUitleg" style="margin-top:8px"></div>
     <div class="velden">
       <label class="fld"><span>Jouw gewicht</span>
         <input type="text" id="rKg" inputmode="decimal" placeholder="75 kg" autocomplete="off"></label>
-      <label class="fld"><span>Fiets</span>
+      <label class="fld"><span>Gewicht fiets</span>
         <input type="text" id="rFiets" inputmode="decimal" placeholder="8,5 kg" autocomplete="off"></label>
       <label class="fld"><span>FTP</span>
         <input type="text" id="rFtp" inputmode="numeric" placeholder="weet niet" autocomplete="off"></label>
@@ -410,7 +415,7 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     spaarstand aan: zwart scherm met alleen de volgende afslag, scheelt flink accu.
   </div>
   <div class="hint" id="versie" style="padding:14px 0 4px;text-align:center;opacity:.55">
-    versie 13</div>
+    versie 15</div>
 </div>
 
 <div id="banner">
@@ -426,9 +431,9 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
 
 <div id="ridebar">
   <div class="s"><u>Tempo</u><b id="rSpd">0<s>km/u</s></b></div>
-  <div class="s"><u>Nog</u><b id="rLeft">0<s>km</s></b></div>
+  <div class="s"><u><span class="alleenRoute">Nog</span><span class="alleenVrij">Rijtijd</span></u><b id="rLeft">0<s>km</s></b></div>
   <div class="s"><u>Gereden</u><b id="rDone">0<s>km</s></b></div>
-  <div class="s"><u>Aankomst</u><b id="rEta">--</b></div>
+  <div class="s"><u><span class="alleenRoute">Aankomst</span><span class="alleenVrij">Gemiddeld</span></u><b id="rEta">--</b></div>
 </div>
 
 <div id="ridectl">
@@ -449,6 +454,15 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
   </div>
 </div>
 
+<div id="hervat">
+  <b>Rit hervatten?</b>
+  <div class="hint" id="hervatTekst" style="margin-top:6px"></div>
+  <div class="row" style="margin:12px 0 0">
+    <button class="btn" id="hervatNee">Rit afsluiten</button>
+    <button class="btn pri" id="hervatJa">Rit hervatten</button>
+  </div>
+</div>
+
 <div id="data">
   <div id="dstrip" title="Terug naar de kaart">
     <span id="dsarrow"></span>
@@ -461,10 +475,10 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
     <div><u>Gemiddeld</u><b id="dAvg">0<s>km/u</s></b></div>
     <div><u>Klim</u><b id="dClimb">0<s>m</s></b></div>
     <div><u>Gereden</u><b id="dDone">0<s>km</s></b></div>
-    <div><u>Nog te gaan</u><b id="dLeft">0<s>km</s></b></div>
+    <div><u><span class="alleenRoute">Nog te gaan</span><span class="alleenVrij">Topsnelheid</span></u><b id="dLeft">0<s>km</s></b></div>
     <div><u>Rijtijd</u><b id="dRij">0:00</b></div>
     <div><u>Onderweg</u><b id="dElapsed">0:00</b></div>
-    <div class="wide"><u>Aankomst</u><b id="dEta">--</b></div>
+    <div class="wide"><u><span class="alleenRoute">Aankomst</span><span class="alleenVrij">Klok</span></u><b id="dEta">--</b></div>
   </div>
   <div id="dhint">Veeg opzij, of tik bovenaan om terug te gaan
     <button class="btn sm slotknop" title="Vergrendelen">&#128274; Vergrendel</button></div>
@@ -554,10 +568,22 @@ const toDeg = r => r * 180 / Math.PI;
 
 const VALHALLA = 'https://valhalla1.openstreetmap.de';
 
+/* Drie soorten fiets. De routeserver kent ze zelf: met dezelfde start en finish
+   koos "Cross" bij Delft 14% onverhard tegen 0,5% voor "Road", en "Mountain" bij
+   Uden 16% paden waar de racefiets over asfalt bleef. Verder verschillen ze in
+   wat de rondjesmaker mooi vindt en in rolweerstand en houding voor het
+   geschatte vermogen (racefiets op de remgrepen; gravel met bredere banden;
+   mountainbike rechtop met noppenbanden). */
+const FIETSEN = {
+  road:   { naam: 'Racefiets',   valhalla: 'Road',     ab: 1.0, ur: 0.7, spd: 28, crr: 0.0045, cda: 0.32, fit: 7 },
+  gravel: { naam: 'Gravel',      valhalla: 'Cross',    ab: 0.0, ur: 0.3, spd: 24, crr: 0.0070, cda: 0.36, fit: 0 },
+  mtb:    { naam: 'Mountainbike', valhalla: 'Mountain', ab: 0.0, ur: 0.1, spd: 18, crr: 0.0110, cda: 0.45, fit: 8 }
+};
+
 const S = {
   wps: [],          // [{lat,lon}] door gebruiker geplaatst
   route: null,      // {pts, cum, man, len, time, wpAlong}
-  prof: { spd: 28, ur: 0.7, ab: 1.0 },
+  prof: { type: 'road', spd: 28, ur: 0.7, ab: 1.0 },
   loopDir: null,    // graden, of null = willekeurig
   saved: [],
   hist: [],
@@ -807,7 +833,7 @@ function profileBody(wps, prof) {
     locations: wps.map(w => ({ lat: +w.lat.toFixed(6), lon: +w.lon.toFixed(6), type: 'break' })),
     costing: 'bicycle',
     costing_options: { bicycle: {
-      bicycle_type: 'Road',
+      bicycle_type: (FIETSEN[prof.type] || FIETSEN.road).valhalla,
       use_roads: prof.ur,
       avoid_bad_surfaces: prof.ab,
       cycling_speed: prof.spd
@@ -1816,7 +1842,23 @@ function routeRuns(route) {
   return out;
 }
 
-function rateRoute(route, a) {
+/* Wat een mooi rondje is, verschilt per fiets. Racefiets: lange stukken zonder
+   bocht en glad asfalt. Gravel: een mix, het best rond 40% onverhard, en lange
+   rechte stukken tellen minder. Mountainbike: hoe meer onverhard hoe beter, en
+   paaltjes hinderen minder dan op een racefiets. */
+const WEGING = {
+  road:   { landelijk: 0.34, lang: 0.30, zeer: 0.15, rust: 0.11, wegdek: 0.10, paaltjes: 1.0 },
+  gravel: { landelijk: 0.34, lang: 0.15, zeer: 0.05, rust: 0.11, wegdek: 0.35, paaltjes: 0.5 },
+  mtb:    { landelijk: 0.30, lang: 0.05, zeer: 0.00, rust: 0.10, wegdek: 0.55, paaltjes: 0.3 }
+};
+function wegdekScore(a, type) {
+  if (type === 'gravel') return clamp(1 - Math.abs(a.onverhard - 0.4) / 0.4, 0, 1);
+  if (type === 'mtb') return clamp(a.onverhard / 0.5, 0, 1);
+  return Math.max(0, a.glad - 2 * a.onverhard);
+}
+function rateRoute(route, a, type) {
+  type = WEGING[type] ? type : (WEGING[S.prof.type] ? S.prof.type : 'road');
+  const w = WEGING[type];
   const km = route.len / 1000;
   const dubbel = overlapFraction(route);
   const runs = routeRuns(route);
@@ -1827,13 +1869,14 @@ function rateRoute(route, a) {
   // als rijden voor niets
   const keer = keerFractie(route);
   if (!a) {  // zonder wegdata alleen wat gratis uit de route komt
-    return { score: 0.55*lang + 0.25*zeer - 1.2*dubbel - 2.0*keer, lang, zeer, bochten,
+    const rechtDeel = type === 'road' ? 1 : 0.3;
+    return { score: rechtDeel * (0.55*lang + 0.25*zeer) - 1.2*dubbel - 2.0*keer, lang, zeer, bochten,
              dubbel: dubbel + keer, keer, ruw: true };
   }
   const landelijk = clamp((12 - a.dichtheid) / 9, 0, 1);
   const rust = clamp((18 - a.kruisPerKm) / 12, 0, 1);
-  const wegdek = Math.max(0, a.glad - 2 * a.onverhard);
-  const straf = Math.min(0.25, a.obstakels * 0.012);
+  const wegdek = wegdekScore(a, type);
+  const straf = Math.min(0.25, a.obstakels * 0.012) * w.paaltjes;
   // Dubbel gereden weg weegt zwaar: een rondje dat over zichzelf heen loopt is
   // geen rondje, hoe mooi de wegen ook zijn. De wind stuurt mee maar wint niet:
   // bij twee vergelijkbare rondjes geeft hij de doorslag, een duidelijk mooiere
@@ -1845,10 +1888,10 @@ function rateRoute(route, a) {
        Dat is een gemiddelde, en daarin verdween een stuk dwars door een
        centrum tussen veel polder. Rond Delft reden onze rondjes 32% van de
        afstand door bebouwd gebied, die van Komoot 21%. */
-    score: 0.34*landelijk + 0.30*lang + 0.15*zeer + 0.11*rust + 0.10*wegdek
+    score: w.landelijk*landelijk + w.lang*lang + w.zeer*zeer + w.rust*rust + w.wegdek*wegdek
            - straf - 1.2*dubbel - 2.0*keer - 0.9*(a.stad || 0) - 1.0*(a.druk || 0) + windDeel,
     landelijk, lang, zeer, rust, wegdek, bochten, dubbel: dubbel + keer, keer,
-    stad: a.stad, druk: a.druk,
+    stad: a.stad, druk: a.druk, onverhard: a.onverhard, type,
     wind: ws ? ws.waarde : null,
     dichtheid: a.dichtheid, kruisPerKm: a.kruisPerKm, obstakels: a.obstakels
   };
@@ -2069,6 +2112,10 @@ function paintQuality(r) {
     cel('omgeving', land[0], land[1]) +
     (r.stad != null ? cel('door bebouwing', Math.round(r.stad * 100) + '%',
         r.stad < 0.15 ? 'good' : (r.stad > 0.30 ? 'meh' : '')) : '') +
+    // bij gravel en mountainbike is onverhard juist waar het om gaat
+    ((r.type === 'gravel' || r.type === 'mtb') && r.onverhard != null
+      ? cel('onverhard', Math.round(r.onverhard * 100) + '%', r.wegdek > 0.7 ? 'good' : (r.wegdek < 0.3 ? 'meh' : ''))
+      : '') +
     cel('lange stukken', Math.round(r.lang * 100) + '%', r.lang > 0.65 ? 'good' : (r.lang < 0.45 ? 'meh' : '')) +
     cel('kruisingen', r.kruisPerKm.toFixed(0) + '/km', r.kruisPerKm < 11 ? 'good' : (r.kruisPerKm > 16 ? 'meh' : '')) +
     cel('paaltjes', r.obstakels, r.obstakels <= 4 ? 'good' : (r.obstakels > 10 ? 'meh' : '')) +
@@ -2332,7 +2379,7 @@ function routeHash() {
   // de ontvanger dezelfde route krijgt en niet een herberekening door
   // steekproefpunten.
   return '#r=' + S.wps.map(w => w.lat.toFixed(5) + ',' + w.lon.toFixed(5)).join(';') +
-         '&s=' + S.prof.spd + '&u=' + S.prof.ur + '&a=' + S.prof.ab +
+         '&s=' + S.prof.spd + '&u=' + S.prof.ur + '&a=' + S.prof.ab + '&t=' + S.prof.type +
          (S.line ? '&l=' + encodeURIComponent(encodePoly(S.line, 5)) : '');
 }
 function loadFromHash() {
@@ -2350,6 +2397,8 @@ function loadFromHash() {
       return isFinite(v) ? clamp(v, lo, hi) : null;
     };
     const s = getal('s', 12, 45), u = getal('u', 0, 1), a = getal('a', 0, 1);
+    const t = q.get('t');
+    if (t && FIETSEN[t]) S.prof.type = t;          // alleen een bekend type
     if (s !== null) S.prof.spd = s;
     if (u !== null) S.prof.ur = u;
     if (a !== null) S.prof.ab = a;
@@ -2531,7 +2580,9 @@ function maakFitKoers(route, naam, kmh, elev) {
   w.definieer('file_id', 0, [[0, 'enum'], [1, 'uint16'], [2, 'uint16'], [3, 'uint32z'], [4, 'uint32']]);
   w.schrijf('file_id', [6, 255, 0, 1 + Math.floor(Math.random() * 0xFFFFFFF0), t0]);
   w.definieer('course', 31, [[4, 'enum'], [5, 'string', 32], [7, 'enum']]);
-  w.schrijf('course', [2, naam, 7]);        // fietsen, racefiets
+  // fietsen, met als subtype racefiets (7) of mountainbike (8); gravel krijgt
+  // het algemene type, want het eigen gravel-type (46) kent een Edge 520 niet
+  w.schrijf('course', [2, naam, (FIETSEN[S.prof.type] || FIETSEN.road).fit]);
   w.definieer('lap', 19, [[253, 'uint32'], [2, 'uint32'], [3, 'sint32'], [4, 'sint32'], [5, 'sint32'],
     [6, 'sint32'], [7, 'uint32'], [8, 'uint32'], [9, 'uint32'], [21, 'uint16'], [22, 'uint16'], [0, 'enum'], [1, 'enum']]);
   w.schrijf('lap', [tijd(len), t0, semi(pts[0][0]), semi(pts[0][1]), semi(pts[n - 1][0]), semi(pts[n - 1][1]),
@@ -2701,10 +2752,119 @@ const Wake = {
     this.lock = null;
   }
 };
-// iOS geeft de wake lock terug zodra je wegklikt, dus opnieuw vragen
+/* Op slot met de zijknop. iOS zet een webpagina dan helemaal stil: geen GPS,
+   geen spraak, geen bijhouden. Dat kan geen enkele webapp voorkomen. Wat wel
+   kan: bij terugkomst zeggen wat er gebeurd is, de GPS opnieuw aanzetten en het
+   gat in de rit netjes opvangen (zie onFix). iOS geeft ook de wake lock terug
+   zodra je wegklikt, dus die opnieuw vragen. */
+let verborgenSinds = null;
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && S.nav) Wake.on();
+  if (document.visibilityState === 'hidden') {
+    if (S.nav) verborgenSinds = Date.now();
+    return;
+  }
+  if (!S.nav) return;
+  Wake.on();
+  const weg = verborgenSinds ? Date.now() - verborgenSinds : 0;
+  verborgenSinds = null;
+  if (weg > 20000) naSlot(weg);
 });
+function naSlot(ms) {
+  const n = S.nav;
+  if (!n) return;
+  // na een lange pauze levert iOS soms geen fixes meer op de oude watch
+  try { if (n.watchId != null) navigator.geolocation.clearWatch(n.watchId); } catch (e) {}
+  try {
+    n.watchId = navigator.geolocation.watchPosition(onFix, onGeoErr,
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
+  } catch (e) {}
+  const min = Math.max(1, Math.round(ms / 60000));
+  toast('Je scherm was ' + min + ' min op slot. Zolang kon de app je niet volgen; nu weer wel. ' +
+        'Telefoon wegsteken? Gebruik het slotje in de app.', 8000);
+  Voice.say('Navigatie loopt weer.');
+  // de komende drie ritten bij de start er ook hardop aan herinneren
+  try { localStorage.setItem('fietsnav.slotWaarschuw', '3'); } catch (e) {}
+}
+
+/* De route van de rit die nu loopt. Ging de pagina dood (iOS gooit hem soms
+   weg als het scherm op slot gaat), dan begon de app daarna leeg: je startpunt
+   sprong naar waar je toen stond, en je rit stond als "onderbroken" in de lijst.
+   Nu kun je hem hervatten met dezelfde route en doorlopende cijfers. */
+function bewaarNavLopend() {
+  if (!S.nav) return;
+  try {
+    localStorage.setItem('fietsnav.navLopend', JSON.stringify({
+      wps: S.wps, line: S.line ? encodePoly(S.line, 5) : null,
+      prof: { type: S.prof.type, spd: S.prof.spd, ur: S.prof.ur, ab: S.prof.ab },
+      vrij: !!S.nav.vrij }));
+  } catch (e) {}
+}
+function wisNavLopend() {
+  try { localStorage.removeItem('fietsnav.navLopend'); } catch (e) {}
+}
+// Is er een rit die we kunnen hervatten? Ouder dan vier uur: dan is hij voorbij.
+function hervatbareRit() {
+  let nav = null, l = null;
+  try {
+    nav = JSON.parse(localStorage.getItem('fietsnav.navLopend') || 'null');
+    l = JSON.parse(localStorage.getItem('fietsnav.ritLopend') || 'null');
+  } catch (e) {}
+  // een vrije rit heeft geen route nodig; een rit met route wel
+  const routeOk = nav && (nav.vrij || (nav.wps && (nav.wps.length >= 2 || nav.line)));
+  if (!nav || !l || !l.p || l.p.length < 2 || !routeOk) {
+    wisNavLopend();
+    return null;
+  }
+  const tr = unpackTrack(l.p);
+  if (Date.now() - tr[tr.length - 1].t > 4 * 3600000) { wisNavLopend(); return null; }
+  return { nav, lopend: l, tr };
+}
+function toonHervat(h) {
+  if (h.nav.prof) Object.assign(S.prof, h.nav.prof);
+  syncProfileUI();
+  const ja = $('#hervatJa');
+  document.body.classList.add('hervatvraag');
+  $('#hervatNee').onclick = () => {
+    document.body.classList.remove('hervatvraag');
+    wisNavLopend();
+    if (herstelLopendeRit()) {
+      renderRides();
+      toast('Je rit staat bij Gereden ritten, als onderbroken rit.', 5000);
+    }
+  };
+  if (h.nav.vrij) {
+    // vrije rit: er is geen route te laden, dus meteen klaar
+    $('#hervatTekst').textContent = 'Je vrije rit werd onderbroken, waarschijnlijk doordat je telefoon op slot ging. ' +
+      'Tot nu toe ' + komma(h.lopend.km || 0, 1) + ' km. Hervatten telt gewoon door.';
+    ja.disabled = false; ja.textContent = 'Rit hervatten';
+    ja.onclick = () => { document.body.classList.remove('hervatvraag'); hervatRit(h); };
+    return;
+  }
+  S.wps = h.nav.wps;
+  S.line = h.nav.line ? decodePoly(h.nav.line, 5) : null;
+  renderMarkers();
+  $('#hervatTekst').textContent = 'Je rit werd onderbroken, waarschijnlijk doordat je telefoon op slot ging. ' +
+    'Tot nu toe ' + komma(h.lopend.km || 0, 1) + ' km. Hervatten gaat verder met dezelfde route en dezelfde cijfers.';
+  const laad = () => {
+    ja.disabled = true; ja.textContent = 'Route laden...';
+    doRefresh().then(ok => {
+      ja.disabled = false;
+      ja.textContent = ok ? 'Rit hervatten' : 'Opnieuw proberen';
+      if (ok) fitRoute();
+    });
+  };
+  ja.onclick = () => {
+    if (!S.route) { laad(); return; }
+    document.body.classList.remove('hervatvraag');
+    hervatRit(h);
+  };
+  laad();
+}
+function hervatRit(h) {
+  const vervolg = { track: h.tr, ridden: (h.lopend.km || 0) * 1000, rijtijd: (h.lopend.rij || 0) * 1000,
+                    klim: h.lopend.klim || 0, startT: h.lopend.startT || h.tr[0].t };
+  if (h.nav.vrij) startVrij(vervolg); else startNav(vervolg);
+}
 /* ---------------- navigatie ---------------- */
 function fmtDist(m) {
   if (m >= 1000) return { n: (m / 1000).toFixed(1), u: 'km' };
@@ -2736,7 +2896,8 @@ function snap(pos, moved) {
     // meegroeien met je snelheid, anders ben je hem kwijt na een gaatje in de
     // GPS. Hard vastzetten bij een terugsprong werkt niet: dan bevriest het
     // venster mee en komt hij er nooit meer uit.
-    const ahead = Math.max(400, (S.nav.spd || 8) * 40);
+    // na een gat (scherm op slot, hervatte rit) ruimer: je kunt ver verder zijn
+    const ahead = Math.max(400, (S.nav.spd || 8) * 40, S.nav.zoekVooruit || 0);
     // idxAt geeft het segment VOOR de gevraagde afstand, en de lus hieronder
     // loopt tot hi (exclusief). Zonder de marges eromheen kan het venster op
     // een stuk met weinig vormpunten inklappen tot een enkel segment, en dan
@@ -2751,7 +2912,8 @@ function snap(pos, moved) {
   // vooraan in de lijst en de loodrechte afstand is even klein. De match blijft
   // dan stelselmatig achter tot hij helemaal uit het venster valt, en dan denkt
   // de app dat je van de route bent terwijl je keurig op de lijn rijdt.
-  const expect = (S.nav && moved != null) ? S.nav.along + moved : null;
+  // na een gat is de afstand hemelsbreed geen goede schatting meer
+  const expect = (S.nav && moved != null && !S.nav.zoekVooruit) ? S.nav.along + moved : null;
   let bd = Infinity, bc = Infinity, bi = lo, bt = 0;
   for (let i = lo; i < Math.min(hi, n - 1); i++) {
     const r = ptSeg(pos, R.pts[i], R.pts[i+1]);
@@ -2778,38 +2940,134 @@ function idxAt(dist, route) {
   return lo;
 }
 
-function startNav() {
-  if (!S.route || !S.route.man.length) { toast('Geen route met afslagen'); return; }
-  Voice.prime();                       // moet synchroon vanuit de tik
-  stopRefresh();                       // geen late herberekening midden in de rit
-  document.body.className = 'mode-ride';
-  S.nav = { idx: 0, along: 0, offCount: 0, rerouting: false,
-            lastPos: null, lastT: 0, spd: 0, heading: 0,
-            fired: new Set(), startT: Date.now(), watchId: null, done: false,
-            splitBuf: [], track: [], trackSaved: 0, rijtijd: 0,
-            ridden: 0,           // werkelijk afgelegd, telt door bij een omweg
-            klimBasis: 0,        // klim op routes van voor een herberekening
-            progFired: new Set(),// 25/50/75%, overleeft een herberekening
-            rerouteNa: 0, offGemeld: false, geenRouteGemeld: false };
+/* Een nieuwe ritstatus. `vervolg` is een onderbroken rit die verder gaat: zijn
+   spoor, gereden afstand en rijtijd lopen door in plaats van op nul te beginnen. */
+function nieuweRit(vervolg) {
+  const n = { idx: 0, along: 0, offCount: 0, rerouting: false,
+              lastPos: null, lastT: 0, spd: 0, heading: 0,
+              fired: new Set(), startT: Date.now(), watchId: null, done: false,
+              splitBuf: [], track: [], trackSaved: 0, rijtijd: 0,
+              ridden: 0,           // werkelijk afgelegd, telt door bij een omweg
+              klimBasis: 0,        // klim op routes van voor een herberekening
+              progFired: new Set(),// 25/50/75%, overleeft een herberekening
+              rerouteNa: 0, offGemeld: false, geenRouteGemeld: false };
+  if (vervolg) {
+    const l = vervolg.track[vervolg.track.length - 1];
+    Object.assign(n, { track: vervolg.track.slice(), ridden: vervolg.ridden, rijtijd: vervolg.rijtijd,
+      startT: vervolg.startT, lastPos: [l.lat, l.lon], lastT: l.t });
+  }
+  return n;
+}
+// Na een rit waarin je telefoon op slot ging, de volgende drie keer ook hardop
+function slotHerinnering() {
+  let w = 0;
+  try { w = +(localStorage.getItem('fietsnav.slotWaarschuw') || 0); } catch (e) {}
+  if (w <= 0) return '';
+  try { localStorage.setItem('fietsnav.slotWaarschuw', String(w - 1)); } catch (e) {}
+  return ' Zet je telefoon niet op slot met de zijknop, gebruik het slotje in de app.';
+}
+const SLOT_TIP = 'Niet op slot met de zijknop: dan stopt iOS de app. Telefoon wegsteken? Gebruik het slotje.';
+
+// Wat elke rit bij de start doet, met of zonder route
+function ritAan(vrij) {
+  document.body.className = 'mode-ride' + (vrij ? ' vrij' : '');
   S.follow = true;
   setRideScreen(0);
   Wake.on();
   renderMarkers();
   map.easeTo({ zoom: 16, pitch: 55, duration: 700 });
-
-  const first = S.route.man.find(m => m.speak);
-  Voice.say('Route van ' + (S.route.len / 1000).toFixed(0) + ' kilometer. ' +
-            (first ? 'Eerste afslag over ' + spokenDist(first.at) + '.' : ''));
-
+  if (mapReady) {
+    // zonder route: geen geplande route op de kaart, wel je eigen spoor in routekleur
+    for (const id of ['route-case', 'route-line']) map.setLayoutProperty(id, 'visibility', vrij ? 'none' : 'visible');
+    map.setPaintProperty('done-line', 'line-color', vrij ? '#e6007e' : '#5b6478');
+  }
+  bewaarNavLopend();
+}
+function startGps() {
   if (!navigator.geolocation) { toast('Deze browser geeft geen GPS'); return; }
   S.nav.watchId = navigator.geolocation.watchPosition(onFix, onGeoErr, {
     enableHighAccuracy: true, maximumAge: 1000, timeout: 15000
   });
 }
 
+function startNav(vervolg) {
+  if (!S.route || !S.route.man.length) { toast('Geen route met afslagen'); return; }
+  if (!vervolg || !vervolg.track) vervolg = null;    // als klik-handler krijgt hij een event mee
+  Voice.prime();                       // moet synchroon vanuit de tik
+  stopRefresh();                       // geen late herberekening midden in de rit
+  S.nav = nieuweRit(vervolg);
+  if (vervolg) {
+    // je eerste positie op de hele route zoeken, en daar de klim en de
+    // voortgangsmeldingen op laten aansluiten (zie onFix)
+    Object.assign(S.nav, { zoekVooruit: Infinity, hervatKlim: vervolg.klim || 0 });
+  }
+  ritAan(false);
+  if (vervolg) {
+    Voice.say('Rit hervat. Even je plek op de route zoeken.');
+  } else {
+    const first = S.route.man.find(m => m.speak);
+    Voice.say('Route van ' + (S.route.len / 1000).toFixed(0) + ' kilometer. ' +
+              (first ? 'Eerste afslag over ' + spokenDist(first.at) + '.' : '') + slotHerinnering());
+    toast(SLOT_TIP, 6000);
+  }
+  startGps();
+}
+
+/* Vrije rit: geen route, alleen bijhouden. Voor wie de app eerst wil
+   uitproberen, of gewoon wil fietsen zonder plan. Afslagen, "nog te gaan",
+   aankomst, voortgang en "van de route" vallen weg; elke 5 km zegt hij je
+   tempo. Het ritoverzicht na afloop is hetzelfde als bij een route. */
+function startVrij(vervolg) {
+  if (!vervolg || !vervolg.track) vervolg = null;
+  Voice.prime();
+  stopRefresh();
+  S.nav = nieuweRit(vervolg);
+  Object.assign(S.nav, { vrij: true, vrijKm: Math.floor(S.nav.ridden / 5000), gpsKlim: 0, topSpd: 0 });
+  ritAan(true);
+  if (vervolg) Voice.say('Rit hervat.');
+  else {
+    Voice.say('Vrije rit gestart. Ik houd je rit bij en zeg elke 5 kilometer je tempo.' + slotHerinnering());
+    toast(SLOT_TIP, 6000);
+  }
+  startGps();
+}
+
+/* Wat een vrije rit bij elke fix doet, in plaats van route zoeken en afslagen. */
+let spoorGetekend = 0;
+function vrijeFix(pos, alt) {
+  const n = S.nav;
+  // Klim onderweg uit de GPS-hoogte: gladgestreken, en een stijging telt pas
+  // als hij 4 m doorzet. Grof; het ritoverzicht rekent hem achteraf over met
+  // het hoogtemodel.
+  if (alt != null && !isNaN(alt)) {
+    n.hGlad = n.hGlad == null ? alt : n.hGlad + 0.15 * (alt - n.hGlad);
+    if (n.hRef == null) n.hRef = n.hGlad;
+    if (n.hGlad - n.hRef > 4) { n.gpsKlim += n.hGlad - n.hRef; n.hRef = n.hGlad; }
+    else if (n.hRef - n.hGlad > 4) n.hRef = n.hGlad;
+  }
+  if (n.spd < 25 && n.spd > n.topSpd) n.topSpd = n.spd;    // boven 90 km/u: meetfout
+  paintBanner();
+  if (S.rideScreen === 0) {
+    paintMe(pos); paintStats();
+    if (Date.now() - spoorGetekend > 5000) { paintSpoor(); spoorGetekend = Date.now(); }
+  } else if (S.rideScreen === 1) paintData();
+  // elke 5 km: hoe snel ging dat stuk
+  const k = Math.floor(n.ridden / 5000);
+  if (k > n.vrijKm) {
+    n.vrijKm = k;
+    const sp = splitSpeed();
+    Voice.say(k * 5 + ' kilometer.' + (sp ? ' Laatste 5 kilometer ' + komma(sp * 3.6, 1) + ' kilometer per uur.' : ''));
+  }
+}
+function paintSpoor() {
+  if (!mapReady || !S.nav || !S.nav.track.length) return;
+  map.getSource('done').setData(lineFC(S.nav.track.map(p => [p.lat, p.lon])));
+}
+
 function stopNav() {
   if (S.nav && S.nav.watchId != null) navigator.geolocation.clearWatch(S.nav.watchId);
   const rit = S.nav ? finishRide() : null;
+  wisNavLopend();
   S.nav = null;
   S.rideScreen = 0;
   document.body.classList.remove('rs0', 'rs1', 'rs2');
@@ -2817,7 +3075,12 @@ function stopNav() {
   try { speechSynthesis.cancel(); } catch (e) {}
   document.body.className = 'mode-plan';
   map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
-  if (mapReady) map.getSource('done').setData(emptyFC());
+  if (mapReady) {
+    map.getSource('done').setData(emptyFC());
+    // na een vrije rit de geplande route weer laten zien
+    for (const id of ['route-case', 'route-line']) map.setLayoutProperty(id, 'visibility', 'visible');
+    map.setPaintProperty('done-line', 'line-color', '#5b6478');
+  }
   renderMarkers();
   fitRoute();
   if (rit) toonRit(rit, true);
@@ -2853,14 +3116,24 @@ function onFix(p) {
      vangt een gat in de GPS op - anders zou een tunnel of een pauze met het
      scherm uit zomaar minuten rijtijd toevoegen. */
   const dtms = S.nav.lastT ? now - S.nav.lastT : 0;
-  if (dtms > 0 && dtms < 15000 && S.nav.spd > 1.5) S.nav.rijtijd += dtms;
-
   const moved = S.nav.lastPos ? hav(S.nav.lastPos, pos) : 0;
   /* Wat je werkelijk fietst, los van de route. `along` zegt waar je op de route
      zit en springt bij een herberekening terug naar nul; wie dat als "gereden"
      gebruikte zag na een omweg op 37 km ineens 2 km en een gemiddelde van
      1,4 km/u. Sprongen boven 200 m per fix zijn GPS-uitschieters. */
-  if (S.nav.spd > 1.5 && moved < 200) S.nav.ridden += moved;
+  if (dtms >= 15000) {
+    /* Een gat zonder fixes: een tunnel, of het scherm ging op slot met de
+       zijknop en iOS zette de app stil. Fietste je in die tijd (tussen 5 en
+       55 km/u gemiddeld), dan de afstand hemelsbreed en de tijd erbij: iets
+       te weinig, maar eerder ging het hele stuk verloren. Daarna je plek op de
+       route ruim vooruit zoeken, want je kunt kilometers verder zijn. */
+    const v = moved / (dtms / 1000);
+    if (v > 1.5 && v < 15) { S.nav.ridden += moved; S.nav.rijtijd += dtms; }
+    S.nav.zoekVooruit = Math.max(S.nav.zoekVooruit || 0, 400, dtms / 1000 * 15);
+  } else {
+    if (dtms > 0 && S.nav.spd > 1.5) S.nav.rijtijd += dtms;
+    if (S.nav.spd > 1.5 && moved < 200) S.nav.ridden += moved;
+  }
   S.nav.lastPos = pos; S.nav.lastT = now;
 
   // Spoor en split altijd bijwerken, ook tijdens herberekenen: je positie hangt
@@ -2872,7 +3145,11 @@ function onFix(p) {
     sb.push({ a: S.nav.ridden, r: S.nav.rijtijd });
   while (sb.length > 2 && S.nav.ridden - sb[0].a > 8000) sb.shift();
 
+  // zonder route: niets op een route te zoeken, alleen bijhouden en tonen
+  if (S.nav.vrij) { vrijeFix(pos, p.coords.altitude); return; }
+
   const s = snap(pos, moved);
+  S.nav.zoekVooruit = 0;                     // het ruime venster geldt voor een fix
   if (s.perp > 40) {
     S.nav.offCount++;
     if (S.nav.offCount >= 3 && !S.nav.rerouting && now >= S.nav.rerouteNa) reroute(pos);
@@ -2885,6 +3162,14 @@ function onFix(p) {
 
   S.nav.idx = s.idx;
   S.nav.along = s.along;
+  if (S.nav.hervatKlim != null) {
+    // Hervatte rit: de klim en de voortgang laten aansluiten op wat je al had,
+    // anders telt de klim tot hier dubbel en hoor je "een kwart" opnieuw.
+    S.nav.klimBasis = S.nav.hervatKlim - climbSoFar(S.nav.along);
+    const frac = S.nav.ridden / Math.max(S.nav.ridden + Math.max(0, S.route.len - S.nav.along), 1);
+    PROGRESS.forEach((p, i) => { if (frac >= p[0]) S.nav.progFired.add(i); });
+    S.nav.hervatKlim = null;
+  }
 
   checkInstructions();
   checkProgress();
@@ -2998,7 +3283,25 @@ function nextManeuvers() {
   return out;
 }
 
+// rode stip: de opname loopt (bij een vrije rit staat er geen afslagpijl)
+const OPNAME_SVG = '<svg viewBox="0 0 66 66"><circle cx="33" cy="33" r="12" fill="#ff3b30"/>' +
+  '<circle cx="33" cy="33" r="20" fill="none" stroke="#ff3b30" stroke-opacity=".35" stroke-width="3"/></svg>';
 function paintBanner() {
+  if (S.nav && S.nav.vrij) {
+    const n = S.nav, km = komma(n.ridden / 1000, 1), rij = n.rijtijd / 1000;
+    const tijd = hhmm(rij), gem = rij > 30 ? komma(n.ridden / rij * 3.6, 1) : null;
+    $('#arrow').innerHTML = OPNAME_SVG;
+    $('#bandist').innerHTML = km + '<s>km</s>';
+    $('#banstreet').textContent = 'Vrije rit';
+    $('#banthen').textContent = 'rijtijd ' + tijd + (gem ? '  ·  gemiddeld ' + gem + ' km/u' : '');
+    $('#parrow').innerHTML = '';
+    $('#pdist').innerHTML = (n.spd * 3.6).toFixed(0) + '<s>km/u</s>';
+    $('#pstreet').textContent = km + ' km  ·  ' + tijd;
+    $('#dsarrow').innerHTML = OPNAME_SVG;
+    $('#dsdist').innerHTML = km + '<s>km</s>';
+    $('#dsstreet').textContent = 'Vrije rit';
+    return;
+  }
   const nx = nextManeuvers();
   const m = nx[0];
   if (!m) {
@@ -3077,8 +3380,12 @@ function trackPush(pos, t, ele, gpsSpd) {
 function ritCijfers(n) {
   const klim = n.klimBasis + climbSoFar(n.along);
   return { km: n.ridden / 1000, rij: Math.round(n.rijtijd / 1000),
-           // zonder hoogteprofiel weten we het niet; dan schat ritStats het uit de GPS
-           klim: (S.elev || n.klimBasis > 0) ? Math.round(klim) : null };
+           // zonder hoogteprofiel weten we het niet; dan rekent analyseRit hem
+           // uit het hoogtemodel langs je spoor. Een vrije rit heeft er nooit een:
+           // het profiel van een geplande route hoort dan niet bij je rit.
+           klim: (!n.vrij && (S.elev || n.klimBasis > 0)) ? Math.round(klim) : null,
+           // met welke fiets: het geschatte vermogen rekent per fiets anders
+           fiets: S.prof.type, vrij: !!n.vrij };
 }
 /* Een spoor als losse objecten wegschrijven kost 4,7 KB per kilometer. Tien
    ritten van 100 km is dan 4,6 MB, tegen zo'n 5,9 MB die localStorage biedt -
@@ -3138,7 +3445,7 @@ function finishRide() {
   const c = ritCijfers(n);
   // wat je onderweg als "gereden" zag; het spoor alleen als die teller leeg is
   const rit = { ts: n.track[0].t, km: c.km > 0 ? c.km : d / 1000, sec: dur,
-                rij: c.rij, klim: c.klim, p: packTrack(n.track) };
+                rij: c.rij, klim: c.klim, fiets: c.fiets, vrij: c.vrij, p: packTrack(n.track) };
   bewaarRit(rit);
   clearLopend();
   renderRides();
@@ -3161,7 +3468,8 @@ function herstelLopendeRit() {
   for (let i = 1; i < tr.length; i++) d += hav([tr[i-1].lat, tr[i-1].lon], [tr[i].lat, tr[i].lon]);
   const rit = { ts: tr[0].t, km: l.km > 0 ? l.km : d / 1000,
                 sec: (tr[tr.length-1].t - tr[0].t) / 1000,
-                rij: l.rij || 0, klim: l.klim == null ? null : l.klim, p: l.p, onderbroken: true };
+                rij: l.rij || 0, klim: l.klim == null ? null : l.klim, fiets: l.fiets, vrij: l.vrij,
+                p: l.p, onderbroken: true };
   bewaarRit(rit);
   clearLopend();
   return rit;
@@ -3271,12 +3579,14 @@ function luchtDichtheid(temp, hpa) {
   return hpa * 100 / (287.05 * (temp + 273.15));
 }
 // v en w in m/s (w is tegenwind; mee is negatief), helling als fractie, a in m/s2
-function vermogen(v, helling, w, a, m, rho) {
+// `fiets` geeft rolweerstand en luchtweerstand (zie FIETSEN); zonder: racefiets
+function vermogen(v, helling, w, a, m, rho, fiets) {
   if (v < 1) return 0;
+  const crr = (fiets && fiets.crr) || FYS.crr, cda = (fiets && fiets.cda) || FYS.cda;
   const hoek = Math.atan(helling);
   const lucht = v + w;
-  const kracht = m * FYS.g * FYS.crr * Math.cos(hoek) + m * FYS.g * Math.sin(hoek) +
-                 0.5 * rho * FYS.cda * lucht * Math.abs(lucht) + m * a;
+  const kracht = m * FYS.g * crr * Math.cos(hoek) + m * FYS.g * Math.sin(hoek) +
+                 0.5 * rho * cda * lucht * Math.abs(lucht) + m * a;
   return Math.max(0, kracht * v / FYS.eta);
 }
 
@@ -3321,6 +3631,7 @@ function analyseRit(rit, prof) {
   prof = prof || rennerProfiel();
   const tr = ritTrack(rit), n = tr.length;
   const massa = prof.kg + prof.fiets + FYS.extra;
+  const fietsType = FIETSEN[rit.fiets] || FIETSEN.road;     // oudere ritten: racefiets
 
   /* ---- afstand, rijtijd en wanneer je beweegt ---- */
   let metDoppler = 0;
@@ -3431,7 +3742,7 @@ function analyseRit(rit, prof) {
       const dt = (tr[i + 1].t - tr[i - 1].t) / 1000;
       if (dt > 0 && dt < 10) acc = (v[i + 1] - v[i - 1]) / dt;
     }
-    P[i] = vermogen(v[i], helling[i], wind[i], acc, massa, rho);
+    P[i] = vermogen(v[i], helling[i], wind[i], acc, massa, rho, fietsType);
   }
 
   // Per seconde rijtijd, voor NP, beste vermogens en zones. Stilstand telt niet
@@ -3837,7 +4148,8 @@ function toonRit(rit, net, stil) {
   tekenStops(a);
   $('#ritNoot').textContent = 'Vermogen is geschat uit snelheid, helling, wind en gewicht (' +
     komma(prof.kg, prof.kg % 1 ? 1 : 0) + ' kg + fiets ' + komma(prof.fiets, prof.fiets % 1 ? 1 : 0) +
-    " kg). Solo zit het er zo'n 10 tot 15% naast; in een groep schat het te hoog, want uit de wind " +
+    ' kg), gerekend als ' + (FIETSEN[rit.fiets] || FIETSEN.road).naam.toLowerCase() + '.' +
+    " Solo zit het er zo'n 10 tot 15% naast; in een groep schat het te hoog, want uit de wind " +
     'rijden ziet de app niet.' + (prof.gezet ? '' : ' Vul je gewicht in bij Fietsprofiel, nu is 75 kg aangenomen.') +
     (a.doppler ? '' : ' Deze rit is opgenomen zonder GPS-snelheid, dus alles is iets grover.');
   $('#ritGpx').onclick = () => ritNaarStrava(rit);
@@ -4210,8 +4522,8 @@ function hhmm(sec) {
 
 function paintData() {
   const n = S.nav, R = S.route;
-  if (!n || !R) return;
-  const left = Math.max(0, R.len - n.along);
+  if (!n || (!R && !n.vrij)) return;
+  const left = n.vrij ? 0 : Math.max(0, R.len - n.along);
   const el = (id, v, u) => {
     const b = $(id);
     b.innerHTML = v + (u ? '<s>' + u + '</s>' : '');
@@ -4223,19 +4535,28 @@ function paintData() {
   else { sb.classList.remove('leeg'); el('#dSplit', (sp * 3.6).toFixed(1).replace('.', ','), 'km/u'); }
   const rij = n.rijtijd / 1000;
   el('#dAvg', rij > 30 ? (n.ridden / rij * 3.6).toFixed(1).replace('.', ',') : '0', 'km/u');
-  el('#dClimb', Math.round(n.klimBasis + climbSoFar(n.along)), 'm');
+  el('#dClimb', Math.round(n.vrij ? n.gpsKlim : n.klimBasis + climbSoFar(n.along)), 'm');
   el('#dDone', (n.ridden / 1000).toFixed(1).replace('.', ','), 'km');
-  el('#dLeft', (left / 1000).toFixed(1).replace('.', ','), 'km');
+  if (n.vrij) el('#dLeft', komma(n.topSpd * 3.6, 1), 'km/u');      // topsnelheid
+  else el('#dLeft', (left / 1000).toFixed(1).replace('.', ','), 'km');
   el('#dRij', hhmm(rij), '');
   el('#dElapsed', hhmm((Date.now() - n.startT) / 1000), '');
-  el('#dEta', aankomst(left), '');
+  el('#dEta', n.vrij ? klokTijd(Date.now()) : aankomst(left), '');
 }
 
 function paintStats() {
+  if (S.nav.vrij) {
+    const n = S.nav, rij = n.rijtijd / 1000;
+    $('#rSpd').innerHTML = (n.spd * 3.6).toFixed(0) + '<s>km/u</s>';
+    $('#rLeft').textContent = hhmm(rij);
+    $('#rDone').innerHTML = komma(n.ridden / 1000, 1) + '<s>km</s>';
+    $('#rEta').innerHTML = rij > 30 ? komma(n.ridden / rij * 3.6, 1) + '<s>km/u</s>' : '--';
+    return;
+  }
   const left = Math.max(0, S.route.len - S.nav.along);
   $('#rSpd').innerHTML = (S.nav.spd * 3.6).toFixed(0) + '<s>km/u</s>';
-  $('#rLeft').innerHTML = (left / 1000).toFixed(1) + '<s>km</s>';
-  $('#rDone').innerHTML = (S.nav.ridden / 1000).toFixed(1) + '<s>km</s>';
+  $('#rLeft').innerHTML = komma(left / 1000, 1) + '<s>km</s>';
+  $('#rDone').innerHTML = komma(S.nav.ridden / 1000, 1) + '<s>km</s>';
   $('#rEta').textContent = aankomst(left);
 }
 
@@ -4273,6 +4594,7 @@ async function reroute(pos, dicht) {
     S.wps = wps;
     S.line = null;                           // de route volgt de ingeladen lijn niet meer
     S.route = r;
+    bewaarNavLopend();                       // hervatten moet de nieuwe route nemen
     n.fired = new Set();                     // alleen afslagen, voortgang staat apart
     n.along = 0;
     n.idx = 0;
@@ -4305,7 +4627,7 @@ async function reroute(pos, dicht) {
    is het de weg waar je zou inslaan; anders de weg recht voor je. */
 function wegDicht() {
   const n = S.nav, route = S.route;
-  if (!n || !route || n.rerouting || n.done) return;
+  if (!n || n.vrij || !route || n.rerouting || n.done) return;
   const volgende = route.man.find(m => m.speak && !ENDT.has(m.type) && m.at > n.along && m.at - n.along < 60);
   const basis = volgende ? volgende.at : n.along;
   // precies op afstand, tussen twee routepunten in: die liggen soms 50 m uit elkaar
@@ -4418,25 +4740,55 @@ function vraagStop() {
   stopVraagTimer = setTimeout(() => document.body.classList.remove('stopvraag'), 6000);
 }
 /* ---------------- bediening ---------------- */
+const FIETS_UITLEG = {
+  road: 'Geen grind of zandpad in je route. Gemeten bij Uden: onverhard van 4,9% naar 0%.',
+  gravel: "Fietspaden, landwegen en grind mogen. De rondjesmaker zoekt een mix met zo'n 40% onverhard.",
+  mtb: 'Paden en onverhard krijgen de voorkeur. Het geschatte vermogen rekent met noppenbanden en een rechtop houding.'
+};
 function syncProfileUI() {
   $('#spd').value = S.prof.spd;
   $('#spdL').textContent = S.prof.spd + ' km/u';
-  $('#bPaved').classList.toggle('on', S.prof.ab >= 0.9);
+  for (const b of document.querySelectorAll('#fietsKeus .chip')) b.classList.toggle('on', b.dataset.f === S.prof.type);
+  $('#fietsUitleg').textContent = FIETS_UITLEG[S.prof.type] || '';
+}
+/* Fietstype en snelheid per type bewaren: wie op de mountainbike 18 rijdt, wil
+   niet dat de racefiets daarna ook op 18 staat. */
+function bewaarFiets() {
+  let f = {};
+  try { f = JSON.parse(localStorage.getItem('fietsnav.fiets') || '{}') || {}; } catch (e) {}
+  f.type = S.prof.type;
+  f.spd = Object.assign({}, f.spd || {}, { [S.prof.type]: S.prof.spd });
+  try { localStorage.setItem('fietsnav.fiets', JSON.stringify(f)); } catch (e) {}
+}
+function zetFiets(type, bewaar) {
+  const F = FIETSEN[type] || FIETSEN.road;
+  let f = {};
+  try { f = JSON.parse(localStorage.getItem('fietsnav.fiets') || '{}') || {}; } catch (e) {}
+  S.prof.type = FIETSEN[type] ? type : 'road';
+  S.prof.ab = F.ab; S.prof.ur = F.ur;
+  S.prof.spd = (f.spd && f.spd[S.prof.type]) || F.spd;
+  if (bewaar) bewaarFiets();
+  syncProfileUI();
+}
+function laadFiets() {
+  let f = {};
+  try { f = JSON.parse(localStorage.getItem('fietsnav.fiets') || '{}') || {}; } catch (e) {}
+  zetFiets(f.type || 'road', false);
 }
 
-$('#spd').oninput = e => { S.prof.spd = +e.target.value; syncProfileUI(); updateStats(); };
+$('#spd').oninput = e => { S.prof.spd = +e.target.value; bewaarFiets(); syncProfileUI(); updateStats(); };
 /* De twee oude schuifjes zijn eruit. use_roads deed vrijwel niets: zelfs op de
-   hoogste stand bleef 59% van een route over fietspad lopen, dus dat staat nu
-   vast op 0.7. avoid_bad_surfaces doet wel iets, maar als schakelaar en niet als
-   dial - 0,0 en 0,5 gaven letterlijk dezelfde route, pas op 1,0 verdwijnt het
-   onverhard. Vandaar een knop in plaats van een schuif. */
-$('#bPaved').onclick = () => {
-  const aan = !$('#bPaved').classList.contains('on');
-  $('#bPaved').classList.toggle('on', aan);
-  S.prof.ab = aan ? 1.0 : 0.3;
-  try { localStorage.setItem('fietsnav.paved', aan ? '1' : '0'); } catch (e) {}
-  refresh();
-};
+   hoogste stand bleef 59% van een route over fietspad lopen. avoid_bad_surfaces
+   doet wel iets, maar als schakelaar: 0,0 en 0,5 gaven letterlijk dezelfde route,
+   pas op 1,0 verdwijnt het onverhard. Nu bepaalt het fietstype beide. */
+for (const b of document.querySelectorAll('#fietsKeus .chip')) {
+  b.onclick = () => {
+    if (b.dataset.f === S.prof.type) return;
+    zetFiets(b.dataset.f, true);
+    updateStats();
+    if (S.wps.length >= 2 || S.line) refresh();
+  };
+}
 $('#loopKm').oninput = e => { $('#loopKmL').textContent = e.target.value + ' km'; };
 
 const DIRS = [['Willekeurig', null], ['N', 0], ['NO', 45], ['O', 90], ['ZO', 135],
@@ -4594,7 +4946,8 @@ $('#gpxFile').onchange = e => {
   if (f) importGPX(f);
   e.target.value = '';           // zelfde bestand opnieuw kunnen kiezen
 };
-$('#bRide').onclick = startNav;
+$('#bRide').onclick = () => startNav();
+$('#bVrij').onclick = () => startVrij();
 $('#bStop').onclick = vraagStop;
 $('#stopJa').onclick = () => { document.body.classList.remove('stopvraag'); stopNav(); };
 $('#stopNee').onclick = () => document.body.classList.remove('stopvraag');
@@ -4689,19 +5042,22 @@ map.on('dragstart', () => { if (S.nav) S.follow = false; });
 Voice.init();
 loadSaved();
 renderAfsluitingen();
-const teruggezet = herstelLopendeRit();
+// Een rit die nog liep toen de pagina dood ging: aanbieden om te hervatten, en
+// pas als je dat niet wilt als onderbroken rit bij je ritten zetten.
+const hervatbaar = hervatbareRit();
+const teruggezet = hervatbaar ? null : herstelLopendeRit();
 renderRides();
 if (teruggezet) {
   toast('Je vorige rit werd onderbroken. Hij staat bij Gereden ritten.', 6000);
 }
-try { if (localStorage.getItem('fietsnav.paved') === '0') S.prof.ab = 0.3; } catch (e) {}
-syncProfileUI();
+laadFiets();
 syncRennerUI();
 $('#loopKmL').textContent = $('#loopKm').value + ' km';
 updateStats();
 window.addEventListener('hashchange', loadFromHash);
 loadFromHash();          // losgekoppeld van de kaart: een gedeelde link moet
                          // ook openen als de tegels niet komen
+if (hervatbaar) toonHervat(hervatbaar);   // voor autoLocate: die mag je route niet vervangen
 
 /* Meteen je eigen locatie pakken en het startpunt daar neerzetten, zodat je
    alleen nog een eindpunt hoeft te prikken of op rondje-maken tikt. Slaat over
