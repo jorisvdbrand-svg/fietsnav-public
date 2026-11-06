@@ -1,4 +1,4 @@
-/* Fietsnav testmodus. Laadt alleen met ?test in het adres.
+/* Kopwerk testmodus. Laadt alleen met ?test in het adres.
 
    Elke test hier is een fout die ooit echt in de app zat. De routes zijn nep en
    de netwerkaanroepen zijn onderschept, zodat de tests niet van Valhalla
@@ -905,6 +905,167 @@
              ', na herladen ' + S.prof.type };
   });
 
+  /* ---------------- ontwerp Zachte Waaier (versie 16) ---------------- */
+  await test('Thema: zon op en onder in Delft, automatisch licht en donker', async () => {
+    const was = klok;
+    const uur = t => { const d = new Date(t); return d.getHours() + d.getMinutes() / 60; };
+    const zomer = kwZon(52.01, 4.36, new Date(2026, 5, 21)), winter = kwZon(52.01, 4.36, new Date(2026, 11, 21));
+    // Delft: 21 juni rond 05:21 en 22:06, 21 december rond 08:47 en 16:31 (op tien minuten)
+    const tijden = Math.abs(uur(zomer.op) - 5.35) < 0.17 && Math.abs(uur(zomer.onder) - 22.1) < 0.17 &&
+                   Math.abs(uur(winter.op) - 8.78) < 0.17 && Math.abs(uur(winter.onder) - 16.52) < 0.17;
+    localStorage.setItem('fietsnav.thema', 'auto');
+    localStorage.setItem('fietsnav.plek', '[52.01,4.36]');
+    klok = new Date(2026, 5, 21, 13, 0).getTime(); const middag = kwThema();
+    klok = new Date(2026, 5, 21, 23, 30).getTime(); const nacht = kwThema();
+    klok = new Date(2026, 11, 21, 17, 0).getTime(); const winterAvond = kwThema();
+    localStorage.setItem('fietsnav.thema', 'donker');
+    klok = new Date(2026, 5, 21, 13, 0).getTime(); const vast = kwThema();
+    klok = was;
+    const ok = tijden && middag === 'licht' && nacht === 'donker' && winterAvond === 'donker' && vast === 'donker';
+    const hm = t => new Date(t).toTimeString().slice(0, 5);
+    return { ok, detail: 'juni ' + hm(zomer.op) + '-' + hm(zomer.onder) + ', december ' + hm(winter.op) + '-' +
+             hm(winter.onder) + '; middag ' + middag + ', nacht ' + nacht + ', winteravond ' + winterAvond + ', vast donker ' + vast };
+  });
+
+  await test('Aankondigen: vroeg en laat schuiven de 7 seconden mee', async () => {
+    const sec = (stand, kmh) => { Inst.set('aank', stand); const d = tierDistances(kmh); return d; };
+    const v = 35 / 3.6;
+    const n = sec('normaal', 35), vr = sec('vroeg', 35), l = sec('laat', 35);
+    Inst.set('aank', 'normaal');
+    const ok = Math.abs(n.pre / v - 7) < 0.1 && Math.abs(vr.pre / v - 9.8) < 0.2 && Math.abs(l.pre / v - 5.25) < 0.2 &&
+               n.now === vr.now && vr.alert > n.alert;
+    return { ok, detail: 'bij 35 km/u: vroeg ' + (vr.pre / v).toFixed(1) + ' s, normaal ' + (n.pre / v).toFixed(1) +
+             ' s, laat ' + (l.pre / v).toFixed(1) + ' s voor de bocht' };
+  });
+
+  await test('Automatisch pauzeren na 8 s stil, Hervat, en uit te zetten', async () => {
+    const t = trap([52.0, 5.0], 10, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    Inst.set('autoPauze', true);
+    start();
+    rijd(S.route, 0, 2000, 28);
+    const pos = punt(S.route, 2000);
+    stilstaan(5, pos);
+    const na5 = !!S.nav.pauze;
+    stilstaan(5, pos);
+    const na10 = !!S.nav.pauze && document.body.classList.contains('pauze') && $('#bandist').textContent === 'Gepauzeerd';
+    rijd(S.route, 2000, 2300, 28);
+    const door = !S.nav.pauze && !document.body.classList.contains('pauze');
+    // met de hand hervat terwijl je nog stilstaat: niet meteen weer pauzeren
+    const pos2 = punt(S.route, 2300);
+    stilstaan(10, pos2);
+    const weer = !!S.nav.pauze;
+    $('#bHervat').click();
+    stilstaan(12, pos2);
+    const blijft = !S.nav.pauze;
+    Inst.set('autoPauze', false);
+    rijd(S.route, 2300, 2600, 28);
+    stilstaan(15, punt(S.route, 2600));
+    const uit = !S.nav.pauze;
+    Inst.set('autoPauze', true);
+    const ok = !na5 && na10 && door && weer && blijft && uit;
+    return { ok, detail: 'na 5 s ' + (na5 ? 'al' : 'nog niet') + ', na 10 s ' + (na10 ? 'gepauzeerd' : 'NIET') +
+             '; wegrijden ' + (door ? 'hervat' : 'NIET hervat') + '; Hervat-knop ' + (blijft ? 'houdt' : 'houdt NIET') +
+             '; uitgezet ' + (uit ? 'geen pauze' : 'toch pauze') };
+  });
+
+  await test('Geen GPS-signaal na 12 s zonder fix, weg bij de volgende fix', async () => {
+    const t = trap([52.0, 5.0], 10, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    start();
+    rijd(S.route, 0, 1000, 28);
+    const voor = document.body.classList.contains('geengps');
+    klok += 20000;
+    await wacht(1150);                                  // de waakhond tikt elke seconde
+    const zonder = document.body.classList.contains('geengps') && $('#bandist').textContent === 'Geen GPS-signaal' &&
+                   $('#rSpd').textContent === '–,–';
+    rijd(S.route, 1000, 1100, 28);
+    const terug = !document.body.classList.contains('geengps') && $('#bandist').textContent !== 'Geen GPS-signaal';
+    const ok = !voor && zonder && terug;
+    return { ok, detail: 'na 20 s ' + (zonder ? 'melding' : 'GEEN melding') + ' (' + $('#banstreet').textContent + '); ' +
+             (terug ? 'weg na de fix' : 'blijft staan na de fix') };
+  });
+
+  await test('Ritoverzicht: windzin, per 10 km, verwacht en wind in Beaufort', async () => {
+    // 25 km naar het oosten met westenwind in de rug (de eerste 10 het hardst),
+    // dan 25 km terug ertegenin
+    const rit = nepRit([{ richting: 'O', km: 10, kmh: 33 }, { richting: 'O', km: 15, kmh: 31 },
+                        { richting: 'W', km: 25, kmh: 26 }],
+                       { weer: { kmh: 20, from: 270, vlaag: 30, temp: 12, hpa: 1013 } });
+    rit.naam = 'Testrondje'; rit.routeKm = 50; rit.verwacht = rit.rij + 120;
+    window.fetch = async () => { throw new Error('geen netwerk in de test'); };
+    toonRit(rit, false, true);
+    zetRitKleur('w');
+    const zin = $('#ritZin').textContent;
+    const stukken = $('#ritStukken').querySelectorAll('div').length;
+    const snelste = $('#ritSnelste').textContent, top = $('#ritStukken .top small');
+    const verw = $('#ritVerwacht').textContent, wind = $('#ritWindKort').textContent, naam = $('#ritDatum').textContent;
+    const balken = $('#ritBalken').querySelectorAll('rect').length;
+    sluitRit();
+    const ok = /^West 4: in de rug tot km 2[456], daarna tegen/.test(zin) && stukken === 5 &&
+               /met de wind in de rug/.test(snelste) && top && /km 0/.test(top.textContent) &&
+               verw === '2 minuten eerder binnen dan verwacht' && wind === 'W 4' && naam === 'Testrondje' && balken > 90;
+    return { ok, detail: '"' + zin + '" | ' + stukken + ' stukken, "' + snelste + '" | "' + verw + '" | wind ' + wind +
+             ' | ' + balken + ' staafjes' };
+  });
+
+  await test('Bewaar rit: het spoor wordt een route bij Bewaarde routes', async () => {
+    const rit = nepRit([{ richting: 'O', km: 6, kmh: 28 }, { richting: 'N', km: 4, kmh: 28 }], {});
+    rit.naam = 'Testrondje';
+    const voor = S.saved.length;
+    const a = analyseRit(rit, PROF);
+    const eerst = bewaarRitAlsRoute(rit, a);
+    const nieuw = S.saved[0];
+    const nogEens = bewaarRitAlsRoute(rit, a);
+    const lijn = decodePoly(nieuw.line, 5);
+    const ok = eerst && !nogEens && S.saved.length === voor + 1 && nieuw.naam === 'Testrondje' &&
+               Math.abs(nieuw.km - 10) < 0.15 && nieuw.wps.length >= 3 && lijn.length > 50 && nieuw.vanRit === rit.ts;
+    if (nieuw && nieuw.vanRit === rit.ts) { S.saved.shift(); storeSaved(); renderSaved(); }
+    return { ok, detail: (eerst ? 'bewaard' : 'NIET bewaard') + ' als "' + (nieuw && nieuw.naam) + '", ' +
+             (nieuw ? nieuw.km.toFixed(2) : '-') + ' km, ' + (nieuw ? nieuw.wps.length : 0) + ' tussenpunten, ' +
+             lijn.length + ' lijnpunten; tweede keer ' + (nogEens ? 'WEER bewaard' : 'geweigerd') };
+  });
+
+  await test('Zoeken: alleen plaatsen en straten, getypte deel vet, dubbele stukken weg', async () => {
+    let gevraagd = '';
+    const f = (name, key, value, type, extra, lon) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, 51.98] },
+      properties: Object.assign({ name, osm_key: key, osm_value: value, type }, extra) });
+    window.fetch = async url => {
+      gevraagd = String(url);
+      return json({ features: [f('Maasland', 'place', 'village', 'city', { state: 'Zuid-Holland' }, 4.27),
+        f('Maastunnel', 'highway', 'trunk', 'street', { city: 'Rotterdam' }, 4.47),
+        f('Maastunnel', 'highway', 'cycleway', 'street', { city: 'Rotterdam' }, 4.47)] });
+    };
+    const plek = S.mijnPlek;
+    S.mijnPlek = [52.01, 4.36];
+    await doSearch('Maas');
+    const rijen = Array.from(document.querySelectorAll('#sRes .item'));
+    const vet = rijen[0] && rijen[0].querySelector('strong');
+    const sub = rijen[0] && rijen[0].querySelector('small').textContent;
+    const km = rijen[0] && rijen[0].querySelector('.waarde').textContent;
+    S.mijnPlek = plek; $('#sRes').innerHTML = '';
+    const ok = gevraagd.indexOf('layer=city') > 0 && rijen.length === 2 && !!vet && vet.textContent === 'Maas' &&
+               sub === 'Plaats · Zuid-Holland' && /^[0-9]+,[0-9] km$/.test(km);
+    return { ok, detail: rijen.length + ' rijen; vet "' + (vet && vet.textContent) + '"; "' + sub + '"; ' + km +
+             (gevraagd.indexOf('layer=city') > 0 ? '' : '; ZONDER laagfilter') };
+  });
+
+  await test('Kaartkleuren volgen het thema, met akkers en zonder reliëf', async () => {
+    for (let i = 0; i < 50 && !mapReady; i++) await wacht(200);
+    if (!mapReady) return { ok: false, detail: 'kaart laadde niet' };
+    const was = document.documentElement.getAttribute('data-thema');
+    document.documentElement.setAttribute('data-thema', 'licht'); KaartThema.toepassen();
+    const licht = map.getPaintProperty('background', 'background-color');
+    const routeLicht = map.getPaintProperty('route-line', 'line-color');
+    document.documentElement.setAttribute('data-thema', 'donker'); KaartThema.toepassen();
+    const donker = map.getPaintProperty('background', 'background-color');
+    document.documentElement.setAttribute('data-thema', was); KaartThema.toepassen();
+    const ok = licht === '#e4e7d1' && donker === '#181b15' && routeLicht === '#e3b132' &&
+               !!map.getLayer('kw-akker') && !map.getLayer('natural_earth');
+    return { ok, detail: 'licht ' + licht + ' (route ' + routeLicht + '), donker ' + donker + ', akkers ' +
+             (map.getLayer('kw-akker') ? 'ja' : 'NEE') + ', reliëf ' + (map.getLayer('natural_earth') ? 'NOG' : 'weg') };
+  });
+
   /* ---------------- opruimen en tonen ---------------- */
   Voice.say = echt.say; Voice.prime = echt.prime; Wake.on = echt.wakeOn;
   window.stopNav = echt.stopNav; Date.now = echt.now;
@@ -916,25 +1077,25 @@
 
   const goed = uitslagen.filter(u => u.ok).length;
   const vak = document.createElement('div');
-  vak.style.cssText = 'position:fixed;inset:0;z-index:99;overflow:auto;background:#0b0e14;' +
-    'color:#e8edf7;font:14px/1.45 -apple-system,Segoe UI,sans-serif;padding:20px 16px';
+  vak.style.cssText = 'position:fixed;inset:0;z-index:99;overflow:auto;background:#12110f;' +
+    'color:#f5f0e6;font:14px/1.45 -apple-system,Segoe UI,sans-serif;padding:20px 16px';
   const kop = document.createElement('h2');
-  kop.textContent = 'Fietsnav-tests: ' + goed + ' van ' + uitslagen.length + ' geslaagd';
+  kop.textContent = 'Kopwerk-tests: ' + goed + ' van ' + uitslagen.length + ' geslaagd';
   kop.style.cssText = 'margin:0 0 14px;font-size:18px;color:' +
-    (goed === uitslagen.length ? '#00e08a' : '#ff6b6b');
+    (goed === uitslagen.length ? '#7fb24a' : '#d9574a');
   vak.appendChild(kop);
   for (const u of uitslagen) {
     const r = document.createElement('div');
-    r.style.cssText = 'padding:9px 11px;margin-bottom:6px;border-radius:9px;background:#141923;' +
-      'border-left:4px solid ' + (u.ok ? '#00e08a' : '#ff6b6b');
+    r.style.cssText = 'padding:9px 11px;margin-bottom:6px;border-radius:9px;background:#1c1a17;' +
+      'border-left:4px solid ' + (u.ok ? '#7fb24a' : '#d9574a');
     const b = document.createElement('b'); b.textContent = (u.ok ? '✓ ' : '✗ ') + u.naam;
     const s = document.createElement('div'); s.textContent = u.detail;
-    s.style.cssText = 'color:#8b97ad;font-size:12.5px;margin-top:2px';
+    s.style.cssText = 'color:#bab2a3;font-size:12.5px;margin-top:2px';
     r.appendChild(b); r.appendChild(s); vak.appendChild(r);
   }
   const noot = document.createElement('p');
   noot.textContent = 'Je bewaarde routes en ritten zijn teruggezet. Haal ?test uit het adres om de app gewoon te gebruiken.';
-  noot.style.cssText = 'color:#8b97ad;font-size:12px;margin-top:14px';
+  noot.style.cssText = 'color:#bab2a3;font-size:12px;margin-top:14px';
   vak.appendChild(noot);
   document.body.appendChild(vak);
   window.__testUitslagen = uitslagen;

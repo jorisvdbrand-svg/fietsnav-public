@@ -1,7 +1,35 @@
-# Fietsnav
+# Kopwerk
 
 Routes maken en gesproken fietsnavigatie. Eén HTML-bestand, geen account,
-geen API-sleutel, geen abonnement.
+geen API-sleutel, geen abonnement. Tot versie 15 heette de app Fietsnav; je
+routes, ritten en instellingen blijven gewoon staan.
+
+## Uiterlijk: Zachte Waaier (versie 16)
+
+Het ontwerp van rondes 10 en 11: boter-geel (`#f1cf6a`) als enige accentkleur,
+Archivo voor koppen en grote cijfers, Noto Sans voor de rest, en de kaart van
+OpenFreeMap herkleurd naar olijfzwart (donker) of lichtgroen (licht), met de
+percelen als dunne streepjes.
+
+- **Donker, licht of automatisch** bij Instellingen. Automatisch is licht tussen
+  zonsopkomst en zonsondergang op je laatst bekende plek, en kijkt elke vijf
+  minuten opnieuw, zodat de kaart tijdens een avondrit vanzelf omslaat.
+- **Instellingen** (tandwiel naast het zoeken): stem, aankondigen vroeg /
+  normaal / laat, automatisch pauzeren, thema, 3D-kaart, knooppunten op de
+  kaart, fiets en rijsnelheid, je gewicht en FTP, de offline kaart.
+- **Aankondigen** blijft op tijd, niet op vaste meters: normaal is de
+  gekalibreerde 7 seconden voor de bocht, vroeg 10 en laat 5.
+- **Automatisch pauzeren**: 8 seconden stil en de balk onderin wordt een
+  pauzeblok met een klok, Hervat en Stop. Wegrijden hervat vanzelf.
+- **Geen GPS-signaal**: na 12 seconden zonder positie zegt de banner dat, met
+  hoe lang geleden je laatste positie was en je laatste aanwijzing.
+- **Van de route af**: na de nieuwe route zie je 20 seconden wat de omweg kost.
+
+Afwijkingen van het ontwerp: geen accupercentage (dat kan een webapp op een
+iPhone niet lezen); links staan vijf knoppen (stem, cijfers, spaarstand, slot,
+stop) en rechts Weg dicht en centreren, omdat zeven knoppen links niet tussen
+de banner en de balk passen; bij zoeken staat de provincie onder een plaats in
+plaats van de gemeente, want Photon geeft de gemeente niet mee.
 
 ## Waar het op draait
 
@@ -28,7 +56,10 @@ of via je wifi-IP werkt daarom niet.
 1. Ga naar github.com en maak een nieuwe repository, bijvoorbeeld `fietsnav`.
    Zet hem op **Public** (Pages werkt niet op gratis private repos).
 2. Klik **uploading an existing file** en sleep `index.html`,
-   `manifest.webmanifest` en `icon.png` erin. Commit.
+   `manifest.webmanifest`, `icon.png` en `tests.js` erin. Commit.
+   Heb je al een repo `fietsnav`: laat die naam staan. Het adres blijft dan
+   gelijk en je bewaarde routes en ritten ook. Het nieuwe icoon verschijnt pas
+   als je de app opnieuw op je beginscherm zet.
 3. **Settings** > **Pages** > Source: `Deploy from a branch`, branch `main`,
    map `/ (root)`. Opslaan.
 4. Na een minuut staat hij op `https://<jouwnaam>.github.io/fietsnav/`.
@@ -39,11 +70,15 @@ Bij de eerste rit vraagt iOS om je locatie: sta toe, anders werkt navigeren niet
 
 ## Onderweg: drie schermen
 
-Tijdens het rijden veeg je tussen drie schermen, of tik je op de knoppen rechts:
+Tijdens het rijden veeg je tussen drie schermen, of tik je op de knoppen links:
 
-1. **Navigatie** met de kaart en de afslagbanner
-2. **Cijfers** met snelheid, de laatste 5 km, gemiddelde, klim, afstand en aankomst
-3. **Spaarstand**: zwart scherm met alleen de volgende afslag
+1. **Navigatie** met de kaart, de afslagbanner (met wat daarna komt) en onderin
+   een snelheidsmeter met gereden, nog te gaan en aankomst
+2. **Cijfers** met snelheid, gereden, nog, rijtijd, gemiddelde, aankomst, de
+   wind langs je koers (tegen-, mee- of zijwind), de laatste 5 km en de klim,
+   en onderin knoppen voor kaart, stem, spaarstand, slot en stop
+3. **Spaarstand**: zwart scherm met alleen de volgende afslag, je snelheid en
+   hoeveel er nog te gaan is
 
 Tik op de cijferbalk onderin om naar het cijferscherm te gaan, tik bovenaan om
 terug te keren. De spraak loopt door op welk scherm je ook staat.
@@ -101,9 +136,18 @@ Zodra je op Start rit tikt legt de app je spoor vast, met tijdstip, hoogte en de
 snelheid die de GPS zelf meet. Stop je (of kom je aan), dan opent het
 **ritoverzicht**, ingedeeld zoals een activiteit in Strava:
 
-- **Bovenin de kaart** met je rit gekleurd naar snelheid, helling of wind.
-- **Kerncijfers**: afstand, rijtijd, gemiddelde, topsnelheid, klim, tijd
-  onderweg, en geschat vermogen (gemiddeld, NP, W/kg, energie).
+- **Bovenin de kaart** met je rit gekleurd naar snelheid, helling of wind, van
+  blauw via groen en geel naar rood. Bij wind en helling staat er een zin onder,
+  zoals "Zuidwest 3: tegen tot km 23, vanaf km 23 in de rug."
+- **Kerncijfers**: de naam van de route, afstand, hoeveel eerder of later je
+  binnen was dan de app bij de start verwachtte, rijtijd, gemiddelde,
+  topsnelheid, totale tijd, stijging en de wind (richting en Beaufort).
+- **Snelheid per halve km** als staafjes, met je gemiddelde, je topsnelheid en
+  de stukken met wind in de rug; daaronder **per 10 km** (onder 30 km per 5 km),
+  het snelste stuk onderstreept en waarom het snel ging.
+- **Bewaar rit** zet je gereden spoor bij je bewaarde routes, met afslagen erbij
+  als je hem nog eens rijdt. Het deelknopje ernaast geeft de GPX voor Strava.
+- **Geschat vermogen**: gemiddeld, NP, W/kg, energie.
 - **Analyse**: hoogte, snelheid en vermogen in één grafiek. Schuif met je vinger
   eroverheen: je ziet de waarden op dat punt en een stip op de kaart.
 - **Beste prestaties**: snelste 1, 5, 10, 20 en 40 km, beste vermogen over
@@ -111,13 +155,13 @@ snelheid die de GPS zelf meet. Stop je (of kom je aan), dan opent het
 - **Klimmen**: automatisch gevonden, met lengte, percentage, hoogtemeters, tijd,
   VAM en vermogen. Tik op een klim en de kaart zoomt erop in.
 - **Wind**: kracht en richting, en hoeveel van je rit tegen-, zij- of meewind was.
-- **Vermogenszones**, IF en TSS; **per 5 km**; **stops**; de knop **GPX voor Strava**.
+- **Vermogenszones**, IF en TSS, en je **stops**.
 
 Hoogte en weer haalt de app na de rit op: het hoogtemodel langs je hele spoor
 (de GPS-hoogte van een iPhone ruist te veel) en het weer per uur via Open-Meteo.
 Zonder bereik komt dat de volgende keer dat je het overzicht opent.
 
-**Vul onder Fietsprofiel je gewicht in**, en je FTP als je die weet. Zonder FTP
+**Vul bij Instellingen je gewicht in**, en je FTP als je die weet. Zonder FTP
 schat de app hem uit je beste 20 minuten over al je ritten.
 
 **Eerlijk over het vermogen:** een iPhone-webapp kan geen vermogensmeter of
@@ -144,7 +188,7 @@ een route, en ook een vrije rit is te hervatten als iOS de app sloot.
 
 ## Racefiets, gravel of mountainbike
 
-Kies je fiets onder Fietsprofiel. Dat bepaalt drie dingen:
+Kies je fiets bij Instellingen, onder Route. Dat bepaalt drie dingen:
 
 - **De route.** De routeplanner kent de fietstypes zelf. Racefiets mijdt grind
   en zandpaden; gravel mag over landwegen en grind; mountainbike zoekt paden en
@@ -219,8 +263,10 @@ de Edge en herstart hem.
 ## Testen
 
 Zet `?test` achter het adres, bijvoorbeeld `https://JOUWNAAM.github.io/fietsnav/?test`.
-De app draait dan drieëndertig tests die elk een fout nalopen die ooit echt in de app
-zat, en toont groen of rood per test. Duurt een paar seconden en gebruikt
+De app draait dan eenenveertig tests die elk een fout nalopen die ooit echt in de app
+zat of iets van het nieuwe ontwerp controleren (zon op en onder, aankondigen,
+pauzeren, geen GPS, het ritoverzicht, Bewaar rit, zoeken en de kaartkleuren), en
+toont groen of rood per test. Duurt een paar seconden en gebruikt
 nep-routes, dus het werkt ook zonder bereik. Je bewaarde routes en ritten worden
 na afloop teruggezet. Haal `?test` weg om de app weer gewoon te gebruiken.
 
@@ -339,5 +385,16 @@ steken op 7,3 tot 9,0, hoe je ook zoekt: een lus van 60 km rondom Delft komt
 altijd door de Randstad. Dat is geen fout in de generator maar in de
 aardrijkskunde.
 - `ascent()` rekent het klimmen uit. Bewust voorzichtig, zie het commentaar.
+- `KaartThema` herkleurt de OpenFreeMap-stijl per laagnaam en voegt een laag
+  akkers toe; lagen die er niet zijn slaat hij over. `herschrijfStijl()` haalt
+  het reliëf van Natural Earth eruit: dat hoort niet bij het ontwerp en de kaart
+  bleef er bij het laden op wachten. Het thema zelf kiest `kwThema()` bovenin de
+  pagina, nog voor er iets getekend wordt, zodat de app niet eerst in de
+  verkeerde kleur flitst.
+- `Inst` bewaart de instellingen onder `fietsnav.<naam>` (stem, aank, autoPauze,
+  3d, kn). De sleutels heten nog fietsnav, zodat niets van je data verloren gaat.
+- Knooppunten op de kaart en bij zoeken (typ een nummer) komen via Overpass met
+  hun nummer. Overpass deed er bij het testen 28 seconden over; per gebied van
+  een tiende graad wordt het antwoord drie maanden bewaard.
 - `window.__fietsnav` is de testhaak: daarmee kun je posities injecteren en een
   rit simuleren zonder te fietsen.
