@@ -80,6 +80,17 @@ Tijdens het rijden veeg je tussen drie schermen, of tik je op de knoppen links:
 3. **Spaarstand**: zwart scherm met alleen de volgende afslag, je snelheid en
    hoeveel er nog te gaan is
 
+**De kaart kijkt met je mee, als in derde persoon.** Je staat onderin, net boven
+de balk, achter je pijl, en de kaart draait mee en kantelt 62 graden naar voren,
+zodat je ziet wat eraan komt. Op de route staat je pijl op de weg zelf en kijkt
+de camera een stuk langs de route vooruit (zo'n 45 m bij 28 km/u): rustiger dan
+het GPS-kompas, en in een bocht draait hij al mee voordat je insturt. Naast de
+route en in een vrije rit volgt hij je eigen koers. Hoe harder je rijdt, hoe
+verder hij vooruit kijkt. Tussen twee GPS-posities glijdt de kaart door in
+plaats van te verspringen. Sleep je de kaart, dan stopt het meekijken tot je op
+centreren tikt. Gebouwen zijn plat, anders stonden ze in de stad voor de weg.
+Liever plat zonder kanteling: zet bij Instellingen de 3D-kaart uit.
+
 Tik op de cijferbalk onderin om naar het cijferscherm te gaan, tik bovenaan om
 terug te keren. De spraak loopt door op welk scherm je ook staat.
 
@@ -263,9 +274,10 @@ de Edge en herstart hem.
 ## Testen
 
 Zet `?test` achter het adres, bijvoorbeeld `https://JOUWNAAM.github.io/fietsnav/?test`.
-De app draait dan eenenveertig tests die elk een fout nalopen die ooit echt in de app
-zat of iets van het nieuwe ontwerp controleren (zon op en onder, aankondigen,
-pauzeren, geen GPS, het ritoverzicht, Bewaar rit, zoeken en de kaartkleuren), en
+De app draait dan tweeënveertig tests die elk een fout nalopen die ooit echt in de app
+zat of iets van het nieuwe ontwerp controleren (de meekijkcamera, zon op en onder,
+aankondigen, pauzeren, geen GPS, het ritoverzicht, Bewaar rit, zoeken en de
+kaartkleuren), en
 toont groen of rood per test. Duurt een paar seconden en gebruikt
 nep-routes, dus het werkt ook zonder bereik. Je bewaarde routes en ritten worden
 na afloop teruggezet. Haal `?test` weg om de app weer gewoon te gebruiken.

@@ -1519,6 +1519,7 @@ const map = new maplibregl.Map({
   style: 'ofm://tiles.openfreemap.org/styles/liberty',
   center: [4.3571, 52.0116],
   zoom: 12,
+  maxPitch: 70,                  // standaard 60; de meekijkcamera kantelt 62 graden
   attributionControl: { compact: true }
 });
 map.touchZoomRotate.disableRotation();
@@ -1635,7 +1636,13 @@ const KaartThema = {
       else if (id === 'water') zet(id, 'fill-color', k.water);
       else if (/^waterway_(tunnel|river|other)$/.test(id)) zet(id, 'line-color', k.waterlijn);
       else if (id === 'building') { zet(id, 'fill-color', k.gebouw); zet(id, 'fill-outline-color', k.gebouw); }
-      else if (id === 'building-3d') zet(id, 'fill-extrusion-color', k.gebouw);
+      else if (id === 'building-3d') {
+        // plat, zoals in het ontwerp: in de gekantelde meekijkkaart stonden
+        // de huizen anders in de stad pal voor de weg die eraan komt
+        zet(id, 'fill-extrusion-color', k.gebouw);
+        zet(id, 'fill-extrusion-height', 0); zet(id, 'fill-extrusion-base', 0);
+        zet(id, 'fill-extrusion-opacity', 1);
+      }
       else if (/^boundary_/.test(id)) zet(id, 'line-color', k.grens);
       else if (/^(tunnel|road|bridge)_/.test(id) && l.type === 'line') {
         let c;
@@ -1658,6 +1665,14 @@ const KaartThema = {
     }
     zet('route-line', 'line-color', k.route);
     zet('done-line', 'line-color', this.gereden(S.nav && S.nav.vrij));
+    // de lucht boven de horizon in de gekantelde kaart: in de kleur van de kaart,
+    // met de verte die er zacht in overloopt
+    if (typeof map.setSky === 'function') {
+      try {
+        map.setSky({ 'sky-color': k.bg, 'horizon-color': k.bg, 'fog-color': k.bg, 'sky-horizon-blend': 1,
+                     'horizon-fog-blend': 1, 'fog-ground-blend': 0.7, 'atmosphere-blend': 0 });
+      } catch (e) {}
+    }
   }
 };
 /* Donker, licht of automatisch (licht tussen zonsopkomst en -ondergang op je
@@ -3446,7 +3461,14 @@ function ritAan(vrij) {
   setRideScreen(0);
   Wake.on();
   renderMarkers();
-  map.easeTo({ zoom: 16, pitch: Inst.get('3d') ? 55 : 0, duration: 700 });
+  // De camera meteen achter je, nog voor de eerste fix: op je laatste plek
+  // (hervatten), of aan het begin van de route en in zijn richting.
+  const n = S.nav;
+  n.camKoers = null; n.camZoom = null;
+  if (!vrij && S.route && !n.lastPos) n.heading = bearingTo(routePunt(S.route, 0), routePunt(S.route, Math.min(S.route.len, 40)));
+  const begin = n.lastPos || (!vrij && S.route ? S.route.pts[0] : null);
+  map.easeTo({ center: begin ? [begin[1], begin[0]] : map.getCenter(), zoom: 17, bearing: n.heading || 0,
+               pitch: Inst.get('3d') ? CAMERA.pitch : 0, padding: camPadding(), duration: 700 });
   if (mapReady) {
     // zonder route: geen geplande route op de kaart, wel je eigen spoor in routekleur
     for (const id of ['route-case', 'route-line']) map.setLayoutProperty(id, 'visibility', vrij ? 'none' : 'visible');
@@ -3551,7 +3573,11 @@ function stopNav() {
   Wake.off(); Voice.stopSilence();
   try { speechSynthesis.cancel(); } catch (e) {}
   document.body.className = 'mode-plan';
-  map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+  // De camera van het meekijken meteen recht: geen kanteling, noord boven en het
+  // midden weer in het midden. Meteen, want fitRoute en het ritoverzicht
+  // starten hierna hun eigen beweging, en die nam de kanteling gewoon over.
+  try { map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }); } catch (e) {}
+  map.jumpTo({ pitch: 0, bearing: 0 });
   if (mapReady) {
     map.getSource('done').setData(emptyFC());
     // na een vrije rit de geplande route weer laten zien
@@ -3627,6 +3653,7 @@ function onFix(p) {
   if (S.nav.vrij) { vrijeFix(pos, p.coords.altitude); return; }
 
   const s = snap(pos, moved);
+  S.nav.perp = s.perp;                       // voor de camera: sta je op de route?
   S.nav.zoekVooruit = 0;                     // het ruime venster geldt voor een fix
   if (s.perp > 40) {
     S.nav.offCount++;
@@ -3904,27 +3931,92 @@ function paintBanner() {
   else if (pauze) $('#psub').textContent = 'Gepauzeerd';
 }
 
+/* ---------------- meekijken: de camera achter je ----------------
+   Zoals een autonavigatie of een racegame in derde persoon: de kaart draait
+   mee met je rijrichting en kantelt naar voren, en jij staat onderin, net boven
+   de balk, zodat je ziet wat eraan komt. Op de route kijkt de camera langs de
+   weg vooruit (rustiger dan het GPS-kompas, en hij draait al mee de bocht in)
+   en staat je pijl op de weg zelf; naast de route of in een vrije rit volgt hij
+   je eigen koers. Tussen twee fixes glijdt de camera in een rechte lijn door,
+   zodat de kaart rijdt in plaats van verspringt. */
+const CAMERA = { pitch: 62, plek: 0.66 };
+function opRoute(n) {
+  return !!(S.route && !n.vrij && !n.rerouting && n.perp != null && n.perp < 30);
+}
+// waar je pijl staat en welke kant hij op wijst: op de route op de weg zelf
+function mijnStand(pos) {
+  const n = S.nav;
+  if (n && opRoute(n)) {
+    const a = routePunt(S.route, n.along - 8), b = routePunt(S.route, Math.min(S.route.len, n.along + 12));
+    return { pos: routePunt(S.route, n.along), koers: hav(a, b) > 3 ? bearingTo(a, b) : n.heading };
+  }
+  return { pos, koers: n ? n.heading : 0 };
+}
+// waar de camera naar kijkt: op de route een stuk vooruit langs de weg
+function camDoelKoers(n, stand) {
+  if (opRoute(n)) {
+    const kijk = 25 + n.spd * 2.5;                 // zo'n 45 m vooruit bij 28 km/u
+    const a = routePunt(S.route, n.along), b = routePunt(S.route, Math.min(S.route.len, n.along + kijk));
+    if (hav(a, b) > 8) return bearingTo(a, b);
+  }
+  return stand.koers;
+}
+// jij op twee derde van het scherm, maar altijd boven de balk onderin
+function camPadding() {
+  const h = window.innerHeight || 800;
+  const balk = $('#ridebar').getBoundingClientRect().top;
+  const plek = Math.min(h * CAMERA.plek, (balk > 0 ? balk : h * 0.75) - 50);
+  return { top: Math.max(0, Math.round(2 * plek - h)), bottom: 0, left: 0, right: 0 };
+}
+function volgCamera(pos, snel) {
+  const n = S.nav;
+  if (!n || !mapReady || !S.follow || S.rideScreen !== 0 || !pos) return;
+  const stand = mijnStand(pos), doel = camDoelKoers(n, stand);
+  // rustig bijdraaien, de kortste kant om
+  if (n.camKoers == null || snel) n.camKoers = doel;
+  else n.camKoers = (n.camKoers + (((doel - n.camKoers + 540) % 360) - 180) * 0.55 + 360) % 360;
+  // dichterbij als je langzaam rijdt, verder vooruit als je hard gaat
+  const zoomDoel = clamp(17.6 - n.spd * 3.6 / 30, 16.3, 17.3);
+  n.camZoom = (n.camZoom == null || snel) ? zoomDoel : n.camZoom + (zoomDoel - n.camZoom) * 0.3;
+  // even lang als de tijd tussen twee fixes, zodat hij doorglijdt tot de volgende
+  const nu = performance.now();
+  const duur = snel ? 600 : clamp(nu - (n.camT || nu - 1000), 300, 1500);
+  n.camT = nu;
+  map.easeTo({ center: [stand.pos[1], stand.pos[0]], bearing: n.camKoers, zoom: n.camZoom,
+               pitch: Inst.get('3d') ? CAMERA.pitch : 0, padding: camPadding(), duration: duur,
+               easing: snel ? undefined : (t => t), essential: true });
+}
+
 function paintMe(pos) {
-  if (!mapReady) return;
+  if (!mapReady || !pos) return;
+  const stand = mijnStand(pos);
   if (!S.meMarker) {
     const el = document.createElement('div');
     el.id = 'me';
     // pijl in de kleuren van het thema; de gestippelde ring alleen zonder GPS
-    el.innerHTML = '<svg viewBox="0 0 36 36" width="36" height="36">' +
+    // groot genoeg om plat op de weg in de kanteling nog goed te zien
+    el.innerHTML = '<svg viewBox="0 0 36 36" width="52" height="52">' +
       '<circle class="zoekring" cx="18" cy="18" r="16" fill="none" style="stroke:var(--tx)" ' +
       'stroke-width="1.4" stroke-dasharray="3 3"/>' +
       '<path d="M18 5 L26 29 L18 23.5 L10 29 Z" style="fill:var(--me-vul);stroke:var(--me-rand)" ' +
       'stroke-width="2.2" stroke-linejoin="round"/></svg>';
-    S.meMarker = new maplibregl.Marker({ element: el, rotationAlignment: 'map' })
-      .setLngLat([pos[1], pos[0]]).addTo(map);
+    // plat op de weg, zodat je er in de gekantelde kaart achter staat
+    S.meMarker = new maplibregl.Marker({ element: el, rotationAlignment: 'map', pitchAlignment: 'map' })
+      .setLngLat([stand.pos[1], stand.pos[0]]).addTo(map);
   }
-  S.meMarker.setLngLat([pos[1], pos[0]]);
-  S.meMarker.setRotation(S.nav ? S.nav.heading : 0);
-  if (S.nav && S.follow && S.rideScreen === 0) {
-    map.easeTo({ center: [pos[1], pos[0]], bearing: S.nav.heading,
-                 duration: 800, essential: true });
+  // Volgt de camera, dan rijdt de pijl mee met het midden van de camera (zie de
+  // 'move' hieronder): anders sprong hij elke fix vooruit en zakte hij terug.
+  if (!(S.nav && S.follow && S.rideScreen === 0)) {
+    S.meMarker.setLngLat([stand.pos[1], stand.pos[0]]);
+    S.meMarker.setRotation(S.nav ? stand.koers : 0);
   }
+  volgCamera(pos);
 }
+map.on('move', () => {
+  if (!S.nav || !S.follow || S.rideScreen !== 0 || !S.meMarker) return;
+  S.meMarker.setLngLat(map.getCenter());
+  S.meMarker.setRotation(map.getBearing());      // altijd recht vooruit
+});
 
 function paintDone() {
   if (!mapReady) return;
@@ -5904,10 +5996,7 @@ for (const b of document.querySelectorAll('.slotknop')) {
 $('#bDicht').onclick = wegDicht;
 $('#bRecenter').onclick = () => {
   S.follow = true;
-  if (S.nav && S.nav.lastPos) {
-    map.easeTo({ center: [S.nav.lastPos[1], S.nav.lastPos[0]],
-                 bearing: S.nav.heading, zoom: 16, duration: 600 });
-  }
+  if (S.nav && S.nav.lastPos) volgCamera(S.nav.lastPos, true);    // terug achter je pijl
 };
 /* De stem aan of uit, vanaf de kaart, het cijferscherm of Instellingen; de
    keus blijft bewaard voor de volgende rit. */
@@ -5959,7 +6048,7 @@ $('#iPauze').onclick = () => {
 };
 $('#i3d').onclick = () => {
   Inst.set('3d', !Inst.get('3d'));
-  if (S.nav) map.easeTo({ pitch: Inst.get('3d') ? 55 : 0, duration: 500 });
+  if (S.nav) map.easeTo({ pitch: Inst.get('3d') ? CAMERA.pitch : 0, duration: 500 });
   syncInstellingen();
 };
 $('#iKn').onclick = () => { Inst.set('kn', !Inst.get('kn')); KnKaart.toon(); syncInstellingen(); };

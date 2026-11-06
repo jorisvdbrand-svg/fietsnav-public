@@ -906,6 +906,34 @@
   });
 
   /* ---------------- ontwerp Zachte Waaier (versie 16) ---------------- */
+  await test('Meekijkcamera: pijl op de weg, kijkt de bocht in, na stoppen weer recht', async () => {
+    for (let i = 0; i < 50 && !mapReady; i++) await wacht(200);
+    if (!mapReady) return { ok: false, detail: 'kaart laadde niet' };
+    // eerst 1200 m naar het noorden, dan een bocht naar het oosten
+    const t = trap([52.0, 5.0], 10, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    start();
+    rijd(S.route, 0, 1100, 28);
+    const st = mijnStand(S.nav.lastPos);
+    const opWeg = hav(st.pos, routePunt(S.route, S.nav.along)) < 1;
+    const recht = camDoelKoers(S.nav, st);
+    rijd(S.route, 1100, 1186, 28);                     // 15 m voor de bocht
+    const inBocht = camDoelKoers(S.nav, mijnStand(S.nav.lastPos));
+    const pad = camPadding().top;
+    // alsof hij midden in de rit gekanteld en verschoven staat, dan stoppen
+    map.jumpTo({ pitch: 62, bearing: 40 }); map.setPadding({ top: pad, bottom: 0, left: 0, right: 0 });
+    window.fetch = async () => { throw new Error('geen netwerk in de test'); };
+    echt.stopNav();
+    const na = { pitch: map.getPitch(), bearing: map.getBearing(), top: map.getPadding().top };
+    sluitRit();
+    const hoek = d => Math.min(d, 360 - d);
+    const ok = opWeg && hoek(recht) < 3 && inBocht > 20 && inBocht < 85 && pad > 100 &&
+               na.pitch === 0 && na.bearing === 0 && na.top === 0;
+    return { ok, detail: 'pijl ' + (opWeg ? 'op de weg' : 'NIET op de weg') + '; kijkt ' + Math.round(recht) +
+             ' graden op het rechte stuk, ' + Math.round(inBocht) + ' graden 15 m voor de bocht; jij ' + pad +
+             ' px omlaag; na stoppen kanteling ' + na.pitch + ', draaiing ' + na.bearing + ', verschuiving ' + na.top };
+  });
+
   await test('Thema: zon op en onder in Delft, automatisch licht en donker', async () => {
     const was = klok;
     const uur = t => { const d = new Date(t); return d.getHours() + d.getMinutes() / 60; };
