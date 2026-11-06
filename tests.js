@@ -920,6 +920,13 @@
     rijd(S.route, 1100, 1186, 28);                     // 15 m voor de bocht
     const inBocht = camDoelKoers(S.nav, mijnStand(S.nav.lastPos));
     const pad = camPadding().top;
+    // Centreren, en dan echt een paar frames tekenen: eerder crashte elke frame
+    let centreren = 'goed';
+    try {
+      S.follow = false; $('#bRecenter').click();
+      for (let i = 0; i < 4; i++) { map._render(performance.now()); await wacht(60); }
+      if (!S.follow) centreren = 'volgt niet';
+    } catch (e) { centreren = 'crash: ' + e.message; }
     // alsof hij midden in de rit gekanteld en verschoven staat, dan stoppen
     map.jumpTo({ pitch: 62, bearing: 40 }); map.setPadding({ top: pad, bottom: 0, left: 0, right: 0 });
     window.fetch = async () => { throw new Error('geen netwerk in de test'); };
@@ -928,10 +935,34 @@
     sluitRit();
     const hoek = d => Math.min(d, 360 - d);
     const ok = opWeg && hoek(recht) < 3 && inBocht > 20 && inBocht < 85 && pad > 100 &&
-               na.pitch === 0 && na.bearing === 0 && na.top === 0;
-    return { ok, detail: 'pijl ' + (opWeg ? 'op de weg' : 'NIET op de weg') + '; kijkt ' + Math.round(recht) +
+               na.pitch === 0 && na.bearing === 0 && na.top === 0 && centreren === 'goed';
+    return { ok, detail: 'centreren ' + centreren + '; pijl ' + (opWeg ? 'op de weg' : 'NIET op de weg') + '; kijkt ' + Math.round(recht) +
              ' graden op het rechte stuk, ' + Math.round(inBocht) + ' graden 15 m voor de bocht; jij ' + pad +
              ' px omlaag; na stoppen kanteling ' + na.pitch + ', draaiing ' + na.bearing + ', verschuiving ' + na.top };
+  });
+
+  await test('Weergave: compact en glas zelf te kiezen, compact geeft meer kaart', async () => {
+    const t = trap([52.0, 5.0], 10, 1200);
+    zetRoute(nepTrip(t.pts, t.bochten));
+    start();
+    rijd(S.route, 0, 500, 28);
+    const kies = (seg, v) => document.querySelector(seg + ' [data-v="' + v + '"]').click();
+    const zicht = () => $('#ridebar').getBoundingClientRect().top - $('#banner').getBoundingClientRect().bottom;
+    const filter = () => { const cs = getComputedStyle($('#ridebar')); return cs.backdropFilter || cs.webkitBackdropFilter || ''; };
+    kies('#iBalken', 'groot'); kies('#iStijl', 'dicht');
+    const groot = zicht(), dicht = filter();
+    kies('#iBalken', 'compact'); kies('#iStijl', 'glas');
+    const compact = zicht(), glas = filter();
+    const html = document.documentElement.getAttribute('data-balken') + '/' + document.documentElement.getAttribute('data-stijl');
+    const bewaard = Inst.get('balken') + '/' + Inst.get('stijl');
+    // een nieuwe rit zet de klassen van body opnieuw; de keuze moet blijven
+    stop(); start();
+    const blijft = document.documentElement.getAttribute('data-balken') === 'compact';
+    kies('#iBalken', 'groot'); kies('#iStijl', 'dicht');
+    const ok = compact > groot * 1.25 && /blur/.test(glas) && !/blur/.test(dicht) && html === 'compact/glas' &&
+               bewaard === 'compact/glas' && blijft;
+    return { ok, detail: 'vrij zicht groot ' + Math.round(groot) + ' px, compact ' + Math.round(compact) + ' px; glas "' +
+             glas + '"; bewaard ' + bewaard + '; na nieuwe rit ' + (blijft ? 'nog compact' : 'TERUG naar groot') };
   });
 
   await test('Thema: zon op en onder in Delft, automatisch licht en donker', async () => {

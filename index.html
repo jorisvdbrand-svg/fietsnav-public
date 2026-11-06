@@ -51,6 +51,10 @@ function kwThema() {
   // licht thema: donkere tekst in de statusbalk, anders valt hij weg op crème
   const m = document.getElementById('statusbalk');
   if (m && t === 'licht') m.setAttribute('content', 'default');
+  // hoe de balken onderweg eruitzien (Instellingen, Weergave onderweg)
+  const lees = (k, std) => { try { return JSON.parse(localStorage.getItem('fietsnav.' + k)) || std; } catch (e) { return std; } };
+  document.documentElement.setAttribute('data-balken', lees('balken', 'groot'));
+  document.documentElement.setAttribute('data-stijl', lees('stijl', 'dicht'));
 })();
 </script>
 <style>
@@ -472,6 +476,61 @@ body.vrij #bDicht,body.vrij .wp{display:none}
 .maplibregl-ctrl-attrib.maplibregl-compact{background:var(--kaart)!important;color:var(--dim)}
 .maplibregl-ctrl-bottom-left{display:none}
 body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
+
+/* ---------------- weergave onderweg: compact en glas ----------------
+   Zelf te kiezen bij Instellingen. Compact: dezelfde cijfers in minder ruimte,
+   op een iPhone 15 zo'n 40% meer kaart tussen banner en balk. Glas: zoals de
+   nieuwe iOS, doorzichtig met de kaart vervaagd erachter, een glanzende rand
+   en een zachte glans bovenin. De keuze staat als data-balken en data-stijl op
+   <html>, zodat een rit die de klassen van <body> opnieuw zet er niet aankomt. */
+[data-balken=compact] #banner{padding:10px 12px}
+[data-balken=compact] .kopRij{gap:12px}
+[data-balken=compact] #banner .tegel{width:56px;height:56px;border-radius:15px}
+[data-balken=compact] #banner .tegel svg{width:36px;height:36px}
+[data-balken=compact] #bandist{font-size:38px;letter-spacing:-1px}
+[data-balken=compact] #bandist s{font-size:18px}
+[data-balken=compact] #banstreet{font-size:17px;margin-top:2px}
+[data-balken=compact] #banner .volgRij{margin-top:8px;padding-top:7px;font-size:13.5px}
+[data-balken=compact] #banner .volgRij b{font-size:14px}
+[data-balken=compact] #ridebar{padding:9px 12px 10px}
+[data-balken=compact] #rijMeter{display:flex;align-items:center}
+[data-balken=compact] #meter{width:auto;height:auto;margin:0;padding-right:12px;border-right:1px solid var(--rand)}
+[data-balken=compact] #meter svg{display:none}
+[data-balken=compact] #meterTekst{position:static;text-align:left}
+[data-balken=compact] #rSpd{font-size:40px;letter-spacing:-1.2px}
+[data-balken=compact] #rSub{font-size:11.5px;white-space:nowrap}
+[data-balken=compact] #rijMeter .drie{flex:1;border-top:0;margin-top:0}
+[data-balken=compact] #rijMeter .drie>div{padding:0 0 0 10px}
+[data-balken=compact] #rijMeter .drie>div:first-child{border-left:0;padding-left:10px}
+[data-balken=compact] #rijMeter .drie u{font-size:11.5px}
+[data-balken=compact] #rijMeter .drie b{font-size:21px}
+/* de knoppen schuiven mee omhoog; gemeten op een SE: knoppen tot 400 px, balk vanaf 580 px */
+[data-balken=compact] #ridectl{top:calc(var(--safe-t) + 132px)}
+[data-balken=compact] #ridectl .rondknop{width:48px;height:48px;border-radius:15px}
+[data-balken=compact] #ridectl #bDicht{top:calc(var(--safe-t) + 132px)}
+[data-balken=compact] #ridectl #bRecenter{top:calc(var(--safe-t) + 188px)}
+
+:root{--glas:rgba(22,20,18,.26);--glas-lijn:rgba(255,255,255,.16);--glas-schaduw:0 14px 34px rgba(0,0,0,.3);
+  --glas-glans:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,0) 45%);
+  --glas-rand:linear-gradient(135deg,rgba(255,255,255,.62),rgba(255,255,255,.1) 30%,rgba(255,255,255,.04) 60%,rgba(255,255,255,.36))}
+[data-thema=licht]{--glas:rgba(255,255,255,.22);--glas-lijn:rgba(31,28,26,.13);--glas-schaduw:0 14px 34px rgba(70,60,30,.2);
+  --glas-glans:linear-gradient(160deg,rgba(255,255,255,.62),rgba(255,255,255,0) 50%);
+  --glas-rand:linear-gradient(135deg,#fff,rgba(255,255,255,.45) 30%,rgba(255,255,255,.25) 60%,rgba(255,255,255,.9))}
+[data-stijl=glas]{--meter-baan:var(--glas-lijn)}
+[data-stijl=glas] #banner,[data-stijl=glas] #ridebar,[data-stijl=glas] .rondknop,[data-stijl=glas] #planbar .logo{
+  background:var(--glas-glans),var(--glas);border-color:transparent;
+  backdrop-filter:blur(9px) saturate(2) brightness(1.06);-webkit-backdrop-filter:blur(9px) saturate(2) brightness(1.06);
+  box-shadow:var(--glas-schaduw),inset 0 1px 1px rgba(255,255,255,.3),inset 0 -1px 1px rgba(255,255,255,.08)}
+[data-stijl=glas] .rondknop,[data-stijl=glas] #planbar .logo{position:relative}
+/* de glanzende rand: een verloop dat alleen in de randlijn te zien is */
+[data-stijl=glas] #banner::before,[data-stijl=glas] #ridebar::before,
+[data-stijl=glas] .rondknop::before,[data-stijl=glas] #planbar .logo::before{
+  content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:var(--glas-rand);pointer-events:none;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+[data-stijl=glas] .volgRij,[data-stijl=glas] .drie,[data-stijl=glas] .drie>div,
+[data-stijl=glas] #meter,[data-stijl=glas] .pauzeKop{border-color:var(--glas-lijn)}
+[data-stijl=glas] .tegel.neutraal{background:var(--glas-lijn)}
 </style>
 </head>
 <body class="mode-plan">
@@ -570,6 +629,17 @@ body.mode-ride .maplibregl-ctrl-bottom-right{display:none}
   </div>
   <div class="instUitleg" id="iAankUitleg"></div>
   <div class="instRij"><span>Automatisch pauzeren</span><button class="schakel" id="iPauze" aria-label="Automatisch pauzeren"></button></div>
+
+  <div class="instGroep">Weergave onderweg</div>
+  <div class="instRij"><span>Balken boven en onder</span></div>
+  <div class="seg" id="iBalken">
+    <button data-v="groot">Groot</button><button data-v="compact">Compact</button>
+  </div>
+  <div class="instRij"><span>Stijl</span></div>
+  <div class="seg" id="iStijl">
+    <button data-v="dicht">Dicht</button><button data-v="glas">Glas</button>
+  </div>
+  <div class="instUitleg" id="iWeergaveUitleg"></div>
 
   <div class="instGroep">Kaart</div>
   <div class="seg" id="iThema">
@@ -1045,13 +1115,23 @@ function tierDistances(spdKmh) {
 
 /* ---------------- instellingen ----------------
    Alles van de instellingenpagina, onder fietsnav.<naam> in localStorage. */
-const INST_STANDAARD = { stem: true, aank: 'normaal', autoPauze: true, '3d': true, kn: false };
+const INST_STANDAARD = { stem: true, aank: 'normaal', autoPauze: true, '3d': true, kn: false,
+                         balken: 'groot', stijl: 'dicht' };
 const Inst = {
   get(k) {
     try { const v = localStorage.getItem('fietsnav.' + k); if (v != null) return JSON.parse(v); } catch (e) {}
     return INST_STANDAARD[k];
   },
   set(k, v) { try { localStorage.setItem('fietsnav.' + k, JSON.stringify(v)); } catch (e) {} }
+};
+// Balken groot of compact, dicht of glas: als attributen op <html> (zie de CSS)
+const Weergave = {
+  balken() { return Inst.get('balken') === 'compact' ? 'compact' : 'groot'; },
+  stijl() { return Inst.get('stijl') === 'glas' ? 'glas' : 'dicht'; },
+  toepassen() {
+    document.documentElement.setAttribute('data-balken', this.balken());
+    document.documentElement.setAttribute('data-stijl', this.stijl());
+  }
 };
 // Aankondigen: de gekalibreerde 7 seconden (normaal), of iets eerder of later
 const AANK = { vroeg: { f: 1.4, sec: 10 }, normaal: { f: 1, sec: 7 }, laat: { f: 0.75, sec: 5 } };
@@ -3982,9 +4062,12 @@ function volgCamera(pos, snel) {
   const nu = performance.now();
   const duur = snel ? 600 : clamp(nu - (n.camT || nu - 1000), 300, 1500);
   n.camT = nu;
-  map.easeTo({ center: [stand.pos[1], stand.pos[0]], bearing: n.camKoers, zoom: n.camZoom,
-               pitch: Inst.get('3d') ? CAMERA.pitch : 0, padding: camPadding(), duration: duur,
-               easing: snel ? undefined : (t => t), essential: true });
+  const opt = { center: [stand.pos[1], stand.pos[0]], bearing: n.camKoers, zoom: n.camZoom,
+                pitch: Inst.get('3d') ? CAMERA.pitch : 0, padding: camPadding(), duration: duur, essential: true };
+  // Lineair tussen fixes. Bij snel (centreren) de standaard van MapLibre: dan de
+  // sleutel weglaten, want easing: undefined overschrijft die en elke frame crasht.
+  if (!snel) opt.easing = t => t;
+  map.easeTo(opt);
 }
 
 function paintMe(pos) {
@@ -6036,6 +6119,15 @@ function syncInstellingen() {
   $('#iAankUitleg').textContent = 'Bij ' + S.prof.spd + ' km/u: eerst een melding op ' +
     Math.round(td.alert / 10) * 10 + ' m, de aanwijzing op ' + Math.round(td.pre / 5) * 5 +
     ' m voor de bocht. Rijd je harder, dan schuift dat mee.';
+  const balken = Weergave.balken(), stijl = Weergave.stijl();
+  for (const b of document.querySelectorAll('#iBalken button')) b.classList.toggle('on', b.dataset.v === balken);
+  for (const b of document.querySelectorAll('#iStijl button')) b.classList.toggle('on', b.dataset.v === stijl);
+  $('#iWeergaveUitleg').textContent = (balken === 'compact'
+      ? "Compact: dezelfde cijfers kleiner, met zo'n 40% meer kaart in beeld. De snelheidsboog valt weg. "
+      : 'Groot: grote cijfers en de snelheidsboog. ') +
+    (stijl === 'glas'
+      ? 'Glas: de kaart schijnt erdoorheen. In fel zonlicht iets minder contrast, en het kost wat extra accu.'
+      : 'Dicht: het best te lezen in fel zonlicht.');
   Thema.toepassen();
 }
 $('#bInst').onclick = () => { syncInstellingen(); document.body.classList.add('inst'); };
@@ -6056,6 +6148,11 @@ for (const b of document.querySelectorAll('#iAank button')) {
   b.onclick = () => { Inst.set('aank', b.dataset.v); syncInstellingen(); };
 }
 for (const b of document.querySelectorAll('#iThema button')) b.onclick = () => Thema.kies(b.dataset.v);
+for (const [id, k] of [['#iBalken', 'balken'], ['#iStijl', 'stijl']]) {
+  for (const b of document.querySelectorAll(id + ' button')) {
+    b.onclick = () => { Inst.set(k, b.dataset.v); Weergave.toepassen(); syncInstellingen(); };
+  }
+}
 $('#bData').onclick = () => setRideScreen(1);
 $('#bSaveMode').onclick = () => setRideScreen(2);
 $('#power').onclick = () => setRideScreen(0);
@@ -6127,6 +6224,7 @@ map.on('dragstart', () => { if (S.nav) S.follow = false; });
 Voice.init();
 zetStem(!!Inst.get('stem'));
 Thema.toepassen();
+Weergave.toepassen();
 loadSaved();
 renderAfsluitingen();
 // Een rit die nog liep toen de pagina dood ging: aanbieden om te hervatten, en

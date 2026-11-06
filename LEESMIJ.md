@@ -24,6 +24,15 @@ percelen als dunne streepjes.
 - **Geen GPS-signaal**: na 12 seconden zonder positie zegt de banner dat, met
   hoe lang geleden je laatste positie was en je laatste aanwijzing.
 - **Van de route af**: na de nieuwe route zie je 20 seconden wat de omweg kost.
+- **Weergave onderweg** (Instellingen), twee keuzes die je vrij combineert:
+  - *Balken groot of compact.* Compact geeft dezelfde cijfers kleiner, met de
+    knoppen mee omhoog. Gemeten op een iPhone 15: 604 in plaats van 438 px kaart
+    tussen banner en balk (+38%). De snelheidsboog valt dan weg.
+  - *Stijl dicht of glas.* Glas is zoals de nieuwe iOS: doorzichtig, de kaart
+    vervaagd erachter, een glanzende rand en een zachte glans bovenin. In fel
+    zonlicht iets minder contrast, en de telefoon moet de bewegende kaart elk
+    beeld opnieuw vervagen, dus het kost wat extra accu (niet gemeten).
+  Standaard staat het op groot en dicht, zoals het ontwerp.
 
 Afwijkingen van het ontwerp: geen accupercentage (dat kan een webapp op een
 iPhone niet lezen); links staan vijf knoppen (stem, cijfers, spaarstand, slot,
@@ -274,8 +283,9 @@ de Edge en herstart hem.
 ## Testen
 
 Zet `?test` achter het adres, bijvoorbeeld `https://JOUWNAAM.github.io/fietsnav/?test`.
-De app draait dan tweeënveertig tests die elk een fout nalopen die ooit echt in de app
-zat of iets van het nieuwe ontwerp controleren (de meekijkcamera, zon op en onder,
+De app draait dan drieënveertig tests die elk een fout nalopen die ooit echt in de app
+zat of iets van het nieuwe ontwerp controleren (de meekijkcamera, de weergave
+onderweg, zon op en onder,
 aankondigen, pauzeren, geen GPS, het ritoverzicht, Bewaar rit, zoeken en de
 kaartkleuren), en
 toont groen of rood per test. Duurt een paar seconden en gebruikt
